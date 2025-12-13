@@ -28,11 +28,15 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Source } from "@shared/schema";
 
+interface FileResult {
+  file: string;
+  status: "success" | "duplicate";
+  sourceId: string;
+  chunks?: number;
+}
+
 interface IngestionResult {
-  processed: number;
-  skipped: number;
-  failed: number;
-  sources: { id: string; title: string; status: string; chunks: number }[];
+  results: FileResult[];
 }
 
 export default function IngestPage() {
@@ -92,9 +96,11 @@ export default function IngestPage() {
         setLastResult(result);
         queryClient.invalidateQueries({ queryKey: ["/api/sources"] });
 
+        const successCount = result.results.filter(r => r.status === "success").length;
+        const duplicateCount = result.results.filter(r => r.status === "duplicate").length;
         toast({
           title: "Ingestion complete",
-          description: `Processed ${result.processed}, skipped ${result.skipped}, failed ${result.failed}`,
+          description: `Processed ${successCount}, skipped ${duplicateCount} duplicates`,
         });
       } catch (error) {
         toast({
@@ -193,7 +199,7 @@ export default function IngestPage() {
         </Card>
 
         {lastResult && (
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -203,33 +209,24 @@ export default function IngestPage() {
               <CardContent>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-2xl font-semibold">{lastResult.processed}</span>
+                  <span className="text-2xl font-semibold">
+                    {lastResult.results.filter(r => r.status === "success").length}
+                  </span>
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Skipped
+                  Skipped (Duplicates)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-yellow-600" />
-                  <span className="text-2xl font-semibold">{lastResult.skipped}</span>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Failed
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <XCircle className="h-5 w-5 text-red-600" />
-                  <span className="text-2xl font-semibold">{lastResult.failed}</span>
+                  <span className="text-2xl font-semibold">
+                    {lastResult.results.filter(r => r.status === "duplicate").length}
+                  </span>
                 </div>
               </CardContent>
             </Card>

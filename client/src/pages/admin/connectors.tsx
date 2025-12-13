@@ -198,7 +198,17 @@ export default function ConnectorsPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: ConnectorFormData) => {
-      const res = await apiRequest("POST", "/api/connectors", data);
+      const configJson = JSON.stringify({
+        baseUrl: data.baseUrl,
+        email: data.email,
+        apiToken: data.apiToken,
+        botToken: data.botToken,
+      });
+      const res = await apiRequest("POST", "/api/connectors", {
+        type: data.type,
+        name: data.name,
+        configJson,
+      });
       return res.json();
     },
     onSuccess: () => {

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -279,22 +279,25 @@ export default function ChatPage() {
   const { toast } = useToast();
 
   const chatMutation = useMutation({
-    mutationFn: async (prompt: string) => {
-      const res = await apiRequest("POST", "/api/chat", { prompt });
+    mutationFn: async (message: string) => {
+      const conversationHistory = messages.map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+      const res = await apiRequest("POST", "/api/chat", { message, conversationHistory });
       return res.json();
     },
-    onSuccess: (data) => {
-      const response = data.response as ChatResponse;
+    onSuccess: (data: ChatResponse) => {
       const newMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: response.answer,
-        response,
+        content: data.answer,
+        response: data,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, newMessage]);
-      if (response.action) {
-        setPendingAction({ action: response.action, requestId: data.requestId });
+      if (data.action) {
+        setPendingAction({ action: data.action, requestId: crypto.randomUUID() });
       }
     },
     onError: (error) => {
@@ -308,21 +311,15 @@ export default function ChatPage() {
 
   const executeMutation = useMutation({
     mutationFn: async ({
-      toolName,
-      draftArgs,
-      requestId,
-      citations,
+      action,
+      idempotencyKey,
     }: {
-      toolName: string;
-      draftArgs: Record<string, unknown>;
-      requestId: string;
-      citations: Citation[];
+      action: { type: string; draft: Record<string, unknown> };
+      idempotencyKey: string;
     }) => {
       const res = await apiRequest("POST", "/api/actions/execute", {
-        toolName,
-        draftArgs,
-        requestId,
-        citations,
+        action,
+        idempotencyKey,
       });
       return res.json();
     },
@@ -367,10 +364,11 @@ export default function ChatPage() {
   const handleApprove = (action: Action, editedDraft: Record<string, unknown>) => {
     if (!pendingAction) return;
     executeMutation.mutate({
-      toolName: action.type,
-      draftArgs: editedDraft,
-      requestId: pendingAction.requestId,
-      citations: action.citations,
+      action: {
+        type: action.type,
+        draft: editedDraft,
+      },
+      idempotencyKey: pendingAction.requestId,
     });
   };
 
