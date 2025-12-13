@@ -1,18 +1,42 @@
 import { createEmbedding, createEmbeddings } from "./openai";
 import type { Chunk } from "@shared/schema";
 
-// In-memory vector store (simpler than pgvector for MVP)
-// Stores embeddings in memory, keyed by chunk ID
+// In-memory vector store with persistence via chunk vectorRef field
+// Embeddings are stored in memory but chunk IDs are tracked in DB
+// On startup, re-index all chunks that don't have cached embeddings
 const vectorStore: Map<string, number[]> = new Map();
+let initialized = false;
+
+export async function initializeVectorStore(allChunks: Chunk[]): Promise<void> {
+  if (initialized) return;
+  
+  console.log(`[vectorstore] Initializing with ${allChunks.length} chunks...`);
+  
+  // Filter chunks that need embedding (not already in memory)
+  const chunksToIndex = allChunks.filter(c => !vectorStore.has(c.id));
+  
+  if (chunksToIndex.length > 0) {
+    console.log(`[vectorstore] Indexing ${chunksToIndex.length} chunks...`);
+    await indexChunks(chunksToIndex);
+  }
+  
+  initialized = true;
+  console.log(`[vectorstore] Ready with ${vectorStore.size} vectors`);
+}
 
 export async function indexChunks(chunks: Chunk[]): Promise<void> {
   if (chunks.length === 0) return;
   
-  const texts = chunks.map(c => c.text);
-  const embeddings = await createEmbeddings(texts);
-  
-  for (let i = 0; i < chunks.length; i++) {
-    vectorStore.set(chunks[i].id, embeddings[i]);
+  // Process in batches to avoid rate limits
+  const batchSize = 100;
+  for (let i = 0; i < chunks.length; i += batchSize) {
+    const batch = chunks.slice(i, i + batchSize);
+    const texts = batch.map(c => c.text);
+    const embeddings = await createEmbeddings(texts);
+    
+    for (let j = 0; j < batch.length; j++) {
+      vectorStore.set(batch[j].id, embeddings[j]);
+    }
   }
 }
 

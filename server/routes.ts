@@ -6,7 +6,7 @@ import { createHash } from "crypto";
 import multer from "multer";
 import { parse as parseYaml } from "yaml";
 import { chunkText, estimateTokens } from "./lib/chunker";
-import { indexChunks, searchSimilar } from "./lib/vectorstore";
+import { indexChunks, searchSimilar, initializeVectorStore } from "./lib/vectorstore";
 import { chatCompletion, type ChatMessage } from "./lib/openai";
 import {
   insertConnectorSchema, insertPolicySchema, insertEvalSuiteSchema,
@@ -65,6 +65,12 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Initialize vector store with existing chunks on startup
+  const existingChunks = await storage.getAllChunks();
+  if (existingChunks.length > 0) {
+    initializeVectorStore(existingChunks).catch(console.error);
+  }
+  
   // Add request ID to all requests
   app.use(requestIdMiddleware);
   
