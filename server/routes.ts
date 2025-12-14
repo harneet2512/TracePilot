@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { createHash } from "crypto";
 import multer from "multer";
 import { parse as parseYaml } from "yaml";
+import rateLimit from "express-rate-limit";
 import { chunkText, estimateTokens } from "./lib/chunker";
 import { indexChunks, searchSimilar, initializeVectorStore } from "./lib/vectorstore";
 import { chatCompletion, type ChatMessage } from "./lib/openai";
@@ -15,6 +16,31 @@ import {
 } from "@shared/schema";
 
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Rate limiters
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window
+  message: { error: "Too many login attempts. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 20, // 20 requests per minute
+  message: { error: "Too many requests. Please slow down." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  message: { error: "Too many requests. Please slow down." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Extend Express Request to include user
 declare global {
@@ -74,8 +100,11 @@ export async function registerRoutes(
   // Add request ID to all requests
   app.use(requestIdMiddleware);
   
+  // Apply rate limiting to API routes
+  app.use("/api", apiLimiter);
+  
   // Auth routes
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", authLimiter, async (req, res) => {
     try {
       const { email, password } = req.body;
       
@@ -342,7 +371,7 @@ export async function registerRoutes(
   });
   
   // Chat route
-  app.post("/api/chat", authMiddleware, async (req, res) => {
+  app.post("/api/chat", authMiddleware, chatLimiter, async (req, res) => {
     const startTime = Date.now();
     const latencyMs: Record<string, number> = {};
     
@@ -477,7 +506,15 @@ Respond in JSON format matching this schema:
         latencyMs,
       });
       
-      res.status(500).json({ error: "Chat failed" });
+      // Provide more specific error messages
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      if (errorMessage.includes("API key") || errorMessage.includes("401")) {
+        res.status(500).json({ error: "OpenAI API key is invalid or missing. Please check your configuration." });
+      } else if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+        res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
+      } else {
+        res.status(500).json({ error: "Chat failed. Please try again." });
+      }
     }
   });
   
