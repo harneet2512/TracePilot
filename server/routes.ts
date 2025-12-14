@@ -1136,6 +1136,107 @@ Respond in JSON format:
     }
   });
 
+  // User connector scopes routes
+  app.get("/api/user-connector-scopes", authMiddleware, async (req, res) => {
+    try {
+      const scopes = await storage.getUserConnectorScopes(req.user!.id);
+      res.json(scopes);
+    } catch (error) {
+      console.error("Get user connector scopes error:", error);
+      res.status(500).json({ error: "Failed to get scopes" });
+    }
+  });
+
+  app.get("/api/user-connector-scopes/:accountId", authMiddleware, async (req, res) => {
+    try {
+      // First verify the account belongs to this user
+      const account = await storage.getUserConnectorAccount(req.params.accountId);
+      if (!account) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      if (account.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const scopes = await storage.getUserConnectorScopesByAccount(req.params.accountId);
+      res.json(scopes);
+    } catch (error) {
+      console.error("Get user connector scope error:", error);
+      res.status(500).json({ error: "Failed to get scope" });
+    }
+  });
+
+  app.post("/api/user-connector-scopes", authMiddleware, async (req, res) => {
+    try {
+      const { accountId, scopeType, scopeJson } = req.body;
+      
+      if (!accountId || !scopeType) {
+        return res.status(400).json({ error: "accountId and scopeType are required" });
+      }
+      
+      // Verify the account belongs to this user
+      const account = await storage.getUserConnectorAccount(accountId);
+      if (!account) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      if (account.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const scope = await storage.createUserConnectorScope({
+        userId: req.user!.id,
+        accountId,
+        scopeType,
+        scopeJson: scopeJson || {},
+      });
+      res.json(scope);
+    } catch (error) {
+      console.error("Create user connector scope error:", error);
+      res.status(500).json({ error: "Failed to create scope" });
+    }
+  });
+
+  app.patch("/api/user-connector-scopes/:id", authMiddleware, async (req, res) => {
+    try {
+      const existing = await storage.getUserConnectorScope(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ error: "Scope not found" });
+      }
+      if (existing.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      // Only allow updating scopeType and scopeJson - prevent changing userId/accountId
+      const { scopeType, scopeJson } = req.body;
+      const updates: { scopeType?: string; scopeJson?: unknown } = {};
+      if (scopeType !== undefined) updates.scopeType = scopeType;
+      if (scopeJson !== undefined) updates.scopeJson = scopeJson;
+      
+      const scope = await storage.updateUserConnectorScope(req.params.id, updates);
+      res.json(scope);
+    } catch (error) {
+      console.error("Update user connector scope error:", error);
+      res.status(500).json({ error: "Failed to update scope" });
+    }
+  });
+
+  app.delete("/api/user-connector-scopes/:id", authMiddleware, async (req, res) => {
+    try {
+      const existing = await storage.getUserConnectorScope(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ error: "Scope not found" });
+      }
+      if (existing.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      await storage.deleteUserConnectorScope(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete user connector scope error:", error);
+      res.status(500).json({ error: "Failed to delete scope" });
+    }
+  });
+
   // Seed admin user endpoint (for initial setup)
   app.post("/api/seed", async (req, res) => {
     try {

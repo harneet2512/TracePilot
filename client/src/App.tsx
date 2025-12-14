@@ -8,6 +8,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import ChatPage from "@/pages/chat";
+import ConnectPage from "@/pages/connect";
+import GoogleScopesPage from "@/pages/connect/google";
+import AtlassianScopesPage from "@/pages/connect/atlassian";
+import SlackScopesPage from "@/pages/connect/slack";
 import SourceViewerPage from "@/pages/sources/[sourceId]";
 import ConnectorsPage from "@/pages/admin/connectors";
 import IngestPage from "@/pages/admin/ingest";
@@ -44,6 +48,18 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/chat">
         {() => <ProtectedRoute component={ChatPage} />}
+      </Route>
+      <Route path="/connect">
+        {() => <ProtectedRoute component={ConnectPage} />}
+      </Route>
+      <Route path="/connect/google">
+        {() => <ProtectedRoute component={GoogleScopesPage} />}
+      </Route>
+      <Route path="/connect/atlassian">
+        {() => <ProtectedRoute component={AtlassianScopesPage} />}
+      </Route>
+      <Route path="/connect/slack">
+        {() => <ProtectedRoute component={SlackScopesPage} />}
       </Route>
       <Route path="/sources/:sourceId">
         {() => <ProtectedRoute component={SourceViewerPage} />}

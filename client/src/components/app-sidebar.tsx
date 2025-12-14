@@ -24,10 +24,12 @@ import {
   BarChart3,
   LogOut,
   Shield,
+  Link2,
 } from "lucide-react";
 
 const memberItems = [
   { title: "Chat", url: "/chat", icon: MessageSquare },
+  { title: "Connect", url: "/connect", icon: Link2 },
 ];
 
 const adminItems = [
