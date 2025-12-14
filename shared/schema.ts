@@ -45,9 +45,59 @@ export const connectors = pgTable("connectors", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Sources for ingested documents
+// User connector accounts for per-user OAuth tokens
+export const userConnectorAccounts = pgTable("user_connector_accounts", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type", { enum: ["google", "atlassian", "slack"] }).notNull(),
+  accessToken: text("access_token").notNull(), // Encrypted if ENCRYPTION_KEY exists
+  refreshToken: text("refresh_token"), // Encrypted if ENCRYPTION_KEY exists
+  expiresAt: timestamp("expires_at"),
+  scopesJson: jsonb("scopes_json"), // OAuth scopes granted
+  externalAccountId: text("external_account_id"), // e.g., Google user ID, Atlassian account ID
+  metadataJson: jsonb("metadata_json"), // Provider-specific metadata
+  status: text("status", { enum: ["connected", "expired", "error"] }).notNull().default("connected"),
+  lastSyncAt: timestamp("last_sync_at"),
+  lastSyncError: text("last_sync_error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("user_connector_accounts_user_id_idx").on(table.userId),
+  index("user_connector_accounts_type_idx").on(table.type),
+]);
+
+// User connector scopes for what to index
+export const userConnectorScopes = pgTable("user_connector_scopes", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  accountId: varchar("account_id", { length: 36 }).notNull().references(() => userConnectorAccounts.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type", { enum: ["google", "atlassian", "slack"] }).notNull(),
+  // Scope selections stored as JSON
+  scopeConfigJson: jsonb("scope_config_json").notNull(), // Provider-specific scope config
+  syncMode: text("sync_mode", { enum: ["metadata_first", "full", "smart", "on_demand"] }).notNull().default("metadata_first"),
+  contentStrategy: text("content_strategy", { enum: ["smart", "full", "on_demand"] }).notNull().default("smart"),
+  exclusionsJson: jsonb("exclusions_json"), // File types, patterns, channels to exclude
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("user_connector_scopes_account_id_idx").on(table.accountId),
+  index("user_connector_scopes_user_id_idx").on(table.userId),
+]);
+
+export const userConnectorScopesRelations = relations(userConnectorScopes, ({ one }) => ({
+  account: one(userConnectorAccounts, { fields: [userConnectorScopes.accountId], references: [userConnectorAccounts.id] }),
+  user: one(users, { fields: [userConnectorScopes.userId], references: [users.id] }),
+}));
+
+export const userConnectorAccountsRelations = relations(userConnectorAccounts, ({ one, many }) => ({
+  user: one(users, { fields: [userConnectorAccounts.userId], references: [users.id] }),
+  scopes: many(userConnectorScopes),
+}));
+
+// Sources for ingested documents (now user-scoped)
 export const sources = pgTable("sources", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 }).references(() => users.id, { onDelete: "cascade" }), // User-scoped
   type: text("type", { enum: ["upload", "confluence", "drive", "jira", "slack"] }).notNull(),
   title: text("title").notNull(),
   url: text("url"),
@@ -58,15 +108,18 @@ export const sources = pgTable("sources", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("sources_content_hash_idx").on(table.contentHash),
+  index("sources_user_id_idx").on(table.userId),
 ]);
 
-export const sourcesRelations = relations(sources, ({ many }) => ({
+export const sourcesRelations = relations(sources, ({ one, many }) => ({
+  user: one(users, { fields: [sources.userId], references: [users.id] }),
   chunks: many(chunks),
 }));
 
-// Chunks for document segments
+// Chunks for document segments (now user-scoped)
 export const chunks = pgTable("chunks", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 }).references(() => users.id, { onDelete: "cascade" }), // User-scoped
   sourceId: varchar("source_id", { length: 36 }).notNull().references(() => sources.id, { onDelete: "cascade" }),
   chunkIndex: integer("chunk_index").notNull(),
   text: text("text").notNull(),
@@ -78,9 +131,11 @@ export const chunks = pgTable("chunks", {
 }, (table) => [
   index("chunks_source_id_idx").on(table.sourceId),
   index("chunks_vector_ref_idx").on(table.vectorRef),
+  index("chunks_user_id_idx").on(table.userId),
 ]);
 
 export const chunksRelations = relations(chunks, ({ one }) => ({
+  user: one(users, { fields: [chunks.userId], references: [users.id] }),
   source: one(sources, { fields: [chunks.sourceId], references: [sources.id] }),
 }));
 
@@ -99,7 +154,7 @@ export const auditEvents = pgTable("audit_events", {
   requestId: varchar("request_id", { length: 36 }).notNull(),
   userId: varchar("user_id", { length: 36 }).references(() => users.id),
   role: text("role"),
-  kind: text("kind", { enum: ["chat", "action_execute", "eval", "replay"] }).notNull(),
+  kind: text("kind", { enum: ["chat", "action_execute", "eval", "replay", "sync"] }).notNull(),
   prompt: text("prompt"),
   retrievedJson: jsonb("retrieved_json"),
   responseJson: jsonb("response_json"),
@@ -177,6 +232,8 @@ export const evalRunsRelations = relations(evalRuns, ({ one }) => ({
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertSessionSchema = createInsertSchema(sessions).omit({ id: true });
 export const insertConnectorSchema = createInsertSchema(connectors).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertUserConnectorAccountSchema = createInsertSchema(userConnectorAccounts).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertUserConnectorScopeSchema = createInsertSchema(userConnectorScopes).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSourceSchema = createInsertSchema(sources).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertChunkSchema = createInsertSchema(chunks).omit({ id: true, createdAt: true });
 export const insertPolicySchema = createInsertSchema(policies).omit({ id: true, createdAt: true });
@@ -192,6 +249,10 @@ export type Session = typeof sessions.$inferSelect;
 export type InsertSession = z.infer<typeof insertSessionSchema>;
 export type Connector = typeof connectors.$inferSelect;
 export type InsertConnector = z.infer<typeof insertConnectorSchema>;
+export type UserConnectorAccount = typeof userConnectorAccounts.$inferSelect;
+export type InsertUserConnectorAccount = z.infer<typeof insertUserConnectorAccountSchema>;
+export type UserConnectorScope = typeof userConnectorScopes.$inferSelect;
+export type InsertUserConnectorScope = z.infer<typeof insertUserConnectorScopeSchema>;
 export type Source = typeof sources.$inferSelect;
 export type InsertSource = z.infer<typeof insertSourceSchema>;
 export type Chunk = typeof chunks.$inferSelect;

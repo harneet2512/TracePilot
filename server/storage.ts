@@ -1,10 +1,13 @@
 import { db } from "./db";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import {
-  users, sessions, connectors, sources, chunks, policies,
-  auditEvents, approvals, evalSuites, evalRuns,
+  users, sessions, connectors, userConnectorAccounts, userConnectorScopes,
+  sources, chunks, policies, auditEvents, approvals, evalSuites, evalRuns,
   type User, type InsertUser, type Session, type InsertSession,
-  type Connector, type InsertConnector, type Source, type InsertSource,
+  type Connector, type InsertConnector,
+  type UserConnectorAccount, type InsertUserConnectorAccount,
+  type UserConnectorScope, type InsertUserConnectorScope,
+  type Source, type InsertSource,
   type Chunk, type InsertChunk, type Policy, type InsertPolicy,
   type AuditEvent, type InsertAuditEvent, type Approval, type InsertApproval,
   type EvalSuite, type InsertEvalSuite, type EvalRun, type InsertEvalRun
@@ -30,6 +33,22 @@ export interface IStorage {
   createConnector(connector: InsertConnector): Promise<Connector>;
   updateConnector(id: string, updates: Partial<InsertConnector>): Promise<Connector | undefined>;
   deleteConnector(id: string): Promise<void>;
+  
+  // User Connector Accounts
+  getUserConnectorAccounts(userId: string): Promise<UserConnectorAccount[]>;
+  getUserConnectorAccount(id: string): Promise<UserConnectorAccount | undefined>;
+  getUserConnectorAccountByType(userId: string, type: string): Promise<UserConnectorAccount | undefined>;
+  createUserConnectorAccount(account: InsertUserConnectorAccount): Promise<UserConnectorAccount>;
+  updateUserConnectorAccount(id: string, updates: Partial<InsertUserConnectorAccount>): Promise<UserConnectorAccount | undefined>;
+  deleteUserConnectorAccount(id: string): Promise<void>;
+  
+  // User Connector Scopes
+  getUserConnectorScopes(userId: string): Promise<UserConnectorScope[]>;
+  getUserConnectorScopesByAccount(accountId: string): Promise<UserConnectorScope[]>;
+  getUserConnectorScope(id: string): Promise<UserConnectorScope | undefined>;
+  createUserConnectorScope(scope: InsertUserConnectorScope): Promise<UserConnectorScope>;
+  updateUserConnectorScope(id: string, updates: Partial<InsertUserConnectorScope>): Promise<UserConnectorScope | undefined>;
+  deleteUserConnectorScope(id: string): Promise<void>;
   
   // Sources
   getSources(): Promise<Source[]>;
@@ -168,6 +187,81 @@ export class DatabaseStorage implements IStorage {
 
   async deleteConnector(id: string): Promise<void> {
     await db.delete(connectors).where(eq(connectors.id, id));
+  }
+
+  // User Connector Accounts
+  async getUserConnectorAccounts(userId: string): Promise<UserConnectorAccount[]> {
+    return db.select().from(userConnectorAccounts)
+      .where(eq(userConnectorAccounts.userId, userId))
+      .orderBy(desc(userConnectorAccounts.createdAt));
+  }
+
+  async getUserConnectorAccount(id: string): Promise<UserConnectorAccount | undefined> {
+    const [account] = await db.select().from(userConnectorAccounts)
+      .where(eq(userConnectorAccounts.id, id));
+    return account;
+  }
+
+  async getUserConnectorAccountByType(userId: string, type: string): Promise<UserConnectorAccount | undefined> {
+    const [account] = await db.select().from(userConnectorAccounts)
+      .where(and(
+        eq(userConnectorAccounts.userId, userId),
+        eq(userConnectorAccounts.type, type as "google" | "atlassian" | "slack")
+      ));
+    return account;
+  }
+
+  async createUserConnectorAccount(account: InsertUserConnectorAccount): Promise<UserConnectorAccount> {
+    const [created] = await db.insert(userConnectorAccounts).values(account).returning();
+    return created;
+  }
+
+  async updateUserConnectorAccount(id: string, updates: Partial<InsertUserConnectorAccount>): Promise<UserConnectorAccount | undefined> {
+    const [updated] = await db.update(userConnectorAccounts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userConnectorAccounts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteUserConnectorAccount(id: string): Promise<void> {
+    await db.delete(userConnectorAccounts).where(eq(userConnectorAccounts.id, id));
+  }
+
+  // User Connector Scopes
+  async getUserConnectorScopes(userId: string): Promise<UserConnectorScope[]> {
+    return db.select().from(userConnectorScopes)
+      .where(eq(userConnectorScopes.userId, userId))
+      .orderBy(desc(userConnectorScopes.createdAt));
+  }
+
+  async getUserConnectorScopesByAccount(accountId: string): Promise<UserConnectorScope[]> {
+    return db.select().from(userConnectorScopes)
+      .where(eq(userConnectorScopes.accountId, accountId))
+      .orderBy(desc(userConnectorScopes.createdAt));
+  }
+
+  async getUserConnectorScope(id: string): Promise<UserConnectorScope | undefined> {
+    const [scope] = await db.select().from(userConnectorScopes)
+      .where(eq(userConnectorScopes.id, id));
+    return scope;
+  }
+
+  async createUserConnectorScope(scope: InsertUserConnectorScope): Promise<UserConnectorScope> {
+    const [created] = await db.insert(userConnectorScopes).values(scope).returning();
+    return created;
+  }
+
+  async updateUserConnectorScope(id: string, updates: Partial<InsertUserConnectorScope>): Promise<UserConnectorScope | undefined> {
+    const [updated] = await db.update(userConnectorScopes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userConnectorScopes.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteUserConnectorScope(id: string): Promise<void> {
+    await db.delete(userConnectorScopes).where(eq(userConnectorScopes.id, id));
   }
 
   // Sources
