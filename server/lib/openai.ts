@@ -1,11 +1,13 @@
 import OpenAI from "openai";
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error("OPENAI_API_KEY must be set");
+const apiKey = process.env.OPENAI_API_KEY_NEW || process.env.OPENAI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("OPENAI_API_KEY or OPENAI_API_KEY_NEW must be set");
 }
 
 export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey,
 });
 
 export async function createEmbedding(text: string): Promise<number[]> {
