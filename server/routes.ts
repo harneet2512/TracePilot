@@ -14,6 +14,11 @@ import {
   chatResponseSchema, policyYamlSchema, evalSuiteJsonSchema,
   type User, type ChatResponse, type PolicyYaml
 } from "@shared/schema";
+import {
+  buildAuthUrl, exchangeCodeForTokens, refreshAccessToken,
+  getGoogleUserInfo, getAtlassianResources, getSlackUserInfo,
+  encryptToken, decryptToken
+} from "./lib/oauth";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -780,6 +785,357 @@ Respond in JSON format:
     }
   });
   
+  // OAuth routes - User connector accounts list
+  app.get("/api/user-connectors", authMiddleware, async (req, res) => {
+    try {
+      const accounts = await storage.getUserConnectorAccounts(req.user!.id);
+      res.json(accounts.map(a => ({
+        id: a.id,
+        type: a.type,
+        status: a.status,
+        externalAccountId: a.externalAccountId,
+        lastSyncAt: a.lastSyncAt,
+        lastSyncError: a.lastSyncError,
+        createdAt: a.createdAt,
+      })));
+    } catch (error) {
+      console.error("Get user connectors error:", error);
+      res.status(500).json({ error: "Failed to get connectors" });
+    }
+  });
+
+  app.delete("/api/user-connectors/:id", authMiddleware, async (req, res) => {
+    try {
+      const account = await storage.getUserConnectorAccount(req.params.id);
+      if (!account || account.userId !== req.user!.id) {
+        return res.status(404).json({ error: "Connector not found" });
+      }
+      await storage.deleteUserConnectorAccount(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete user connector error:", error);
+      res.status(500).json({ error: "Failed to delete connector" });
+    }
+  });
+
+  // Google OAuth
+  app.get("/api/oauth/google", authMiddleware, (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      return res.status(500).json({ error: "Google OAuth not configured" });
+    }
+
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : `http://localhost:${process.env.PORT || 5000}`;
+    const redirectUri = `${baseUrl}/api/oauth/google/callback`;
+    const state = Buffer.from(JSON.stringify({ 
+      userId: req.user!.id,
+      timestamp: Date.now()
+    })).toString("base64");
+
+    const authUrl = buildAuthUrl("google", clientId, redirectUri, state);
+    res.json({ authUrl });
+  });
+
+  app.get("/api/oauth/google/callback", async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (!code || !state) {
+        return res.redirect("/?error=oauth_failed");
+      }
+
+      const stateData = JSON.parse(Buffer.from(state as string, "base64").toString());
+      const userId = stateData.userId;
+
+      const clientId = process.env.GOOGLE_CLIENT_ID!;
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : `http://localhost:${process.env.PORT || 5000}`;
+      const redirectUri = `${baseUrl}/api/oauth/google/callback`;
+
+      const tokens = await exchangeCodeForTokens(
+        "google", code as string, clientId, clientSecret, redirectUri
+      );
+
+      const userInfo = await getGoogleUserInfo(tokens.accessToken);
+
+      const existingAccount = await storage.getUserConnectorAccountByType(userId, "google");
+
+      const expiresAt = tokens.expiresIn 
+        ? new Date(Date.now() + tokens.expiresIn * 1000)
+        : null;
+
+      if (existingAccount) {
+        await storage.updateUserConnectorAccount(existingAccount.id, {
+          accessToken: encryptToken(tokens.accessToken),
+          refreshToken: tokens.refreshToken ? encryptToken(tokens.refreshToken) : existingAccount.refreshToken,
+          expiresAt,
+          scopesJson: tokens.scope ? tokens.scope.split(" ") : null,
+          externalAccountId: userInfo.id,
+          metadataJson: { email: userInfo.email, name: userInfo.name, picture: userInfo.picture },
+          status: "connected",
+          lastSyncError: null,
+        });
+      } else {
+        await storage.createUserConnectorAccount({
+          userId,
+          type: "google",
+          accessToken: encryptToken(tokens.accessToken),
+          refreshToken: tokens.refreshToken ? encryptToken(tokens.refreshToken) : null,
+          expiresAt,
+          scopesJson: tokens.scope ? tokens.scope.split(" ") : null,
+          externalAccountId: userInfo.id,
+          metadataJson: { email: userInfo.email, name: userInfo.name, picture: userInfo.picture },
+          status: "connected",
+        });
+      }
+
+      res.redirect("/connect?success=google");
+    } catch (error) {
+      console.error("Google OAuth callback error:", error);
+      res.redirect("/connect?error=google_oauth_failed");
+    }
+  });
+
+  // Atlassian OAuth
+  app.get("/api/oauth/atlassian", authMiddleware, (req, res) => {
+    const clientId = process.env.ATLASSIAN_CLIENT_ID;
+    if (!clientId) {
+      return res.status(500).json({ error: "Atlassian OAuth not configured" });
+    }
+
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : `http://localhost:${process.env.PORT || 5000}`;
+    const redirectUri = `${baseUrl}/api/oauth/atlassian/callback`;
+    const state = Buffer.from(JSON.stringify({ 
+      userId: req.user!.id,
+      timestamp: Date.now()
+    })).toString("base64");
+
+    const authUrl = buildAuthUrl("atlassian", clientId, redirectUri, state);
+    res.json({ authUrl });
+  });
+
+  app.get("/api/oauth/atlassian/callback", async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (!code || !state) {
+        return res.redirect("/?error=oauth_failed");
+      }
+
+      const stateData = JSON.parse(Buffer.from(state as string, "base64").toString());
+      const userId = stateData.userId;
+
+      const clientId = process.env.ATLASSIAN_CLIENT_ID!;
+      const clientSecret = process.env.ATLASSIAN_CLIENT_SECRET!;
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : `http://localhost:${process.env.PORT || 5000}`;
+      const redirectUri = `${baseUrl}/api/oauth/atlassian/callback`;
+
+      const tokens = await exchangeCodeForTokens(
+        "atlassian", code as string, clientId, clientSecret, redirectUri
+      );
+
+      const resources = await getAtlassianResources(tokens.accessToken);
+
+      const existingAccount = await storage.getUserConnectorAccountByType(userId, "atlassian");
+
+      const expiresAt = tokens.expiresIn 
+        ? new Date(Date.now() + tokens.expiresIn * 1000)
+        : null;
+
+      if (existingAccount) {
+        await storage.updateUserConnectorAccount(existingAccount.id, {
+          accessToken: encryptToken(tokens.accessToken),
+          refreshToken: tokens.refreshToken ? encryptToken(tokens.refreshToken) : existingAccount.refreshToken,
+          expiresAt,
+          scopesJson: tokens.scope ? tokens.scope.split(" ") : null,
+          metadataJson: { resources },
+          status: "connected",
+          lastSyncError: null,
+        });
+      } else {
+        await storage.createUserConnectorAccount({
+          userId,
+          type: "atlassian",
+          accessToken: encryptToken(tokens.accessToken),
+          refreshToken: tokens.refreshToken ? encryptToken(tokens.refreshToken) : null,
+          expiresAt,
+          scopesJson: tokens.scope ? tokens.scope.split(" ") : null,
+          externalAccountId: resources[0]?.id || null,
+          metadataJson: { resources },
+          status: "connected",
+        });
+      }
+
+      res.redirect("/connect?success=atlassian");
+    } catch (error) {
+      console.error("Atlassian OAuth callback error:", error);
+      res.redirect("/connect?error=atlassian_oauth_failed");
+    }
+  });
+
+  // Slack OAuth
+  app.get("/api/oauth/slack", authMiddleware, (req, res) => {
+    const clientId = process.env.SLACK_CLIENT_ID;
+    if (!clientId) {
+      return res.status(500).json({ error: "Slack OAuth not configured" });
+    }
+
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : `http://localhost:${process.env.PORT || 5000}`;
+    const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
+    const state = Buffer.from(JSON.stringify({ 
+      userId: req.user!.id,
+      timestamp: Date.now()
+    })).toString("base64");
+
+    const authUrl = buildAuthUrl("slack", clientId, redirectUri, state);
+    res.json({ authUrl });
+  });
+
+  app.get("/api/oauth/slack/callback", async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (!code || !state) {
+        return res.redirect("/?error=oauth_failed");
+      }
+
+      const stateData = JSON.parse(Buffer.from(state as string, "base64").toString());
+      const userId = stateData.userId;
+
+      const clientId = process.env.SLACK_CLIENT_ID!;
+      const clientSecret = process.env.SLACK_CLIENT_SECRET!;
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : `http://localhost:${process.env.PORT || 5000}`;
+      const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
+
+      const tokens = await exchangeCodeForTokens(
+        "slack", code as string, clientId, clientSecret, redirectUri
+      );
+
+      let slackUserInfo;
+      try {
+        slackUserInfo = await getSlackUserInfo(tokens.accessToken);
+      } catch {
+        slackUserInfo = { id: "unknown", teamId: "unknown", name: "Slack User" };
+      }
+
+      const existingAccount = await storage.getUserConnectorAccountByType(userId, "slack");
+
+      if (existingAccount) {
+        await storage.updateUserConnectorAccount(existingAccount.id, {
+          accessToken: encryptToken(tokens.accessToken),
+          refreshToken: tokens.refreshToken ? encryptToken(tokens.refreshToken) : existingAccount.refreshToken,
+          scopesJson: tokens.scope ? tokens.scope.split(",") : null,
+          externalAccountId: slackUserInfo.id,
+          metadataJson: { 
+            teamId: slackUserInfo.teamId, 
+            email: slackUserInfo.email, 
+            name: slackUserInfo.name 
+          },
+          status: "connected",
+          lastSyncError: null,
+        });
+      } else {
+        await storage.createUserConnectorAccount({
+          userId,
+          type: "slack",
+          accessToken: encryptToken(tokens.accessToken),
+          refreshToken: tokens.refreshToken ? encryptToken(tokens.refreshToken) : null,
+          scopesJson: tokens.scope ? tokens.scope.split(",") : null,
+          externalAccountId: slackUserInfo.id,
+          metadataJson: { 
+            teamId: slackUserInfo.teamId, 
+            email: slackUserInfo.email, 
+            name: slackUserInfo.name 
+          },
+          status: "connected",
+        });
+      }
+
+      res.redirect("/connect?success=slack");
+    } catch (error) {
+      console.error("Slack OAuth callback error:", error);
+      res.redirect("/connect?error=slack_oauth_failed");
+    }
+  });
+
+  // Token refresh endpoint
+  app.post("/api/oauth/refresh/:accountId", authMiddleware, async (req, res) => {
+    try {
+      const account = await storage.getUserConnectorAccount(req.params.accountId);
+      
+      if (!account || account.userId !== req.user!.id) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+
+      if (!account.refreshToken) {
+        return res.status(400).json({ error: "No refresh token available" });
+      }
+
+      const provider = account.type as "google" | "atlassian" | "slack";
+      
+      let clientId: string | undefined;
+      let clientSecret: string | undefined;
+
+      if (provider === "google") {
+        clientId = process.env.GOOGLE_CLIENT_ID;
+        clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      } else if (provider === "atlassian") {
+        clientId = process.env.ATLASSIAN_CLIENT_ID;
+        clientSecret = process.env.ATLASSIAN_CLIENT_SECRET;
+      } else if (provider === "slack") {
+        clientId = process.env.SLACK_CLIENT_ID;
+        clientSecret = process.env.SLACK_CLIENT_SECRET;
+      }
+
+      if (!clientId || !clientSecret) {
+        return res.status(500).json({ error: `${provider} OAuth not configured` });
+      }
+
+      const decryptedRefreshToken = decryptToken(account.refreshToken);
+      const tokens = await refreshAccessToken(
+        provider,
+        decryptedRefreshToken,
+        clientId,
+        clientSecret
+      );
+
+      const expiresAt = tokens.expiresIn 
+        ? new Date(Date.now() + tokens.expiresIn * 1000)
+        : null;
+
+      await storage.updateUserConnectorAccount(account.id, {
+        accessToken: encryptToken(tokens.accessToken),
+        refreshToken: tokens.refreshToken ? encryptToken(tokens.refreshToken) : account.refreshToken,
+        expiresAt,
+        status: "connected",
+        lastSyncError: null,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      
+      await storage.updateUserConnectorAccount(req.params.accountId, {
+        status: "expired",
+        lastSyncError: error instanceof Error ? error.message : "Token refresh failed",
+      });
+
+      res.status(500).json({ error: "Token refresh failed" });
+    }
+  });
+
   // Seed admin user endpoint (for initial setup)
   app.post("/api/seed", async (req, res) => {
     try {
