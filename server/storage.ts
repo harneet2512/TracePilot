@@ -55,6 +55,8 @@ export interface IStorage {
   getSource(id: string): Promise<Source | undefined>;
   getSourceWithChunks(id: string): Promise<{ source: Source; chunks: Chunk[] } | undefined>;
   getSourceByContentHash(hash: string): Promise<Source | undefined>;
+  getSourcesByUserAndType(userId: string, type: string): Promise<Source[]>;
+  getSourceByExternalId(externalId: string, userId: string): Promise<Source | undefined>;
   createSource(source: InsertSource): Promise<Source>;
   deleteSource(id: string): Promise<void>;
   
@@ -287,6 +289,18 @@ export class DatabaseStorage implements IStorage {
 
   async getSourceByContentHash(hash: string): Promise<Source | undefined> {
     const [source] = await db.select().from(sources).where(eq(sources.contentHash, hash));
+    return source;
+  }
+
+  async getSourcesByUserAndType(userId: string, type: string): Promise<Source[]> {
+    return db.select().from(sources)
+      .where(and(eq(sources.userId, userId), eq(sources.type, type as typeof sources.type.enumValues[number])))
+      .orderBy(desc(sources.createdAt));
+  }
+
+  async getSourceByExternalId(externalId: string, userId: string): Promise<Source | undefined> {
+    const [source] = await db.select().from(sources)
+      .where(and(eq(sources.externalId, externalId), eq(sources.userId, userId)));
     return source;
   }
 

@@ -1263,6 +1263,96 @@ Respond in JSON format:
     }
   });
 
+  // Sync routes
+  app.post("/api/sync/:scopeId", authMiddleware, async (req, res) => {
+    try {
+      const scope = await storage.getUserConnectorScope(req.params.scopeId);
+      if (!scope) {
+        return res.status(404).json({ error: "Scope not found" });
+      }
+      if (scope.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const account = await storage.getUserConnectorAccount(scope.accountId);
+      if (!account) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      if (account.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const { getSyncEngine, runSync } = await import("./lib/sync");
+      const engine = getSyncEngine(scope.type);
+      if (!engine) {
+        return res.status(400).json({ error: `No sync engine for type: ${scope.type}` });
+      }
+
+      const accessToken = decryptToken(account.accessToken);
+      const result = await runSync(engine, {
+        userId: req.user!.id,
+        accountId: account.id,
+        scope,
+        accessToken,
+      });
+
+      await storage.updateUserConnectorScope(scope.id, {});
+
+      res.json(result);
+    } catch (error) {
+      console.error("Sync error:", error);
+      res.status(500).json({ error: "Sync failed" });
+    }
+  });
+
+  app.post("/api/sync/:scopeId/on-demand", authMiddleware, async (req, res) => {
+    try {
+      const { externalId } = req.body;
+      if (!externalId) {
+        return res.status(400).json({ error: "externalId is required" });
+      }
+
+      const scope = await storage.getUserConnectorScope(req.params.scopeId);
+      if (!scope) {
+        return res.status(404).json({ error: "Scope not found" });
+      }
+      if (scope.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const account = await storage.getUserConnectorAccount(scope.accountId);
+      if (!account) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      if (account.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const { getSyncEngine, syncOnDemand } = await import("./lib/sync");
+      const engine = getSyncEngine(scope.type);
+      if (!engine) {
+        return res.status(400).json({ error: `No sync engine for type: ${scope.type}` });
+      }
+
+      const accessToken = decryptToken(account.accessToken);
+      const content = await syncOnDemand(engine, {
+        userId: req.user!.id,
+        accountId: account.id,
+        scope,
+        accessToken,
+      }, externalId);
+
+      if (!content) {
+        return res.status(404).json({ error: "Content not found or failed to sync" });
+      }
+
+      res.json({ success: true, title: content.title });
+    } catch (error) {
+      console.error("On-demand sync error:", error);
+      res.status(500).json({ error: "On-demand sync failed" });
+    }
+  });
+
   // Seed admin user endpoint (for initial setup)
   app.post("/api/seed", async (req, res) => {
     try {

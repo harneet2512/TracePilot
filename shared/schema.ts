@@ -99,6 +99,7 @@ export const sources = pgTable("sources", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id", { length: 36 }).references(() => users.id, { onDelete: "cascade" }), // User-scoped
   type: text("type", { enum: ["upload", "confluence", "drive", "jira", "slack"] }).notNull(),
+  externalId: varchar("external_id", { length: 255 }), // External system ID for synced content
   title: text("title").notNull(),
   url: text("url"),
   contentHash: text("content_hash").notNull(),
@@ -109,6 +110,7 @@ export const sources = pgTable("sources", {
 }, (table) => [
   index("sources_content_hash_idx").on(table.contentHash),
   index("sources_user_id_idx").on(table.userId),
+  index("sources_external_id_user_idx").on(table.externalId, table.userId),
 ]);
 
 export const sourcesRelations = relations(sources, ({ one, many }) => ({
