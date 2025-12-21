@@ -11,9 +11,19 @@ import { indexChunks, searchSimilar, initializeVectorStore } from "./lib/vectors
 import { chatCompletion, type ChatMessage } from "./lib/openai";
 import {
   insertConnectorSchema, insertPolicySchema, insertEvalSuiteSchema,
+  insertUserConnectorScopeSchema,
   chatResponseSchema, policyYamlSchema, evalSuiteJsonSchema,
   type User, type ChatResponse, type PolicyYaml
 } from "@shared/schema";
+import { z } from "zod";
+
+// Schema for updating user connector scopes (only allow scopeConfigJson, syncMode, contentStrategy, exclusionsJson)
+const updateUserConnectorScopeSchema = z.object({
+  scopeConfigJson: z.unknown().optional(),
+  syncMode: z.enum(["metadata_first", "full", "smart", "on_demand"]).optional(),
+  contentStrategy: z.enum(["smart", "full", "on_demand"]).optional(),
+  exclusionsJson: z.unknown().optional(),
+});
 import {
   buildAuthUrl, exchangeCodeForTokens, refreshAccessToken,
   getGoogleUserInfo, getAtlassianResources, getSlackUserInfo,
@@ -1168,10 +1178,15 @@ Respond in JSON format:
 
   app.post("/api/user-connector-scopes", authMiddleware, async (req, res) => {
     try {
-      const { accountId, scopeType, scopeJson } = req.body;
+      const { accountId, type, scopeConfigJson, syncMode, contentStrategy, exclusionsJson } = req.body;
       
-      if (!accountId || !scopeType) {
-        return res.status(400).json({ error: "accountId and scopeType are required" });
+      if (!accountId || !type || !scopeConfigJson) {
+        return res.status(400).json({ error: "accountId, type, and scopeConfigJson are required" });
+      }
+      
+      // Validate type
+      if (!["google", "atlassian", "slack"].includes(type)) {
+        return res.status(400).json({ error: "Invalid type. Must be google, atlassian, or slack" });
       }
       
       // Verify the account belongs to this user
@@ -1186,8 +1201,11 @@ Respond in JSON format:
       const scope = await storage.createUserConnectorScope({
         userId: req.user!.id,
         accountId,
-        scopeType,
-        scopeJson: scopeJson || {},
+        type,
+        scopeConfigJson,
+        syncMode: syncMode || "metadata_first",
+        contentStrategy: contentStrategy || "smart",
+        exclusionsJson: exclusionsJson || null,
       });
       res.json(scope);
     } catch (error) {
@@ -1206,13 +1224,21 @@ Respond in JSON format:
         return res.status(403).json({ error: "Access denied" });
       }
       
-      // Only allow updating scopeType and scopeJson - prevent changing userId/accountId
-      const { scopeType, scopeJson } = req.body;
-      const updates: { scopeType?: string; scopeJson?: unknown } = {};
-      if (scopeType !== undefined) updates.scopeType = scopeType;
-      if (scopeJson !== undefined) updates.scopeJson = scopeJson;
+      // Validate and extract only allowed fields - prevent changing userId/accountId/type
+      const parsed = updateUserConnectorScopeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid update data", details: parsed.error.message });
+      }
       
-      const scope = await storage.updateUserConnectorScope(req.params.id, updates);
+      // Build updates with only defined fields - cast to storage-compatible types
+      const updates: Record<string, unknown> = {};
+      
+      if (parsed.data.scopeConfigJson !== undefined) updates.scopeConfigJson = parsed.data.scopeConfigJson;
+      if (parsed.data.syncMode !== undefined) updates.syncMode = parsed.data.syncMode;
+      if (parsed.data.contentStrategy !== undefined) updates.contentStrategy = parsed.data.contentStrategy;
+      if (parsed.data.exclusionsJson !== undefined) updates.exclusionsJson = parsed.data.exclusionsJson;
+      
+      const scope = await storage.updateUserConnectorScope(req.params.id, updates as Parameters<typeof storage.updateUserConnectorScope>[1]);
       res.json(scope);
     } catch (error) {
       console.error("Update user connector scope error:", error);

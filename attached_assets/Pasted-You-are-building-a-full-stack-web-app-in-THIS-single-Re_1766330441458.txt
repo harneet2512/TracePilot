@@ -1,0 +1,396 @@
+You are building a full-stack web app in THIS single Replit project called FieldCopilot.
+
+Core value:
+1) Users log in.
+2) Each user connects their own Google Drive, Atlassian (Jira + Confluence), and Slack via OAuth (per-user OAuth).
+3) The app automatically syncs and indexes content from the scopes the user selects (folders/projects/spaces/channels or “all accessible” options).
+4) Users ask questions in a chat UI and get answers WITH chunk-level citations.
+5) Users can request actions (create Jira issue, post Slack message, update/create Confluence page). The app produces an editable draft, requires explicit approval, then executes using the SAME user’s OAuth token.
+6) The app enforces connector-specific scope constraints, tool constraints, and approval rules via a policy engine.
+7) Everything is auditable: store retrieval results, model output, proposed tool calls, approvals, executed tool calls, and latency.
+8) The app includes an evaluation suite/dashboard that runs test cases in dry-run mode (no real writes) and reports groundedness + action correctness.
+
+NON-NEGOTIABLES:
+- Must run end-to-end in Replit.
+- Must use per-user OAuth tokens (not a single global token).
+- Must not leak cross-user data: all indexed content and retrieval is user-scoped.
+- Must never execute writes without an explicit “Approve & Execute”.
+- Must never log secrets; secrets only in Replit Secrets/env vars.
+- Must be debuggable and measurable: audit logs + eval runner.
+
+TECH STACK (use this unless blocked):
+- Next.js (App Router) + TypeScript
+- Prisma ORM
+- Postgres (Replit Postgres or external) for all app data
+- Vector store abstraction with two implementations:
+  A) Postgres + pgvector if available
+  B) Qdrant Cloud fallback via REST
+- Zod for validation
+- Tailwind CSS for UI (or minimal CSS if Tailwind setup fails)
+
+ENV VARS (read from process.env; do not hardcode):
+# App/Auth
+- DATABASE_URL
+- APP_URL (base URL used for OAuth redirect URIs)
+- AUTH_MODE="simple" | "nextauth" (default "simple")
+- SESSION_SECRET (required if AUTH_MODE="simple")
+- NEXTAUTH_SECRET (required if AUTH_MODE="nextauth")
+- NEXTAUTH_URL (required if AUTH_MODE="nextauth")
+- ENCRYPTION_KEY (optional but preferred; encrypt stored tokens if present)
+
+# LLM
+- LLM_PROVIDER="openai"
+- LLM_API_KEY
+- LLM_MODEL
+- EMBEDDING_MODEL
+
+# Vector store
+- VECTOR_STORE="pgvector" | "qdrant" (auto-detect: try pgvector; if unavailable, use qdrant if vars exist)
+- QDRANT_URL (if qdrant)
+- QDRANT_API_KEY (if qdrant)
+- QDRANT_COLLECTION="fieldcopilot_chunks"
+
+# Google OAuth (Drive)
+- GOOGLE_CLIENT_ID
+- GOOGLE_CLIENT_SECRET
+
+# Atlassian OAuth (Jira + Confluence)
+- ATLASSIAN_CLIENT_ID
+- ATLASSIAN_CLIENT_SECRET
+
+# Slack OAuth
+- SLACK_CLIENT_ID
+- SLACK_CLIENT_SECRET
+
+# Optional seed admin
+- ADMIN_EMAIL
+- ADMIN_PASSWORD
+
+REQUIRED ROUTES / PAGES:
+- /login
+- /chat
+- /connect (lists available connectors + status per connector)
+- /connect/google (start OAuth)
+- /connect/atlassian (start OAuth)
+- /connect/slack (start OAuth)
+- /scopes/google (after Google OAuth: scope selection UI)
+- /scopes/atlassian (after Atlassian OAuth: scope selection UI)
+- /scopes/slack (after Slack OAuth: scope selection UI)
+- /sources/[sourceId] (source viewer + chunk highlighting)
+Admin pages (admin role only):
+- /admin (nav hub)
+- /admin/policies
+- /admin/audit
+- /admin/evals
+- /admin/ingest (file upload ingestion for demo/testing only; connectors are primary)
+All API routes under /app/api/*
+
+DATA MODEL (Prisma):
+User:
+- id, email, passwordHash? (simple auth), role ("admin"|"member"), createdAt
+
+Session:
+- id, userId, token, expiresAt
+
+UserConnectorAccount (PER-USER TOKENS):
+- id
+- userId
+- type ("google"|"atlassian"|"slack")
+- accessToken (encrypted if ENCRYPTION_KEY exists)
+- refreshToken (encrypted if ENCRYPTION_KEY exists)
+- expiresAt
+- scopesJson (granted OAuth scopes)
+- externalAccountId (google sub / atlassian accountId / slack userId)
+- metadataJson (for atlassian: cloudIds/sites; for slack: teamId; etc.)
+- createdAt, updatedAt
+
+UserConnectorScope (USER-SELECTED INDEXING SCOPE):
+- id
+- userId
+- connectorType ("google"|"atlassian"|"slack")
+- scopeType (examples: "drive_folder","drive_shared_drive","jira_project","confluence_space","slack_channel","jira_jql","confluence_page_tree")
+- scopeId
+- scopeName
+- isIncluded (true/false)
+- createdAt, updatedAt
+
+Source (USER-SCOPED):
+- id
+- userId
+- connectorType ("upload"|"google"|"jira"|"confluence"|"slack")
+- externalId (fileId / issueKey / pageId / slack permalink id)
+- title
+- url
+- contentHash
+- updatedAtExternal (timestamp)
+- metadataJson (owner, path, channel, project, etc.)
+- createdAt, updatedAt
+
+Chunk (USER-SCOPED):
+- id
+- userId
+- sourceId
+- chunkIndex
+- text
+- charStart
+- charEnd
+- tokenEstimate
+- vectorRef (string if qdrant)
+- createdAt
+
+Policy:
+- id, name, yamlText, isActive, createdAt
+
+AuditEvent:
+- id
+- requestId
+- userId
+- role
+- kind ("chat"|"action_execute"|"eval"|"sync")
+- prompt
+- retrievedJson (top chunks + scores)
+- responseJson (LLM output JSON)
+- toolProposalsJson
+- toolExecutionsJson
+- policyJson
+- approvalJson
+- success
+- error
+- latencyJson (embedMs, retrievalMs, llmMs, toolMs, totalMs)
+- createdAt
+
+Approval:
+- id, auditEventId, userId, toolName, draftJson, finalJson, approvedAt
+
+EvalSuite:
+- id, name, jsonText, createdAt
+
+EvalRun:
+- id, suiteId, userId (who ran it), startedAt, finishedAt, summaryJson, resultsJson, createdAt
+
+VECTOR STORE ABSTRACTION:
+Implement /lib/vectorstore/index.ts with interface:
+- upsertVectors(items: {chunkId, userId, embedding, metadata}[])
+- query(userId, embedding, topK, filters) -> {chunkId, score}[]
+- deleteBySource(sourceId)
+Use metadata filters at least for userId. Cross-user retrieval must be impossible.
+
+LLM PROVIDER ABSTRACTION:
+Implement /lib/llm/provider.ts with:
+- embed(texts: string[]): Promise<number[][]>
+- chatStructured(input): Promise<StructuredResponse>
+Where StructuredResponse MUST conform to Zod schema below.
+
+STRUCTURED RESPONSE SCHEMA (ZOD ENFORCED):
+{
+  answer: string,
+  bullets: { claim: string, citations: { sourceId: string, chunkId: string }[] }[],
+  action: null | {
+    type: "jira.create_issue" | "slack.post_message" | "confluence.upsert_page",
+    draft: any,
+    rationale: string,
+    citations: { sourceId: string, chunkId: string }[]
+  },
+  needsClarification: boolean,
+  clarifyingQuestions: string[]
+}
+
+IMPORTANT: If model response is not valid JSON, retry with a “JSON only” repair prompt. If still invalid, return a safe error message and log failure.
+
+OAUTH IMPLEMENTATION (PER-USER):
+Implement OAuth start + callback endpoints and store tokens in UserConnectorAccount.
+
+Google Drive:
+- Start: /api/oauth/google/start
+- Callback: /api/oauth/google/callback
+Use offline access so refresh token is available.
+After callback, redirect user to /scopes/google
+
+Atlassian (Jira + Confluence):
+- Start: /api/oauth/atlassian/start
+- Callback: /api/oauth/atlassian/callback
+After callback, fetch accessible resources (cloudId list) and store in metadataJson.
+Redirect to /scopes/atlassian to select sites + projects/spaces.
+
+Slack:
+- Start: /api/oauth/slack/start
+- Callback: /api/oauth/slack/callback
+Store teamId and userId in metadataJson.
+Redirect to /scopes/slack to select channels or all accessible channels.
+
+SCOPE SELECTION UI (MUST IMPLEMENT THESE OPTIONS):
+Google scopes page:
+- Radio:
+  1) Selected folders (folder picker using Drive API)
+  2) All My Drive
+  3) All Shared Drives I’m a member of (list drives, allow include/exclude)
+  4) Everything accessible to me (warning: large)
+- Sync mode:
+  - Metadata-first ON/OFF (default ON)
+  - Content indexing: Smart (default) / Full / On-demand
+- Exclusions:
+  - exclude file types (e.g., .png, .zip)
+  - exclude folders by pattern
+Save selections to UserConnectorScope.
+
+Atlassian scopes page:
+- Select which sites (cloudIds) to enable
+Then for each:
+- Jira scope:
+  1) Selected projects
+  2) All accessible projects
+  3) JQL-defined scope (textbox)
+- Confluence scope:
+  1) Selected spaces
+  2) All accessible spaces
+  3) Selected page trees (pick root pages)
+Also:
+- Sync mode: Metadata-first + Smart/Full/On-demand
+- Exclusions: projects/spaces to exclude
+Save to UserConnectorScope.
+
+Slack scopes page:
+- Radio:
+  1) Selected channels
+  2) All channels I can access (bounded by Slack permissions)
+  3) All channels the app/bot is a member of (if applicable)
+- Time window: last 30/90/180 days
+- Exclusions: channels to exclude, ignore bot messages
+Save to UserConnectorScope.
+
+SYNC / INGESTION (USER-SCOPED, AUTOMATIC):
+Implement a sync engine per connector in /lib/sync:
+- googleSync(userId)
+- jiraSync(userId, cloudId)
+- confluenceSync(userId, cloudId)
+- slackSync(userId)
+
+Behavior:
+- Metadata-first: fetch list of items in scope and store Source records with minimal metadata and urls.
+- Content indexing:
+  - Full: fetch full content for all items and chunk+embed
+  - Smart: fetch full content for recent items AND items that were retrieved often (store retrieval counts), plus any manually pinned.
+  - On-demand: only fetch full content when retrieval requests it (lazy fetch).
+For each ingested item:
+- compute contentHash; skip if unchanged
+- chunk with overlap and store charStart/charEnd
+- embed and store vectors
+Record a sync AuditEvent(kind="sync") with counts and errors.
+Provide UI on /connect showing last sync status per connector and “Sync now” button (per user).
+
+FILE UPLOAD INGEST (DEMO ONLY):
+/admin/ingest allows admin to upload text files and ingest them into THAT admin’s user scope for testing.
+
+RETRIEVAL + CHAT:
+Implement /api/chat:
+- authenticate user
+- embed query
+- vector query topK=8 filtered by userId
+- fetch chunks+sources
+- send model prompt with:
+  - user question
+  - retrieved snippets with sourceId+chunkId+titles
+  - instructions to output ONLY valid JSON per schema
+- parse+validate response
+- store AuditEvent(kind="chat") with retrievedJson and responseJson and latencyJson
+Return response to UI.
+
+CITATIONS UI:
+- Render bullets with citations.
+- Clicking citation opens /sources/[sourceId]?chunk=[chunkId] and highlights.
+
+ACTIONS (DRAFT -> APPROVE -> EXECUTE):
+In /api/chat, allow the model to propose an action draft, but do NOT execute.
+In /chat UI, when action != null:
+- show editable fields using Zod schemas per tool
+- buttons: Approve & Execute, Cancel
+On approve: POST /api/actions/execute with { requestId, toolName, args, citations }
+
+Tools to implement (use user OAuth tokens):
+1) jira.create_issue:
+- args schema: cloudId, projectKey, issueType, summary, description, labels?, components?, acceptanceCriteria?
+- create issue via Jira REST using the user’s token
+- return created issue key + url
+
+2) slack.post_message:
+- args schema: channelId, text
+- post message via Slack API using the user’s token (or bot token if OAuth flow yields that; but keep per-user by design)
+- return channel + ts + permalink if available
+
+3) confluence.upsert_page:
+- args schema: cloudId, spaceKey, title, bodyStorageFormat, parentPageId?
+- MUST support diff preview: in chat return draft; UI shows preview; only execute after approval
+- return pageId + url
+
+IDEMPOTENCY:
+Implement idempotency for writes:
+- compute idempotencyKey = hash(userId + toolName + normalizedArgs + citations)
+- if a prior Approval/tool execution exists with same key and success, return prior result without executing.
+Store key in Approval or separate ActionExecution table.
+
+POLICY ENGINE (MINIMUM):
+Even with per-user OAuth, enforce tool constraints to show maturity.
+Create /admin/policies for YAML policy. Default policy:
+- members allowed: jira.create_issue, slack.post_message, confluence.upsert_page
+- requireApproval = true for all write tools
+- allowlists:
+  - jira allowedProjects
+  - slack allowedChannels
+  - confluence allowedSpaces
+Policy evaluator in /lib/policy:
+- isToolAllowed(role, tool)
+- validateToolConstraints(tool, args)
+- requiresApproval(tool)
+Policy must be checked in /api/chat (to decide whether to even propose actions) AND in /api/actions/execute (hard enforcement).
+
+AUDIT LOGS:
+Create /admin/audit:
+- list + detail view
+Detail includes:
+- prompt
+- retrieved chunks + scores + links
+- response JSON
+- tool proposal JSON
+- approvals and edits (draft vs final)
+- tool execution result
+- policy decisions
+- latency breakdown
+Add Replay (dry-run):
+- re-run /api/chat with same prompt and retrieval, but never execute tools.
+
+EVALUATION SUITE:
+Create /admin/evals:
+- upload eval suite JSON
+- run suite (dry-run only)
+Suite format:
+{
+  "name": "...",
+  "cases": [
+    { "id":"q1", "type":"QNA", "prompt":"...", "mustCite":true, "expectedSourceIds":[] },
+    { "id":"a1", "type":"ACTION", "prompt":"...", "expectedTool":"jira.create_issue", "requiredFields":["projectKey","issueType","summary","description"], "mustCite":true }
+  ]
+}
+Runner:
+- for each case call the same chat pipeline in DRY_RUN mode (never execute tools)
+Scoring:
+- QNA pass if every bullet has >=1 citation when mustCite
+- if expectedSourceIds present: at least one citation.sourceId matches
+- ACTION pass if action.type == expectedTool and requiredFields exist in action.draft
+Store EvalRun and render dashboard: pass rate, failures, replay links.
+
+SECURITY:
+- Passwords hashed with bcrypt in simple auth.
+- Tokens encrypted at rest if ENCRYPTION_KEY exists.
+- Do not log tokens or raw OAuth responses.
+- Add basic rate limit on /api/chat and /api/actions/execute.
+
+README + SEED:
+- Provide complete env var list and exact OAuth redirect URLs:
+  - Google callback: APP_URL + /api/oauth/google/callback
+  - Atlassian callback: APP_URL + /api/oauth/atlassian/callback
+  - Slack callback: APP_URL + /api/oauth/slack/callback
+- Provide prisma migrate and seed instructions.
+- Seed script creates admin from ADMIN_EMAIL/ADMIN_PASSWORD and inserts default policy + sample eval suite.
+- Include a “Self-test checklist” verifying each critical feature.
+
+Implement incrementally but deliver the full set of features above. Avoid adding extra unrelated features.
