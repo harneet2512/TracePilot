@@ -25,6 +25,7 @@ import {
   LogOut,
   Shield,
   Link2,
+  Activity,
 } from "lucide-react";
 
 const memberItems = [
@@ -38,6 +39,7 @@ const adminItems = [
   { title: "Policies", url: "/admin/policies", icon: ShieldCheck },
   { title: "Audit Logs", url: "/admin/audit", icon: ClipboardList },
   { title: "Evaluations", url: "/admin/evals", icon: BarChart3 },
+  { title: "Observability", url: "/admin/observability", icon: Activity },
 ];
 
 export function AppSidebar() {

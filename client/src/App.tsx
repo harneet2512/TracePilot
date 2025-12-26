@@ -18,6 +18,7 @@ import IngestPage from "@/pages/admin/ingest";
 import PoliciesPage from "@/pages/admin/policies";
 import AuditPage from "@/pages/admin/audit";
 import EvalsPage from "@/pages/admin/evals";
+import ObservabilityPage from "@/pages/admin/observability";
 import { Loader2 } from "lucide-react";
 
 function ProtectedRoute({ component: Component, adminOnly = false }: { component: React.ComponentType; adminOnly?: boolean }) {
@@ -78,6 +79,9 @@ function Router() {
       </Route>
       <Route path="/admin/evals">
         {() => <ProtectedRoute component={EvalsPage} adminOnly />}
+      </Route>
+      <Route path="/admin/observability">
+        {() => <ProtectedRoute component={ObservabilityPage} adminOnly />}
       </Route>
       <Route path="/">
         {() => <Redirect to="/chat" />}

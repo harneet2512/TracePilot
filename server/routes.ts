@@ -404,7 +404,7 @@ export async function registerRoutes(
     }
   });
   
-  // Chat route
+  // Chat route with tracing
   app.post("/api/chat", authMiddleware, chatLimiter, async (req, res) => {
     const startTime = Date.now();
     const latencyMs: Record<string, number> = {};
@@ -416,16 +416,30 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Message is required" });
       }
       
+      // Start trace for this chat request
+      const traceCtx = await tracer.startTrace("chat", req.user!.id, req.requestId);
+      
       // Get active chunks for retrieval (respects source versioning)
       const embedStart = Date.now();
       const allChunks = await storage.getActiveChunks();
       
-      // Search for relevant chunks
+      // Search for relevant chunks - record retrieval span
       const retrievalStart = Date.now();
       latencyMs.embedMs = retrievalStart - embedStart;
       
       const relevantChunks = await searchSimilar(message, allChunks, 5);
       latencyMs.retrievalMs = Date.now() - retrievalStart;
+      
+      // Record retrieval span
+      await tracer.recordSpan(traceCtx.traceId, {
+        name: "retrieval",
+        kind: "retrieve",
+        durationMs: latencyMs.retrievalMs,
+        retrievalCount: relevantChunks.length,
+        similarityMin: relevantChunks.length > 0 ? Math.min(...relevantChunks.map(r => r.score)) : undefined,
+        similarityMax: relevantChunks.length > 0 ? Math.max(...relevantChunks.map(r => r.score)) : undefined,
+        similarityAvg: relevantChunks.length > 0 ? relevantChunks.reduce((a, r) => a + r.score, 0) / relevantChunks.length : undefined,
+      });
       
       // Get active policy for context
       const activePolicy = await storage.getActivePolicy();
@@ -485,10 +499,20 @@ Respond in JSON format matching this schema:
         { role: "user", content: message },
       ];
       
-      // Call LLM
+      // Call LLM - record LLM span
       const llmStart = Date.now();
       const responseText = await chatCompletion(messages);
       latencyMs.llmMs = Date.now() - llmStart;
+      
+      // Record LLM span
+      await tracer.recordSpan(traceCtx.traceId, {
+        name: "llm_completion",
+        kind: "llm",
+        durationMs: latencyMs.llmMs,
+        model: "gpt-4o",
+        inputTokens: Math.ceil(messages.reduce((a, m) => a + m.content.length, 0) / 4),
+        metadata: { messageCount: messages.length },
+      });
       
       // Parse and validate response
       let chatResponse: ChatResponse;
@@ -522,11 +546,16 @@ Respond in JSON format matching this schema:
         policyJson: parsedPolicy,
         success: true,
         latencyMs,
+        traceId: traceCtx.traceId,
       });
+      
+      // End trace successfully
+      await tracer.endTrace(traceCtx.traceId, "completed");
       
       res.json(chatResponse);
     } catch (error) {
       console.error("Chat error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       
       // Log failed audit event
       await storage.createAuditEvent({
@@ -536,12 +565,15 @@ Respond in JSON format matching this schema:
         kind: "chat",
         prompt: req.body.message,
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: errorMessage,
         latencyMs,
       });
       
-      // Provide more specific error messages
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      // End trace with failure
+      const existingTrace = tracer.getCurrentTrace();
+      if (existingTrace) {
+        await tracer.endTrace(existingTrace.traceId, "failed", errorMessage);
+      }
       if (errorMessage.includes("API key") || errorMessage.includes("401")) {
         res.status(500).json({ error: "OpenAI API key is invalid or missing. Please check your configuration." });
       } else if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
@@ -552,14 +584,18 @@ Respond in JSON format matching this schema:
     }
   });
   
-  // Action execution route
+  // Action execution route with tracing
   app.post("/api/actions/execute", authMiddleware, async (req, res) => {
     const startTime = Date.now();
+    
+    // Start action trace
+    const traceCtx = await tracer.startTrace("action", req.user!.id, req.requestId);
     
     try {
       const { action, idempotencyKey } = req.body;
       
       if (!action || !action.type || !action.draft) {
+        await tracer.endTrace(traceCtx.traceId, "failed", "Invalid action");
         return res.status(400).json({ error: "Invalid action" });
       }
       
@@ -596,6 +632,21 @@ Respond in JSON format matching this schema:
         }
       }
       
+      // Record policy validation span
+      await tracer.recordSpan(traceCtx.traceId, {
+        name: "policy_validation",
+        kind: "validate",
+        durationMs: Date.now() - startTime,
+        metadata: { 
+          toolName: action.type, 
+          requiresApproval,
+          hasPolicy: !!activePolicy 
+        },
+      });
+      
+      // Execute action with span
+      const toolStart = Date.now();
+      
       // For now, simulate action execution
       // In real implementation, would call actual Jira/Slack/Confluence APIs
       const result = {
@@ -604,6 +655,14 @@ Respond in JSON format matching this schema:
         executedAt: new Date().toISOString(),
         details: action.draft,
       };
+      
+      // Record tool execution span
+      await tracer.recordSpan(traceCtx.traceId, {
+        name: `tool_${action.type}`,
+        kind: "tool",
+        durationMs: Date.now() - toolStart,
+        metadata: { actionType: action.type, success: true },
+      });
       
       // Create audit event
       const auditEvent = await storage.createAuditEvent({
@@ -615,6 +674,7 @@ Respond in JSON format matching this schema:
         toolExecutionsJson: [result],
         success: true,
         latencyMs: { toolMs: Date.now() - startTime },
+        traceId: traceCtx.traceId,
       });
       
       // Create approval record
@@ -629,9 +689,14 @@ Respond in JSON format matching this schema:
         approvedAt: new Date(),
       });
       
+      // End trace successfully
+      await tracer.endTrace(traceCtx.traceId, "completed");
+      
       res.json({ result, requiresApproval });
     } catch (error) {
       console.error("Action execution error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Action execution failed";
+      await tracer.endTrace(traceCtx.traceId, "failed", errorMessage);
       res.status(500).json({ error: "Action execution failed" });
     }
   });
