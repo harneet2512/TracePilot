@@ -1660,6 +1660,194 @@ Respond in JSON format:
     }
   });
 
+  // ============================================================================
+  // EVAL ROUTES
+  // ============================================================================
+
+  // Get all eval suites
+  app.get("/api/eval-suites", authMiddleware, async (req, res) => {
+    try {
+      const suites = await storage.getEvalSuites();
+      res.json(suites);
+    } catch (error) {
+      console.error("Get eval suites error:", error);
+      res.status(500).json({ error: "Failed to get eval suites" });
+    }
+  });
+
+  // Create eval suite (upload JSON)
+  app.post("/api/eval-suites", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+      // Validate required fields (name and cases)
+      const suiteValidation = evalSuiteJsonSchema.safeParse({
+        name: req.body.name,
+        cases: req.body.cases,
+      });
+      
+      if (!suiteValidation.success) {
+        return res.status(400).json({ 
+          error: "Invalid suite JSON format - name and cases array required", 
+          details: suiteValidation.error.format() 
+        });
+      }
+
+      // Store full payload in jsonText (preserves optional fields like mustCite, expectedSourceIds, etc.)
+      const parsed = insertEvalSuiteSchema.safeParse({
+        name: suiteValidation.data.name,
+        description: req.body.description || null,
+        jsonText: JSON.stringify(req.body),
+        isBaseline: req.body.isBaseline || false,
+      });
+
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid suite format", details: parsed.error.format() });
+      }
+
+      const suite = await storage.createEvalSuite(parsed.data);
+      res.status(201).json(suite);
+    } catch (error) {
+      console.error("Create eval suite error:", error);
+      res.status(500).json({ error: "Failed to create eval suite" });
+    }
+  });
+
+  // Get eval suite by ID
+  app.get("/api/eval-suites/:id", authMiddleware, async (req, res) => {
+    try {
+      const suite = await storage.getEvalSuite(req.params.id);
+      if (!suite) {
+        return res.status(404).json({ error: "Suite not found" });
+      }
+      res.json(suite);
+    } catch (error) {
+      console.error("Get eval suite error:", error);
+      res.status(500).json({ error: "Failed to get eval suite" });
+    }
+  });
+
+  // Delete eval suite
+  app.delete("/api/eval-suites/:id", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+      await storage.deleteEvalSuite(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete eval suite error:", error);
+      res.status(500).json({ error: "Failed to delete eval suite" });
+    }
+  });
+
+  // Run eval suite
+  app.post("/api/eval-suites/:id/run", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+      const suite = await storage.getEvalSuite(req.params.id);
+      if (!suite) {
+        return res.status(404).json({ error: "Suite not found" });
+      }
+
+      // Parse suite JSON to get cases
+      let suiteData: { cases?: Array<{ id?: string; type: string; prompt: string; mustCite?: boolean; expectedSourceIds?: string[]; expectedTool?: string; requiredFields?: string[] }> };
+      try {
+        suiteData = JSON.parse(suite.jsonText || "{}");
+      } catch (e) {
+        return res.status(400).json({ error: "Invalid suite JSON" });
+      }
+
+      if (!suiteData.cases || suiteData.cases.length === 0) {
+        return res.status(400).json({ error: "Suite has no test cases" });
+      }
+
+      // Create eval run
+      const run = await storage.createEvalRun({
+        suiteId: suite.id,
+        status: "running",
+        startedAt: new Date(),
+      });
+
+      // Run cases asynchronously
+      const cases = suiteData.cases.map((c, i) => ({
+        id: c.id || `case-${i + 1}`,
+        type: (c.type || "QNA") as "QNA" | "ACTION",
+        prompt: c.prompt,
+        mustCite: c.mustCite,
+        expectedSourceIds: c.expectedSourceIds,
+        expectedTool: c.expectedTool,
+        requiredFields: c.requiredFields,
+      }));
+
+      // Start async eval (don't await)
+      runEvalCases(run.id, cases, req.user!.id).catch(async (error) => {
+        console.error("Eval run error:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        await storage.updateEvalRun(run.id, {
+          status: "failed",
+          finishedAt: new Date(),
+          summaryJson: {
+            total: cases.length,
+            passed: 0,
+            failed: cases.length,
+            passRate: 0,
+          },
+          metricsJson: {
+            total: cases.length,
+            passed: 0,
+            failed: cases.length,
+            passRate: 0,
+          },
+          resultsJson: cases.map(c => ({
+            id: c.id,
+            type: c.type,
+            prompt: c.prompt,
+            passed: false,
+            reason: `Run failed: ${errorMessage}`,
+          })),
+        });
+      });
+
+      res.status(201).json(run);
+    } catch (error) {
+      console.error("Run eval suite error:", error);
+      res.status(500).json({ error: "Failed to run eval suite" });
+    }
+  });
+
+  // Get all eval runs
+  app.get("/api/eval-runs", authMiddleware, async (req, res) => {
+    try {
+      const runs = await storage.getEvalRuns();
+      
+      // Attach suite info to each run
+      const runsWithSuites = await Promise.all(
+        runs.map(async (run) => {
+          const suite = await storage.getEvalSuite(run.suiteId);
+          return { ...run, suite };
+        })
+      );
+      
+      res.json(runsWithSuites);
+    } catch (error) {
+      console.error("Get eval runs error:", error);
+      res.status(500).json({ error: "Failed to get eval runs" });
+    }
+  });
+
+  // Get eval run by ID
+  app.get("/api/eval-runs/:id", authMiddleware, async (req, res) => {
+    try {
+      const runs = await storage.getEvalRuns();
+      const run = runs.find(r => r.id === req.params.id);
+      
+      if (!run) {
+        return res.status(404).json({ error: "Run not found" });
+      }
+      
+      const suite = await storage.getEvalSuite(run.suiteId);
+      res.json({ ...run, suite });
+    } catch (error) {
+      console.error("Get eval run error:", error);
+      res.status(500).json({ error: "Failed to get eval run" });
+    }
+  });
+
   // Seed admin user endpoint (for initial setup)
   app.post("/api/seed", async (req, res) => {
     try {
@@ -1851,15 +2039,29 @@ Respond in JSON: {"answer": "...", "bullets": [{"claim": "...", "citations": [{"
   // Update run with results
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
+  const passRate = cases.length > 0 ? passed / cases.length : 0;
   
   await storage.updateEvalRun(runId, {
+    status: "completed",
     finishedAt: new Date(),
+    summaryJson: {
+      total: cases.length,
+      passed,
+      failed,
+      passRate,
+    },
     metricsJson: {
       total: cases.length,
       passed,
       failed,
-      passRate: cases.length > 0 ? (passed / cases.length) * 100 : 0,
+      passRate: passRate * 100,
     },
-    resultsJson: results,
+    resultsJson: results.map(r => ({
+      id: r.caseId,
+      type: cases.find(c => c.id === r.caseId)?.type || "QNA",
+      prompt: cases.find(c => c.id === r.caseId)?.prompt || "",
+      passed: r.passed,
+      reason: r.details,
+    })),
   });
 }

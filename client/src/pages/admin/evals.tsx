@@ -54,6 +54,64 @@ interface EvalRunWithSuite extends EvalRun {
   suite?: EvalSuite;
 }
 
+function LatestRunFailures({ results }: { results: EvalCaseResult[] }) {
+  const failures = results.filter((r) => !r.passed);
+  
+  if (!failures.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Latest Run Failures</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <CheckCircle className="h-10 w-10 text-green-600 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
+              All test cases passed!
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Latest Run Failures</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Case ID</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Prompt</TableHead>
+              <TableHead>Reason</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {failures.map((result) => (
+              <TableRow key={result.id}>
+                <TableCell className="font-mono text-xs">{result.id}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className="text-xs">
+                    {result.type}
+                  </Badge>
+                </TableCell>
+                <TableCell className="max-w-xs truncate">{result.prompt}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {result.reason || "—"}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 function EvalDashboardCards({ run }: { run: EvalRunWithSuite | null }) {
   if (!run?.summaryJson) {
     return (
@@ -265,7 +323,7 @@ export default function EvalsPage() {
               ) : (
                 <div className="space-y-3">
                   {suites.map((suite) => {
-                    const suiteJson = JSON.parse(suite.jsonText) as { cases: any[] };
+                    const suiteJson = suite.jsonText ? JSON.parse(suite.jsonText) as { cases: unknown[] } : { cases: [] };
                     return (
                       <div
                         key={suite.id}
@@ -363,55 +421,8 @@ export default function EvalsPage() {
           </Card>
         </div>
 
-        {latestRun?.resultsJson && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Latest Run Failures</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(() => {
-                const failures = (latestRun.resultsJson as EvalCaseResult[]).filter((r) => !r.passed);
-                if (!failures.length) {
-                  return (
-                    <div className="text-center py-8">
-                      <CheckCircle className="h-10 w-10 text-green-600 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">
-                        All test cases passed!
-                      </p>
-                    </div>
-                  );
-                }
-                return (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Case ID</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Prompt</TableHead>
-                        <TableHead>Reason</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {failures.map((result) => (
-                        <TableRow key={result.id}>
-                          <TableCell className="font-mono text-xs">{result.id}</TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-xs">
-                              {result.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate">{result.prompt}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {result.reason || "—"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                );
-              })()}
-            </CardContent>
-          </Card>
+        {latestRun?.resultsJson && Array.isArray(latestRun.resultsJson) && (
+          <LatestRunFailures results={latestRun.resultsJson as EvalCaseResult[]} />
         )}
 
         <Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>

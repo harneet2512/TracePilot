@@ -432,6 +432,7 @@ export const evalRuns = pgTable("eval_runs", {
   status: text("status", { enum: ["running", "completed", "failed"] }).notNull().default("running"),
   startedAt: timestamp("started_at").defaultNow().notNull(),
   finishedAt: timestamp("finished_at"),
+  summaryJson: jsonb("summary_json"),
   metricsJson: jsonb("metrics_json"),
   resultsJson: jsonb("results_json"),
   regressionJson: jsonb("regression_json"),
