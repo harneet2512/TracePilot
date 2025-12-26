@@ -17,6 +17,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { enqueueJob } from "./lib/jobs/runner";
+import { tracer, withTrace, withSpan } from "./lib/observability/tracer";
 
 // Schema for updating user connector scopes (only allow scopeConfigJson, syncMode, contentStrategy, exclusionsJson)
 const updateUserConnectorScopeSchema = z.object({
@@ -1479,6 +1480,101 @@ Respond in JSON format:
     } catch (error) {
       console.error("Retry job error:", error);
       res.status(500).json({ error: "Failed to retry job" });
+    }
+  });
+
+  // ============================================================================
+  // OBSERVABILITY ROUTES
+  // ============================================================================
+
+  // Get user's traces
+  app.get("/api/traces", authMiddleware, async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const traces = await storage.getTracesByUser(req.user!.id, limit);
+      res.json(traces);
+    } catch (error) {
+      console.error("Get traces error:", error);
+      res.status(500).json({ error: "Failed to get traces" });
+    }
+  });
+
+  // Admin-only: Get recent traces across all users
+  app.get("/api/admin/traces", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+      const traces = await storage.getRecentTraces(limit);
+      res.json(traces);
+    } catch (error) {
+      console.error("Get traces error:", error);
+      res.status(500).json({ error: "Failed to get traces" });
+    }
+  });
+
+  // Get trace details with spans
+  app.get("/api/traces/:id", authMiddleware, async (req, res) => {
+    try {
+      const trace = await storage.getTrace(req.params.id);
+      if (!trace) {
+        return res.status(404).json({ error: "Trace not found" });
+      }
+      if (trace.userId !== req.user!.id && req.user!.role !== "admin") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      const spans = await storage.getSpansByTrace(req.params.id);
+      res.json({ trace, spans });
+    } catch (error) {
+      console.error("Get trace error:", error);
+      res.status(500).json({ error: "Failed to get trace" });
+    }
+  });
+
+  // Get observability metrics (admin only)
+  app.get("/api/admin/observability/metrics", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+      const hours = parseInt(req.query.hours as string) || 24;
+      const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+      
+      // Get recent traces for aggregate metrics
+      const traces = await storage.getRecentTraces(1000);
+      const recentTraces = traces.filter(t => new Date(t.createdAt) >= since);
+      
+      const metrics = {
+        totalTraces: recentTraces.length,
+        byKind: {} as Record<string, number>,
+        byStatus: {} as Record<string, number>,
+        avgDurationMs: 0,
+        p95DurationMs: 0,
+        errorRate: 0,
+      };
+      
+      const durations: number[] = [];
+      let errorCount = 0;
+      
+      for (const trace of recentTraces) {
+        metrics.byKind[trace.kind] = (metrics.byKind[trace.kind] || 0) + 1;
+        metrics.byStatus[trace.status] = (metrics.byStatus[trace.status] || 0) + 1;
+        
+        if (trace.durationMs) {
+          durations.push(trace.durationMs);
+        }
+        if (trace.status === "failed") {
+          errorCount++;
+        }
+      }
+      
+      if (durations.length > 0) {
+        metrics.avgDurationMs = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length);
+        durations.sort((a, b) => a - b);
+        metrics.p95DurationMs = durations[Math.floor(durations.length * 0.95)] || 0;
+      }
+      
+      metrics.errorRate = recentTraces.length > 0 ? (errorCount / recentTraces.length) * 100 : 0;
+      
+      res.json(metrics);
+    } catch (error) {
+      console.error("Get observability metrics error:", error);
+      res.status(500).json({ error: "Failed to get metrics" });
     }
   });
 
