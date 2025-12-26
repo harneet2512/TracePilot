@@ -16,6 +16,7 @@ import {
   type User, type ChatResponse, type PolicyYaml
 } from "@shared/schema";
 import { z } from "zod";
+import { enqueueJob } from "./lib/jobs/runner";
 
 // Schema for updating user connector scopes (only allow scopeConfigJson, syncMode, contentStrategy, exclusionsJson)
 const updateUserConnectorScopeSchema = z.object({
@@ -736,6 +737,9 @@ Respond in JSON format:
       
       // Validate JSON content
       try {
+        if (!parsed.data.jsonText) {
+          return res.status(400).json({ error: "jsonText is required" });
+        }
         const jsonContent = JSON.parse(parsed.data.jsonText);
         evalSuiteJsonSchema.parse(jsonContent);
       } catch (e) {
@@ -767,6 +771,9 @@ Respond in JSON format:
         return res.status(404).json({ error: "Eval suite not found" });
       }
       
+      if (!suite.jsonText) {
+        return res.status(400).json({ error: "Suite has no test cases defined" });
+      }
       const suiteJson = evalSuiteJsonSchema.parse(JSON.parse(suite.jsonText));
       
       // Create eval run
@@ -1353,6 +1360,128 @@ Respond in JSON format:
     }
   });
 
+  // Job-based sync endpoint (returns job immediately, runs sync in background)
+  app.post("/api/sync/:scopeId/async", authMiddleware, async (req, res) => {
+    try {
+      const scope = await storage.getUserConnectorScope(req.params.scopeId);
+      if (!scope) {
+        return res.status(404).json({ error: "Scope not found" });
+      }
+      if (scope.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const account = await storage.getUserConnectorAccount(scope.accountId);
+      if (!account) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      if (account.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const idempotencyKey = `sync:${scope.id}:${Date.now()}`;
+      const job = await enqueueJob({
+        type: "sync",
+        userId: req.user!.id,
+        connectorType: scope.type as "google" | "atlassian" | "slack" | "upload",
+        scopeId: scope.id,
+        idempotencyKey,
+        payload: {
+          scopeId: scope.id,
+          userId: req.user!.id,
+          connectorType: scope.type,
+          accountId: account.id,
+        },
+      });
+
+      res.json({ jobId: job.id, status: job.status });
+    } catch (error) {
+      console.error("Async sync error:", error);
+      res.status(500).json({ error: "Failed to queue sync job" });
+    }
+  });
+
+  // Job management routes
+  app.get("/api/jobs", authMiddleware, async (req, res) => {
+    try {
+      const jobs = await storage.getJobsByUser(req.user!.id);
+      res.json(jobs);
+    } catch (error) {
+      console.error("Get jobs error:", error);
+      res.status(500).json({ error: "Failed to get jobs" });
+    }
+  });
+
+  app.get("/api/jobs/:id", authMiddleware, async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      if (job.userId !== req.user!.id && req.user!.role !== "admin") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      res.json(job);
+    } catch (error) {
+      console.error("Get job error:", error);
+      res.status(500).json({ error: "Failed to get job" });
+    }
+  });
+
+  app.get("/api/jobs/:id/runs", authMiddleware, async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      if (job.userId !== req.user!.id && req.user!.role !== "admin") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      const runs = await storage.getJobRuns(req.params.id);
+      res.json(runs);
+    } catch (error) {
+      console.error("Get job runs error:", error);
+      res.status(500).json({ error: "Failed to get job runs" });
+    }
+  });
+
+  // Admin-only: Get dead letter jobs
+  app.get("/api/admin/jobs/dead-letter", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+      const jobs = await storage.getDeadLetterJobs();
+      res.json(jobs);
+    } catch (error) {
+      console.error("Get dead letter jobs error:", error);
+      res.status(500).json({ error: "Failed to get dead letter jobs" });
+    }
+  });
+
+  // Admin-only: Retry dead letter job
+  app.post("/api/admin/jobs/:id/retry", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      if (job.status !== "dead_letter" && job.status !== "failed") {
+        return res.status(400).json({ error: "Job is not in failed or dead letter state" });
+      }
+      
+      await storage.updateJob(req.params.id, {
+        status: "pending",
+        attempts: 0,
+        nextRunAt: new Date(),
+        lockedAt: null,
+        lockedBy: null,
+      });
+      
+      res.json({ success: true, message: "Job requeued for retry" });
+    } catch (error) {
+      console.error("Retry job error:", error);
+      res.status(500).json({ error: "Failed to retry job" });
+    }
+  });
+
   // Seed admin user endpoint (for initial setup)
   app.post("/api/seed", async (req, res) => {
     try {
@@ -1547,7 +1676,7 @@ Respond in JSON: {"answer": "...", "bullets": [{"claim": "...", "citations": [{"
   
   await storage.updateEvalRun(runId, {
     finishedAt: new Date(),
-    summaryJson: {
+    metricsJson: {
       total: cases.length,
       passed,
       failed,

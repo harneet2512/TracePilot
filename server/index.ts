@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import cookieParser from "cookie-parser";
+import { startJobRunner } from "./lib/jobs/runner";
+import "./lib/jobs/handlers";
 
 const app = express();
 app.set('trust proxy', 1);
@@ -97,6 +99,8 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      startJobRunner();
+      log("Job runner started");
     },
   );
 })();

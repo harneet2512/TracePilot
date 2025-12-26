@@ -1,8 +1,9 @@
 import { db } from "./db";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray, lte, isNull, sql } from "drizzle-orm";
 import {
   users, sessions, connectors, userConnectorAccounts, userConnectorScopes,
   sources, chunks, policies, auditEvents, approvals, evalSuites, evalRuns,
+  jobs, jobRuns, traces, spans, sourceVersions, evalCases, evalResults, playbooks, playbookItems,
   type User, type InsertUser, type Session, type InsertSession,
   type Connector, type InsertConnector,
   type UserConnectorAccount, type InsertUserConnectorAccount,
@@ -10,7 +11,12 @@ import {
   type Source, type InsertSource,
   type Chunk, type InsertChunk, type Policy, type InsertPolicy,
   type AuditEvent, type InsertAuditEvent, type Approval, type InsertApproval,
-  type EvalSuite, type InsertEvalSuite, type EvalRun, type InsertEvalRun
+  type EvalSuite, type InsertEvalSuite, type EvalRun, type InsertEvalRun,
+  type Job, type InsertJob, type JobRun, type InsertJobRun,
+  type Trace, type InsertTrace, type Span, type InsertSpan,
+  type SourceVersion, type InsertSourceVersion,
+  type EvalCase, type InsertEvalCase, type EvalResult, type InsertEvalResult,
+  type Playbook, type InsertPlaybook, type PlaybookItem, type InsertPlaybookItem
 } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
@@ -97,6 +103,53 @@ export interface IStorage {
   getEvalRunsBySuiteId(suiteId: string): Promise<EvalRun[]>;
   createEvalRun(run: InsertEvalRun): Promise<EvalRun>;
   updateEvalRun(id: string, updates: Partial<InsertEvalRun>): Promise<EvalRun | undefined>;
+
+  // Jobs
+  getJob(id: string): Promise<Job | undefined>;
+  getJobByIdempotencyKey(key: string): Promise<Job | undefined>;
+  getPendingJobs(limit?: number): Promise<Job[]>;
+  getJobsByUser(userId: string): Promise<Job[]>;
+  getDeadLetterJobs(): Promise<Job[]>;
+  createJob(job: InsertJob): Promise<Job>;
+  updateJob(id: string, updates: Partial<InsertJob>): Promise<Job | undefined>;
+  lockJob(jobId: string, workerId: string): Promise<Job | undefined>;
+  unlockJob(jobId: string): Promise<void>;
+  unlockStaleJob(jobId: string, expectedWorkerId: string): Promise<boolean>;
+  getStaleRunningJobs(staleThreshold: Date): Promise<Job[]>;
+  
+  // Job Runs
+  getJobRuns(jobId: string): Promise<JobRun[]>;
+  createJobRun(run: InsertJobRun): Promise<JobRun>;
+  updateJobRun(id: string, updates: Partial<InsertJobRun>): Promise<JobRun | undefined>;
+  
+  // Traces
+  getTrace(id: string): Promise<Trace | undefined>;
+  getTracesByUser(userId: string, limit?: number): Promise<Trace[]>;
+  getRecentTraces(limit?: number): Promise<Trace[]>;
+  createTrace(trace: InsertTrace): Promise<Trace>;
+  updateTrace(id: string, updates: Partial<InsertTrace>): Promise<Trace | undefined>;
+  
+  // Spans
+  getSpansByTrace(traceId: string): Promise<Span[]>;
+  createSpan(span: InsertSpan): Promise<Span>;
+  updateSpan(id: string, updates: Partial<InsertSpan>): Promise<Span | undefined>;
+  
+  // Source Versions
+  getSourceVersions(sourceId: string): Promise<SourceVersion[]>;
+  getActiveSourceVersion(sourceId: string): Promise<SourceVersion | undefined>;
+  createSourceVersion(version: InsertSourceVersion): Promise<SourceVersion>;
+  deactivateSourceVersions(sourceId: string): Promise<void>;
+  
+  // Playbooks
+  getPlaybook(id: string): Promise<Playbook | undefined>;
+  getPlaybooksByUser(userId: string): Promise<Playbook[]>;
+  createPlaybook(playbook: InsertPlaybook): Promise<Playbook>;
+  updatePlaybook(id: string, updates: Partial<InsertPlaybook>): Promise<Playbook | undefined>;
+  
+  // Playbook Items
+  getPlaybookItems(playbookId: string): Promise<PlaybookItem[]>;
+  createPlaybookItem(item: InsertPlaybookItem): Promise<PlaybookItem>;
+  updatePlaybookItem(id: string, updates: Partial<InsertPlaybookItem>): Promise<PlaybookItem | undefined>;
 }
 
 const SALT_ROUNDS = 10;
@@ -459,6 +512,237 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(evalRuns)
       .set(updates)
       .where(eq(evalRuns.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Jobs
+  async getJob(id: string): Promise<Job | undefined> {
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+    return job;
+  }
+
+  async getJobByIdempotencyKey(key: string): Promise<Job | undefined> {
+    const [job] = await db.select().from(jobs).where(eq(jobs.idempotencyKey, key));
+    return job;
+  }
+
+  async getPendingJobs(limit = 10): Promise<Job[]> {
+    const now = new Date();
+    return db.select().from(jobs)
+      .where(and(
+        eq(jobs.status, "pending"),
+        lte(jobs.nextRunAt, now),
+        isNull(jobs.lockedAt)
+      ))
+      .orderBy(desc(jobs.priority), jobs.nextRunAt)
+      .limit(limit);
+  }
+
+  async getJobsByUser(userId: string): Promise<Job[]> {
+    return db.select().from(jobs)
+      .where(eq(jobs.userId, userId))
+      .orderBy(desc(jobs.createdAt));
+  }
+
+  async getDeadLetterJobs(): Promise<Job[]> {
+    return db.select().from(jobs)
+      .where(eq(jobs.status, "dead_letter"))
+      .orderBy(desc(jobs.createdAt));
+  }
+
+  async createJob(job: InsertJob): Promise<Job> {
+    const [created] = await db.insert(jobs).values(job).returning();
+    return created;
+  }
+
+  async updateJob(id: string, updates: Partial<InsertJob>): Promise<Job | undefined> {
+    const [updated] = await db.update(jobs)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(jobs.id, id))
+      .returning();
+    return updated;
+  }
+
+  async lockJob(jobId: string, workerId: string): Promise<Job | undefined> {
+    const now = new Date();
+    const [locked] = await db.update(jobs)
+      .set({ lockedAt: now, lockedBy: workerId, status: "running", updatedAt: now })
+      .where(and(
+        eq(jobs.id, jobId),
+        eq(jobs.status, "pending"),
+        isNull(jobs.lockedAt),
+        lte(jobs.nextRunAt, now)
+      ))
+      .returning();
+    return locked;
+  }
+
+  async unlockStaleJob(jobId: string, expectedWorkerId: string): Promise<boolean> {
+    const now = new Date();
+    const result = await db.update(jobs)
+      .set({ lockedAt: null, lockedBy: null, status: "pending", updatedAt: now })
+      .where(and(
+        eq(jobs.id, jobId),
+        eq(jobs.lockedBy, expectedWorkerId)
+      ));
+    return true;
+  }
+
+  async unlockJob(jobId: string): Promise<void> {
+    await db.update(jobs)
+      .set({ lockedAt: null, lockedBy: null, updatedAt: new Date() })
+      .where(eq(jobs.id, jobId));
+  }
+
+  async getStaleRunningJobs(staleThreshold: Date): Promise<Job[]> {
+    return db.select().from(jobs)
+      .where(and(
+        eq(jobs.status, "running"),
+        lte(jobs.lockedAt, staleThreshold)
+      ));
+  }
+
+  // Job Runs
+  async getJobRuns(jobId: string): Promise<JobRun[]> {
+    return db.select().from(jobRuns)
+      .where(eq(jobRuns.jobId, jobId))
+      .orderBy(desc(jobRuns.createdAt));
+  }
+
+  async createJobRun(run: InsertJobRun): Promise<JobRun> {
+    const [created] = await db.insert(jobRuns).values(run).returning();
+    return created;
+  }
+
+  async updateJobRun(id: string, updates: Partial<InsertJobRun>): Promise<JobRun | undefined> {
+    const [updated] = await db.update(jobRuns)
+      .set(updates)
+      .where(eq(jobRuns.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Traces
+  async getTrace(id: string): Promise<Trace | undefined> {
+    const [trace] = await db.select().from(traces).where(eq(traces.id, id));
+    return trace;
+  }
+
+  async getTracesByUser(userId: string, limit = 50): Promise<Trace[]> {
+    return db.select().from(traces)
+      .where(eq(traces.userId, userId))
+      .orderBy(desc(traces.createdAt))
+      .limit(limit);
+  }
+
+  async getRecentTraces(limit = 100): Promise<Trace[]> {
+    return db.select().from(traces)
+      .orderBy(desc(traces.createdAt))
+      .limit(limit);
+  }
+
+  async createTrace(trace: InsertTrace): Promise<Trace> {
+    const [created] = await db.insert(traces).values(trace).returning();
+    return created;
+  }
+
+  async updateTrace(id: string, updates: Partial<InsertTrace>): Promise<Trace | undefined> {
+    const [updated] = await db.update(traces)
+      .set(updates)
+      .where(eq(traces.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Spans
+  async getSpansByTrace(traceId: string): Promise<Span[]> {
+    return db.select().from(spans)
+      .where(eq(spans.traceId, traceId))
+      .orderBy(spans.startedAt);
+  }
+
+  async createSpan(span: InsertSpan): Promise<Span> {
+    const [created] = await db.insert(spans).values(span).returning();
+    return created;
+  }
+
+  async updateSpan(id: string, updates: Partial<InsertSpan>): Promise<Span | undefined> {
+    const [updated] = await db.update(spans)
+      .set(updates)
+      .where(eq(spans.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Source Versions
+  async getSourceVersions(sourceId: string): Promise<SourceVersion[]> {
+    return db.select().from(sourceVersions)
+      .where(eq(sourceVersions.sourceId, sourceId))
+      .orderBy(desc(sourceVersions.version));
+  }
+
+  async getActiveSourceVersion(sourceId: string): Promise<SourceVersion | undefined> {
+    const [version] = await db.select().from(sourceVersions)
+      .where(and(
+        eq(sourceVersions.sourceId, sourceId),
+        eq(sourceVersions.isActive, true)
+      ));
+    return version;
+  }
+
+  async createSourceVersion(version: InsertSourceVersion): Promise<SourceVersion> {
+    const [created] = await db.insert(sourceVersions).values(version).returning();
+    return created;
+  }
+
+  async deactivateSourceVersions(sourceId: string): Promise<void> {
+    await db.update(sourceVersions)
+      .set({ isActive: false })
+      .where(eq(sourceVersions.sourceId, sourceId));
+  }
+
+  // Playbooks
+  async getPlaybook(id: string): Promise<Playbook | undefined> {
+    const [playbook] = await db.select().from(playbooks).where(eq(playbooks.id, id));
+    return playbook;
+  }
+
+  async getPlaybooksByUser(userId: string): Promise<Playbook[]> {
+    return db.select().from(playbooks)
+      .where(eq(playbooks.userId, userId))
+      .orderBy(desc(playbooks.createdAt));
+  }
+
+  async createPlaybook(playbook: InsertPlaybook): Promise<Playbook> {
+    const [created] = await db.insert(playbooks).values(playbook).returning();
+    return created;
+  }
+
+  async updatePlaybook(id: string, updates: Partial<InsertPlaybook>): Promise<Playbook | undefined> {
+    const [updated] = await db.update(playbooks)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(playbooks.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Playbook Items
+  async getPlaybookItems(playbookId: string): Promise<PlaybookItem[]> {
+    return db.select().from(playbookItems)
+      .where(eq(playbookItems.playbookId, playbookId))
+      .orderBy(playbookItems.orderIndex);
+  }
+
+  async createPlaybookItem(item: InsertPlaybookItem): Promise<PlaybookItem> {
+    const [created] = await db.insert(playbookItems).values(item).returning();
+    return created;
+  }
+
+  async updatePlaybookItem(id: string, updates: Partial<InsertPlaybookItem>): Promise<PlaybookItem | undefined> {
+    const [updated] = await db.update(playbookItems)
+      .set(updates)
+      .where(eq(playbookItems.id, id))
       .returning();
     return updated;
   }
