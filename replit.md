@@ -47,16 +47,35 @@ Preferred communication style: Simple, everyday language.
 - **sessions**: Token-based session management
 - **connectors**: External service configs (Jira, Slack, Confluence)
 - **sources**: Ingested documents with content hashing for deduplication
+- **sourceVersions**: Version tracking for document updates
 - **chunks**: Text segments with character offsets for citation linking
 - **policies**: YAML-defined role/tool constraints
 - **auditEvents**: Comprehensive operation logging
 - **approvals**: Pending action drafts requiring user confirmation
-- **evalSuites/evalRuns**: Test cases and execution results
+- **evalSuites/evalCases/evalRuns/evalResults**: Enhanced evaluation system
+- **jobs/jobRuns**: Background job queue with status tracking
+- **traces/spans**: Distributed tracing for observability
+- **playbooks/playbookItems**: Incident response playbooks
 
 ### LLM Integration
 - **Provider**: OpenAI (GPT-4o for chat, text-embedding-3-small for embeddings)
 - **RAG Pipeline**: Query → Vector search → Context injection → Structured response
 - **Response Format**: JSON schema enforcement for citations and actions
+
+### Job Runner System
+- **Queue**: Postgres-based job queue with pessimistic locking
+- **Polling**: 5-second interval with worker ID tracking
+- **Retry**: Exponential backoff (1s, 4s, 9s) with max 3 attempts
+- **DLQ**: Dead letter queue for failed jobs with admin retry capability
+- **Handlers**: Registered via `registerJobHandler(type, fn)` pattern
+- **Location**: `server/lib/jobs/runner.ts`, handlers in `server/lib/jobs/handlers/`
+
+### Observability System
+- **Traces**: Top-level request tracking with kind (chat/action/sync/eval/playbook)
+- **Spans**: Nested operations (embed/retrieve/llm/tool/chunk/validate)
+- **Metrics**: Duration, token usage, error rates, retrieval counts
+- **Tracer**: `server/lib/observability/tracer.ts` with `withTrace`/`withSpan` helpers
+- **APIs**: `/api/traces`, `/api/traces/:id`, `/api/admin/observability/metrics`
 
 ### Security Considerations
 - Secrets stored in environment variables only (never logged or exposed)
