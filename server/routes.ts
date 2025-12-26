@@ -9,6 +9,8 @@ import rateLimit from "express-rate-limit";
 import { chunkText, estimateTokens } from "./lib/chunker";
 import { indexChunks, searchSimilar, initializeVectorStore } from "./lib/vectorstore";
 import { chatCompletion, type ChatMessage } from "./lib/openai";
+import { checkPolicy, formatPolicyDenial } from "./lib/policy/checker";
+import { validateWithRepair } from "./lib/validation/jsonRepair";
 import {
   insertConnectorSchema, insertPolicySchema, insertEvalSuiteSchema,
   insertUserConnectorScopeSchema,
@@ -514,13 +516,28 @@ Respond in JSON format matching this schema:
         metadata: { messageCount: messages.length },
       });
       
-      // Parse and validate response
+      // Parse and validate response with repair pass
       let chatResponse: ChatResponse;
-      try {
-        const parsed = JSON.parse(responseText);
-        chatResponse = chatResponseSchema.parse(parsed);
-      } catch (e) {
-        // Fallback response if JSON parsing fails
+      
+      const validationResult = await validateWithRepair(responseText, chatResponseSchema, 2);
+      
+      if (validationResult.success && validationResult.data) {
+        chatResponse = validationResult.data;
+        
+        // Only log repair span if repair was actually needed and attempted
+        if (validationResult.repaired && validationResult.repairAttempts && validationResult.repairAttempts > 0) {
+          await tracer.recordSpan(traceCtx.traceId, {
+            name: "json_repair",
+            kind: "validate",
+            durationMs: 0,
+            metadata: { 
+              repairAttempts: validationResult.repairAttempts,
+              originalError: validationResult.originalError,
+            },
+          });
+        }
+      } else {
+        // Fallback response if JSON validation fails even after repair
         chatResponse = {
           answer: responseText,
           bullets: [],
@@ -528,6 +545,17 @@ Respond in JSON format matching this schema:
           needsClarification: false,
           clarifyingQuestions: [],
         };
+        
+        // Log validation failure if repair was attempted
+        if (validationResult.repairAttempts && validationResult.repairAttempts > 0) {
+          await tracer.recordSpan(traceCtx.traceId, {
+            name: "json_validation_failed",
+            kind: "validate",
+            durationMs: 0,
+            error: validationResult.originalError,
+            metadata: { repairAttempts: validationResult.repairAttempts },
+          });
+        }
       }
       
       // Log audit event
@@ -607,30 +635,51 @@ Respond in JSON format matching this schema:
         }
       }
       
-      // Get active policy
+      // Get active policy and check with explainable denies
       const activePolicy = await storage.getActivePolicy();
       let requiresApproval = false;
+      let parsedPolicy: PolicyYaml | null = null;
       
       if (activePolicy) {
         try {
-          const policy = parseYaml(activePolicy.yamlText) as PolicyYaml;
-          const userRole = req.user!.role;
-          const allowedTools = policy.roles[userRole]?.tools || [];
-          
-          // Check if tool is allowed
-          if (!allowedTools.includes(action.type)) {
-            return res.status(403).json({ error: `Tool ${action.type} not allowed for role ${userRole}` });
-          }
-          
-          // Check if approval is required
-          const toolConstraints = policy.toolConstraints?.[action.type];
-          if (toolConstraints?.requireApproval && userRole !== "admin") {
-            requiresApproval = true;
-          }
+          parsedPolicy = parseYaml(activePolicy.yamlText) as PolicyYaml;
         } catch (e) {
-          console.error("Policy check error:", e);
+          console.error("Policy parse error:", e);
         }
       }
+      
+      const policyResult = checkPolicy(parsedPolicy, {
+        userRole: req.user!.role,
+        toolName: action.type,
+        toolParams: action.draft,
+      });
+      
+      if (!policyResult.allowed) {
+        const denialMessage = formatPolicyDenial(policyResult);
+        
+        // Record policy denial span
+        await tracer.recordSpan(traceCtx.traceId, {
+          name: "policy_denial",
+          kind: "validate",
+          durationMs: Date.now() - startTime,
+          metadata: { 
+            toolName: action.type,
+            denied: true,
+            reason: policyResult.denialReason,
+            details: policyResult.denialDetails,
+          },
+        });
+        
+        await tracer.endTrace(traceCtx.traceId, "failed", "Policy denial");
+        
+        return res.status(403).json({ 
+          error: policyResult.denialReason,
+          details: policyResult.denialDetails,
+          explanation: denialMessage,
+        });
+      }
+      
+      requiresApproval = policyResult.requiresApproval;
       
       // Record policy validation span
       await tracer.recordSpan(traceCtx.traceId, {
