@@ -1,0 +1,169 @@
+You are the QA/Verification Agent for the FieldCopilot repo in this Replit workspace.
+
+Your job: VERIFY (not describe) whether the implementation fully matches the “10/10 FieldCopilot” spec below. Assume the developer may have partially implemented it or hand-waved parts. You must inspect the codebase and run the app/tests to confirm. If anything is missing, incomplete, mocked, or non-functional, call it out explicitly.
+
+Do NOT be polite. Do NOT say “should.” Say what is implemented and what is not. Provide evidence: file paths, function names, database tables, endpoints, UI routes, screenshots/console output summaries, and commands you ran. If you claim something works, show the proof (log output, DB rows created, UI behavior).
+
+-------------------------
+REQUIRED SPEC TO VERIFY
+-------------------------
+
+A) Reliability: Job runner (queue + retries)
+1) Postgres-backed job queue exists with these tables (or equivalent):
+- jobs(id, userId, kind, status, payloadJson, idempotencyKey, attempts, maxAttempts, nextRunAt, createdAt, updatedAt)
+- jobRuns(id, jobId, status, startedAt, endedAt, error, statsJson)
+- jobLocks(connectorAccountId, lockedUntil) (optional)
+
+2) Worker exists and actually runs jobs:
+- Polls runnable jobs using SKIP LOCKED (or equivalent safe locking)
+- Retries with exponential backoff
+- Concurrency limits per connector type AND per connector account
+- Rate limiting per connector (QPS caps)
+- Dead-letter behavior after max attempts
+- Progress + partial failure reporting in statsJson (docs discovered/processed/skipped/failed)
+
+3) Ingestion and connector sync run AS JOBS (not inline):
+- Manual upload ingestion creates a job
+- Each connector scope sync creates a job
+- Jobs write jobRuns and audit/trace events
+
+B) Source versioning (no chunk mixing)
+1) Schema exists:
+- sources = identity
+- sourceVersions = immutable snapshots (versionHash/contentHash)
+- chunks tied to sourceVersionId, not sourceId
+
+2) Ingestion behavior:
+- New contentHash/versionHash => new sourceVersion created and marked active
+- Old versions preserved but inactive
+- Retrieval searches ONLY active sourceVersions
+- Citations reference sourceVersionId + char ranges reliably
+
+C) Governance + structural safety
+1) JSON Schema validation exists for:
+- assistant response format
+- citations (sourceVersionId + charStart/charEnd)
+- suggestedAction (tool + params)
+2) Enforcement:
+- invalid outputs are rejected or repaired once; if still invalid, safe error returned
+- tool execution layer accepts ONLY validated tool calls
+3) Policy enforcement:
+- policy engine exists (YAML OK) but compiled/evaluated deterministically
+- explainable denies are returned
+- approvals are required when policy says so
+
+D) Observability (real telemetry, not only audit logs)
+1) Tables exist:
+- traces(id, userId, kind, startedAt, endedAt, status)
+- spans(id, traceId, name, start, end, attrsJson)
+2) Traces emitted for:
+- ingest → chunk → embed
+- retrieve → (rerank?) → generate
+- policy check → propose → approve → execute
+3) Spans include metrics:
+- connectorType, topK, similarity stats, token usage/cost, tool name, error codes, latency breakdown
+4) Dashboards exist and look polished:
+- Chat dashboard: request count, error rate, latency p50/p95, token usage + cost, latency split
+- Retrieval dashboard: similarity distribution, 0 useful chunk rate, diversity
+- Citations dashboard: citation rate, citation integrity, unsupported-claim heuristic
+- Actions dashboard: propose→approve→execute funnel, deny reasons, success per tool/connector
+- Sync dashboard: throughput, failures by connector/type, staleness per scope
+5) UI has filters: date range + connector + tool (at minimum)
+
+E) Evaluation suite (enterprise-grade)
+1) Tables exist:
+- evalSuites, evalCases, evalRuns, evalResults
+2) UI exists:
+- suites list/create/edit
+- cases list/create/edit with expectedJson
+- run suite + progress
+- results view + failure reasons
+- regression diff view vs baseline
+3) Metrics computed and stored:
+RAG:
+- Recall@k
+- Citation integrity
+- Unsupported-claim heuristic rate
+Actions:
+- Tool selection accuracy
+- Parameter correctness/completeness
+- Policy compliance rate
+- First-call success rate
+Agentic:
+- Task success rate
+- Steps-to-success
+- Loop rate
+- Cost-per-success
+4) Regression gate exists (script/CI):
+- compares against baseline run
+- fails if TSR drops >3%
+- fails if unsupported-claim rises >2%
+- fails if cost-per-success rises >10% without TSR improvement
+5) Seed data exists:
+- at least ~20 sample eval cases
+- instructions in README to run evals headlessly
+
+F) Differentiator: Incident → Work Order Playbooks
+1) UX flow exists:
+- User enters incident text (“Valve leak at Site 47”)
+- System creates a saved playbook
+2) Playbook includes:
+- SOP steps with citations (from ingested docs)
+- checklist including PPE + shutdown procedure items
+- draft Jira action + draft Slack action (as suggested actions)
+- all actions behind policy + approval
+3) Playbooks are stored and viewable:
+- list page
+- detail page
+- replay/regenerate option (optional but preferred)
+
+G) UI polish and admin console
+1) Admin Console exists with routes/tabs:
+- /admin/connectors
+- /admin/health
+- /admin/jobs
+- /admin/observability
+- /admin/evals
+- /admin/policies
+2) Connector Health page shows:
+- token status (valid/expiring/expired)
+- last successful sync time
+- last sync duration + docs processed
+- error rate 24h/7d
+- top error reasons
+- staleness per scope
+
+H) Developer ergonomics
+1) README includes:
+- how to run backend + frontend + worker
+- how to seed demo data
+- how to run evals and regression gate
+- how to demo playbooks
+2) npm scripts exist:
+- dev (web+api)
+- worker
+- eval
+- ci (regression gate)
+
+-------------------------
+WHAT YOU MUST DELIVER
+-------------------------
+
+1) A “Pass/Fail” checklist with each spec item as a row.
+For each failed item, include:
+- what’s missing
+- exact file(s) and locations that should contain it
+- the smallest concrete change needed to fix it
+
+2) Evidence section:
+- commands you ran
+- key logs
+- DB table presence and sample rows (redact secrets)
+- key endpoints tested with example payloads
+- key UI routes manually verified with what you observed
+
+3) Final verdict:
+- Give an honest score out of 10
+- Provide the top 5 blockers preventing 10/10
+
+Start now by inspecting the repository tree and Drizzle schema, then validate worker behavior and dashboards by running the app.
