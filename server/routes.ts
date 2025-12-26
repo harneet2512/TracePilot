@@ -108,8 +108,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Initialize vector store with existing chunks on startup
-  const existingChunks = await storage.getAllChunks();
+  // Initialize vector store with active chunks on startup (respects source versioning)
+  const existingChunks = await storage.getActiveChunks();
   if (existingChunks.length > 0) {
     initializeVectorStore(existingChunks).catch(console.error);
   }
@@ -257,7 +257,7 @@ export async function registerRoutes(
     }
   });
   
-  // Ingest route (admin only)
+  // Ingest route (admin only) - uses job queue for reliability
   app.post("/api/ingest", authMiddleware, adminMiddleware, upload.array("files"), async (req, res) => {
     try {
       const files = req.files as Express.Multer.File[];
@@ -265,58 +265,75 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No files uploaded" });
       }
       
-      const results = [];
+      const userId = req.user!.id;
       
-      for (const file of files) {
-        const content = file.buffer.toString("utf-8");
-        const contentHash = createHash("sha256").update(content).digest("hex");
-        
-        // Check for duplicate
-        const existing = await storage.getSourceByContentHash(contentHash);
-        if (existing) {
-          results.push({ file: file.originalname, status: "duplicate", sourceId: existing.id });
-          continue;
-        }
-        
-        // Create source
-        const source = await storage.createSource({
-          type: "upload",
-          title: file.originalname,
-          contentHash,
-          fullText: content,
-          metadataJson: { mimeType: file.mimetype, size: file.size },
-        });
-        
-        // Chunk the content
-        const textChunks = chunkText(content);
-        
-        // Create chunk records
-        const chunkRecords = await storage.createChunks(
-          textChunks.map(tc => ({
-            sourceId: source.id,
-            chunkIndex: tc.chunkIndex,
-            text: tc.text,
-            charStart: tc.charStart,
-            charEnd: tc.charEnd,
-            tokenEstimate: estimateTokens(tc.text),
-          }))
-        );
-        
-        // Index chunks for vector search
-        await indexChunks(chunkRecords);
-        
-        results.push({
-          file: file.originalname,
-          status: "success",
-          sourceId: source.id,
-          chunks: chunkRecords.length,
-        });
-      }
+      const filePayloads = files.map(file => ({
+        filename: file.originalname,
+        content: file.buffer.toString("utf-8"),
+        mimeType: file.mimetype,
+        size: file.size,
+      }));
+
+      const job = await enqueueJob({
+        type: "ingest",
+        userId,
+        payload: { files: filePayloads, userId },
+        connectorType: "upload",
+        idempotencyKey: `ingest-${userId}-${Date.now()}`,
+        priority: 1,
+      });
       
-      res.json({ results });
+      res.json({ 
+        jobId: job.id, 
+        status: job.status,
+        fileCount: files.length,
+        message: "Files queued for processing"
+      });
     } catch (error) {
       console.error("Ingest error:", error);
-      res.status(500).json({ error: "Failed to ingest files" });
+      res.status(500).json({ error: "Failed to queue files for ingestion" });
+    }
+  });
+  
+  // Job status endpoint
+  app.get("/api/jobs/:id", authMiddleware, async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      
+      if (job.userId !== req.user!.id && req.user!.role !== "admin") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const runs = await storage.getJobRuns(job.id);
+      const latestRun = runs[0];
+      
+      res.json({
+        id: job.id,
+        type: job.type,
+        status: job.status,
+        createdAt: job.createdAt,
+        completedAt: job.completedAt,
+        attempts: job.attempts,
+        stats: latestRun?.statsJson,
+        error: latestRun?.error,
+      });
+    } catch (error) {
+      console.error("Get job error:", error);
+      res.status(500).json({ error: "Failed to get job status" });
+    }
+  });
+  
+  // List user's jobs
+  app.get("/api/jobs", authMiddleware, async (req, res) => {
+    try {
+      const jobs = await storage.getJobsByUser(req.user!.id);
+      res.json(jobs);
+    } catch (error) {
+      console.error("Get jobs error:", error);
+      res.status(500).json({ error: "Failed to get jobs" });
     }
   });
   
@@ -399,9 +416,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Message is required" });
       }
       
-      // Get all chunks for retrieval
+      // Get active chunks for retrieval (respects source versioning)
       const embedStart = Date.now();
-      const allChunks = await storage.getAllChunks();
+      const allChunks = await storage.getActiveChunks();
       
       // Search for relevant chunks
       const retrievalStart = Date.now();
@@ -655,8 +672,8 @@ Respond in JSON format matching this schema:
         return res.status(400).json({ error: "Only chat events can be replayed" });
       }
       
-      // Re-run the chat with the same prompt
-      const allChunks = await storage.getAllChunks();
+      // Re-run the chat with the same prompt (using active chunks)
+      const allChunks = await storage.getActiveChunks();
       const relevantChunks = await searchSimilar(originalEvent.prompt, allChunks, 5);
       
       const contextParts = relevantChunks.map((r, i) => {
@@ -1659,8 +1676,8 @@ async function runEvalCases(
   
   for (const evalCase of cases) {
     try {
-      // Get chunks for retrieval
-      const allChunks = await storage.getAllChunks();
+      // Get active chunks for retrieval (respects source versioning)
+      const allChunks = await storage.getActiveChunks();
       const relevantChunks = await searchSimilar(evalCase.prompt, allChunks, 5);
       
       const contextParts = relevantChunks.map((r, i) => {
