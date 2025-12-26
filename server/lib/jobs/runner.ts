@@ -7,7 +7,21 @@ const MAX_ATTEMPTS = 3;
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
 type JobType = "sync" | "ingest" | "eval" | "playbook";
-type JobHandler = (job: Job) => Promise<{ success: boolean; output?: unknown; error?: string }>;
+type JobHandler = (job: Job) => Promise<{ 
+  success: boolean; 
+  output?: unknown; 
+  error?: string;
+  errorCode?: string;
+  stats?: JobStats;
+}>;
+
+export interface JobStats {
+  discovered?: number;
+  processed?: number;
+  skipped?: number;
+  failed?: number;
+  durationMs?: number;
+}
 
 const handlers: Map<string, JobHandler> = new Map();
 
@@ -19,10 +33,30 @@ function calculateBackoff(attempt: number): number {
   return Math.min(1000 * Math.pow(2, attempt), 30 * 60 * 1000);
 }
 
+function shouldRetry(errorCode?: string, errorMessage?: string): boolean {
+  if (!errorCode && !errorMessage) return true;
+  
+  if (errorCode === "429" || errorMessage?.includes("rate limit") || errorMessage?.includes("429")) {
+    return true;
+  }
+  if (errorCode?.startsWith("5") || errorMessage?.includes("500") || errorMessage?.includes("503")) {
+    return true;
+  }
+  if (errorMessage?.includes("timeout") || errorMessage?.includes("ETIMEDOUT")) {
+    return true;
+  }
+  if (errorCode?.startsWith("4") && errorCode !== "401" && errorCode !== "403") {
+    return false;
+  }
+  
+  return true;
+}
+
 export class JobRunner {
   private workerId: string;
   private isRunning = false;
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
+  private activeLocks: Map<string, string> = new Map();
 
   constructor() {
     this.workerId = `worker-${randomUUID().slice(0, 8)}`;
@@ -41,6 +75,18 @@ export class JobRunner {
       clearTimeout(this.pollTimer);
       this.pollTimer = null;
     }
+    
+    const entries = Array.from(this.activeLocks.entries());
+    for (let i = 0; i < entries.length; i++) {
+      const [jobId, lockId] = entries[i];
+      try {
+        await storage.decrementJobLockCount(lockId);
+      } catch (e) {
+        console.error(`[JobRunner] Failed to release lock for job ${jobId}:`, e);
+      }
+    }
+    this.activeLocks.clear();
+    
     console.log(`[JobRunner] Stopped worker ${this.workerId}`);
   }
 
@@ -49,10 +95,10 @@ export class JobRunner {
 
     try {
       await this.cleanupStaleJobs();
-      const jobs = await storage.getPendingJobs(5);
       
-      for (const job of jobs) {
-        if (!this.isRunning) break;
+      const job = await storage.claimJobWithLock(this.workerId, 1);
+      
+      if (job) {
         await this.processJob(job);
       }
     } catch (error) {
@@ -78,11 +124,53 @@ export class JobRunner {
   }
 
   private async processJob(job: Job) {
-    const locked = await storage.lockJob(job.id, this.workerId);
-    if (!locked) return;
-
     const startTime = Date.now();
     const attemptNumber = (job.attempts || 0) + 1;
+
+    const connectorType = job.connectorType || "upload";
+    const accountId = (job.inputJson as { accountId?: string })?.accountId;
+    
+    const canAcquire = await storage.canAcquireConcurrencySlot(connectorType, accountId);
+    if (!canAcquire) {
+      console.log(`[JobRunner] Concurrency limit reached for ${connectorType}/${accountId}, requeueing job ${job.id}`);
+      await storage.updateJob(job.id, {
+        status: "pending",
+        lockedAt: null,
+        lockedBy: null,
+        nextRunAt: new Date(Date.now() + 5000),
+      });
+      return;
+    }
+
+    if (accountId) {
+      const hasToken = await storage.consumeRateLimitToken(accountId, connectorType);
+      if (!hasToken) {
+        console.log(`[JobRunner] Rate limit exceeded for ${connectorType}/${accountId}, requeueing job ${job.id}`);
+        await storage.updateJob(job.id, {
+          status: "pending",
+          lockedAt: null,
+          lockedBy: null,
+          nextRunAt: new Date(Date.now() + 10000),
+        });
+        return;
+      }
+    }
+
+    const lock = await storage.getOrCreateJobLock(connectorType, accountId);
+    const acquired = await storage.incrementJobLockCount(lock.id);
+    
+    if (!acquired) {
+      console.log(`[JobRunner] Failed to acquire concurrency slot for job ${job.id}`);
+      await storage.updateJob(job.id, {
+        status: "pending",
+        lockedAt: null,
+        lockedBy: null,
+        nextRunAt: new Date(Date.now() + 5000),
+      });
+      return;
+    }
+    
+    this.activeLocks.set(job.id, lock.id);
 
     const run: InsertJobRun = {
       jobId: job.id,
@@ -104,23 +192,39 @@ export class JobRunner {
       const result = await handler(job);
       
       if (result.success) {
-        await this.handleSuccess(job, createdRun.id, startTime, result.output);
+        await this.handleSuccess(job, createdRun.id, startTime, result.output, result.stats);
       } else {
-        await this.handleFailure(job, createdRun.id, startTime, result.error || "Job failed without error message");
+        const canRetry = shouldRetry(result.errorCode, result.error);
+        await this.handleFailure(
+          job, 
+          createdRun.id, 
+          startTime, 
+          result.error || "Job failed without error message",
+          result.errorCode,
+          result.stats,
+          canRetry
+        );
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       await this.handleFailure(job, createdRun.id, startTime, errorMessage);
+    } finally {
+      await storage.decrementJobLockCount(lock.id);
+      this.activeLocks.delete(job.id);
     }
   }
 
-  private async handleSuccess(job: Job, runId: string, startTime: number, output?: unknown) {
+  private async handleSuccess(job: Job, runId: string, startTime: number, output?: unknown, stats?: JobStats) {
     const duration = Date.now() - startTime;
     
     await storage.updateJobRun(runId, {
       status: "completed",
       finishedAt: new Date(),
-      statsJson: { durationMs: duration, output },
+      statsJson: { 
+        durationMs: duration, 
+        output,
+        ...stats
+      },
     });
 
     await storage.updateJob(job.id, {
@@ -133,7 +237,15 @@ export class JobRunner {
     console.log(`[JobRunner] Job ${job.id} completed successfully in ${duration}ms`);
   }
 
-  private async handleFailure(job: Job, runId: string, startTime: number, error: string) {
+  private async handleFailure(
+    job: Job, 
+    runId: string, 
+    startTime: number, 
+    error: string,
+    errorCode?: string,
+    stats?: JobStats,
+    canRetry = true
+  ) {
     const duration = Date.now() - startTime;
     const attempts = (job.attempts || 0) + 1;
     const maxAttempts = job.maxAttempts ?? MAX_ATTEMPTS;
@@ -142,10 +254,11 @@ export class JobRunner {
       status: "failed",
       finishedAt: new Date(),
       error,
-      statsJson: { durationMs: duration },
+      errorCode: errorCode || null,
+      statsJson: { durationMs: duration, ...stats },
     });
 
-    if (attempts >= maxAttempts) {
+    if (!canRetry || attempts >= maxAttempts) {
       await storage.updateJob(job.id, {
         status: "dead_letter",
         attempts,
@@ -153,7 +266,7 @@ export class JobRunner {
         lockedAt: null,
         lockedBy: null,
       });
-      console.log(`[JobRunner] Job ${job.id} moved to dead letter queue after ${attempts} attempts`);
+      console.log(`[JobRunner] Job ${job.id} moved to dead letter queue after ${attempts} attempts (canRetry: ${canRetry})`);
     } else {
       const backoff = calculateBackoff(attempts);
       const nextRunAt = new Date(Date.now() + backoff);

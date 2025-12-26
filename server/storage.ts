@@ -1,9 +1,10 @@
-import { db } from "./db";
-import { eq, desc, and, inArray, lte, isNull, sql } from "drizzle-orm";
+import { db, pool } from "./db";
+import { eq, desc, and, inArray, lte, isNull, sql, gt } from "drizzle-orm";
 import {
   users, sessions, connectors, userConnectorAccounts, userConnectorScopes,
   sources, chunks, policies, auditEvents, approvals, evalSuites, evalRuns,
   jobs, jobRuns, traces, spans, sourceVersions, evalCases, evalResults, playbooks, playbookItems,
+  jobLocks, rateLimitBuckets,
   type User, type InsertUser, type Session, type InsertSession,
   type Connector, type InsertConnector,
   type UserConnectorAccount, type InsertUserConnectorAccount,
@@ -13,6 +14,7 @@ import {
   type AuditEvent, type InsertAuditEvent, type Approval, type InsertApproval,
   type EvalSuite, type InsertEvalSuite, type EvalRun, type InsertEvalRun,
   type Job, type InsertJob, type JobRun, type InsertJobRun,
+  type JobLock, type InsertJobLock, type RateLimitBucket, type InsertRateLimitBucket,
   type Trace, type InsertTrace, type Span, type InsertSpan,
   type SourceVersion, type InsertSourceVersion,
   type EvalCase, type InsertEvalCase, type EvalResult, type InsertEvalResult,
@@ -121,6 +123,23 @@ export interface IStorage {
   getJobRuns(jobId: string): Promise<JobRun[]>;
   createJobRun(run: InsertJobRun): Promise<JobRun>;
   updateJobRun(id: string, updates: Partial<InsertJobRun>): Promise<JobRun | undefined>;
+  
+  // Job locking with SKIP LOCKED
+  claimJobWithLock(workerId: string, limit?: number): Promise<Job | undefined>;
+  
+  // Concurrency control
+  getOrCreateJobLock(connectorType: string, accountId?: string): Promise<JobLock>;
+  incrementJobLockCount(lockId: string): Promise<boolean>;
+  decrementJobLockCount(lockId: string): Promise<void>;
+  canAcquireConcurrencySlot(connectorType: string, accountId?: string): Promise<boolean>;
+  
+  // Rate limiting
+  getOrCreateRateLimitBucket(accountId: string, connectorType: string): Promise<RateLimitBucket>;
+  consumeRateLimitToken(accountId: string, connectorType: string): Promise<boolean>;
+  
+  // Active chunks retrieval (respecting source versioning)
+  getActiveChunks(): Promise<Chunk[]>;
+  getActiveChunksByUser(userId: string): Promise<Chunk[]>;
   
   // Traces
   getTrace(id: string): Promise<Trace | undefined>;
@@ -745,6 +764,195 @@ export class DatabaseStorage implements IStorage {
       .where(eq(playbookItems.id, id))
       .returning();
     return updated;
+  }
+
+  // Job locking with SKIP LOCKED - atomic job claiming
+  async claimJobWithLock(workerId: string, limit = 1): Promise<Job | undefined> {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      const now = new Date();
+      const result = await client.query<Job>(
+        `SELECT * FROM jobs 
+         WHERE status = 'pending' 
+         AND next_run_at <= $1 
+         AND locked_at IS NULL
+         ORDER BY priority DESC, next_run_at ASC
+         LIMIT $2
+         FOR UPDATE SKIP LOCKED`,
+        [now, limit]
+      );
+      
+      if (result.rows.length === 0) {
+        await client.query('COMMIT');
+        return undefined;
+      }
+      
+      const job = result.rows[0];
+      
+      await client.query(
+        `UPDATE jobs SET locked_at = $1, locked_by = $2, status = 'running', updated_at = $1 WHERE id = $3`,
+        [now, workerId, job.id]
+      );
+      
+      await client.query('COMMIT');
+      
+      const [updatedJob] = await db.select().from(jobs).where(eq(jobs.id, job.id));
+      return updatedJob;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  // Concurrency control
+  async getOrCreateJobLock(connectorType: string, accountId?: string): Promise<JobLock> {
+    const existing = await db.select().from(jobLocks)
+      .where(and(
+        eq(jobLocks.connectorType, connectorType as "google" | "atlassian" | "slack" | "upload"),
+        accountId ? eq(jobLocks.accountId, accountId) : isNull(jobLocks.accountId)
+      ));
+    
+    if (existing.length > 0) return existing[0];
+    
+    const [created] = await db.insert(jobLocks).values({
+      connectorType: connectorType as "google" | "atlassian" | "slack" | "upload",
+      accountId: accountId || null,
+      activeCount: 0,
+      maxConcurrency: connectorType === "upload" ? 5 : 2,
+      updatedAt: new Date(),
+    }).returning();
+    
+    return created;
+  }
+
+  async incrementJobLockCount(lockId: string): Promise<boolean> {
+    const lock = await db.select().from(jobLocks).where(eq(jobLocks.id, lockId));
+    if (lock.length === 0) return false;
+    
+    if (lock[0].activeCount >= lock[0].maxConcurrency) return false;
+    
+    await db.update(jobLocks)
+      .set({ activeCount: lock[0].activeCount + 1, updatedAt: new Date() })
+      .where(eq(jobLocks.id, lockId));
+    
+    return true;
+  }
+
+  async decrementJobLockCount(lockId: string): Promise<void> {
+    const lock = await db.select().from(jobLocks).where(eq(jobLocks.id, lockId));
+    if (lock.length === 0) return;
+    
+    await db.update(jobLocks)
+      .set({ activeCount: Math.max(0, lock[0].activeCount - 1), updatedAt: new Date() })
+      .where(eq(jobLocks.id, lockId));
+  }
+
+  async canAcquireConcurrencySlot(connectorType: string, accountId?: string): Promise<boolean> {
+    const lock = await this.getOrCreateJobLock(connectorType, accountId);
+    return lock.activeCount < lock.maxConcurrency;
+  }
+
+  // Rate limiting - token bucket
+  async getOrCreateRateLimitBucket(accountId: string, connectorType: string): Promise<RateLimitBucket> {
+    const existing = await db.select().from(rateLimitBuckets)
+      .where(and(
+        eq(rateLimitBuckets.accountId, accountId),
+        eq(rateLimitBuckets.connectorType, connectorType as "google" | "atlassian" | "slack" | "upload")
+      ));
+    
+    if (existing.length > 0) {
+      const bucket = existing[0];
+      const now = Date.now();
+      const lastRefillTime = new Date(bucket.lastRefill).getTime();
+      const secondsElapsed = Math.floor((now - lastRefillTime) / 1000);
+      
+      if (secondsElapsed > 0) {
+        const tokensToAdd = Math.min(secondsElapsed * bucket.refillRate, bucket.maxTokens - bucket.tokens);
+        if (tokensToAdd > 0) {
+          const [updated] = await db.update(rateLimitBuckets)
+            .set({ 
+              tokens: bucket.tokens + tokensToAdd, 
+              lastRefill: new Date(),
+              updatedAt: new Date() 
+            })
+            .where(eq(rateLimitBuckets.id, bucket.id))
+            .returning();
+          return updated;
+        }
+      }
+      return bucket;
+    }
+    
+    const maxTokens = connectorType === "upload" ? 20 : 10;
+    const [created] = await db.insert(rateLimitBuckets).values({
+      accountId,
+      connectorType: connectorType as "google" | "atlassian" | "slack" | "upload",
+      tokens: maxTokens,
+      maxTokens,
+      refillRate: connectorType === "upload" ? 2 : 1,
+      lastRefill: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+    
+    return created;
+  }
+
+  async consumeRateLimitToken(accountId: string, connectorType: string): Promise<boolean> {
+    const bucket = await this.getOrCreateRateLimitBucket(accountId, connectorType);
+    
+    if (bucket.tokens <= 0) return false;
+    
+    await db.update(rateLimitBuckets)
+      .set({ tokens: bucket.tokens - 1, updatedAt: new Date() })
+      .where(eq(rateLimitBuckets.id, bucket.id));
+    
+    return true;
+  }
+
+  // Active chunks retrieval (respecting source versioning)
+  async getActiveChunks(): Promise<Chunk[]> {
+    const activeVersionIds = await db.select({ id: sourceVersions.id })
+      .from(sourceVersions)
+      .where(eq(sourceVersions.isActive, true));
+    
+    if (activeVersionIds.length === 0) {
+      return db.select().from(chunks).where(isNull(chunks.sourceVersionId));
+    }
+    
+    const versionIds = activeVersionIds.map(v => v.id);
+    
+    const activeChunks = await db.select().from(chunks)
+      .where(inArray(chunks.sourceVersionId, versionIds));
+    
+    const legacyChunks = await db.select().from(chunks)
+      .where(isNull(chunks.sourceVersionId));
+    
+    return [...activeChunks, ...legacyChunks];
+  }
+
+  async getActiveChunksByUser(userId: string): Promise<Chunk[]> {
+    const activeVersionIds = await db.select({ id: sourceVersions.id })
+      .from(sourceVersions)
+      .where(eq(sourceVersions.isActive, true));
+    
+    if (activeVersionIds.length === 0) {
+      return db.select().from(chunks)
+        .where(and(eq(chunks.userId, userId), isNull(chunks.sourceVersionId)));
+    }
+    
+    const versionIds = activeVersionIds.map(v => v.id);
+    
+    const activeChunks = await db.select().from(chunks)
+      .where(and(eq(chunks.userId, userId), inArray(chunks.sourceVersionId, versionIds)));
+    
+    const legacyChunks = await db.select().from(chunks)
+      .where(and(eq(chunks.userId, userId), isNull(chunks.sourceVersionId)));
+    
+    return [...activeChunks, ...legacyChunks];
   }
 }
 

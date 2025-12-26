@@ -97,6 +97,32 @@ export const userConnectorAccountsRelations = relations(userConnectorAccounts, (
 // JOB RUNNER SYSTEM
 // ============================================================================
 
+// Job locks - for concurrency control per connector/account
+export const jobLocks = pgTable("job_locks", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  connectorType: text("connector_type", { enum: ["google", "atlassian", "slack", "upload"] }).notNull(),
+  accountId: varchar("account_id", { length: 36 }),
+  activeCount: integer("active_count").notNull().default(0),
+  maxConcurrency: integer("max_concurrency").notNull().default(2),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("job_locks_connector_type_account_idx").on(table.connectorType, table.accountId),
+]);
+
+// Rate limit buckets - token bucket for rate limiting
+export const rateLimitBuckets = pgTable("rate_limit_buckets", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  accountId: varchar("account_id", { length: 36 }).notNull(),
+  connectorType: text("connector_type", { enum: ["google", "atlassian", "slack", "upload"] }).notNull(),
+  tokens: integer("tokens").notNull().default(10),
+  maxTokens: integer("max_tokens").notNull().default(10),
+  refillRate: integer("refill_rate").notNull().default(1),
+  lastRefill: timestamp("last_refill").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("rate_limit_buckets_account_connector_idx").on(table.accountId, table.connectorType),
+]);
+
 // Jobs table - represents a schedulable/runnable task
 export const jobs = pgTable("jobs", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
@@ -516,6 +542,8 @@ export const insertAuditEventSchema = createInsertSchema(auditEvents).omit({ id:
 export const insertApprovalSchema = createInsertSchema(approvals).omit({ id: true, createdAt: true });
 export const insertJobSchema = createInsertSchema(jobs).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertJobRunSchema = createInsertSchema(jobRuns).omit({ id: true, createdAt: true });
+export const insertJobLockSchema = createInsertSchema(jobLocks).omit({ id: true });
+export const insertRateLimitBucketSchema = createInsertSchema(rateLimitBuckets).omit({ id: true });
 export const insertTraceSchema = createInsertSchema(traces).omit({ id: true, createdAt: true });
 export const insertSpanSchema = createInsertSchema(spans).omit({ id: true, createdAt: true });
 export const insertEvalSuiteSchema = createInsertSchema(evalSuites).omit({ id: true, createdAt: true, updatedAt: true });
@@ -555,6 +583,10 @@ export type Job = typeof jobs.$inferSelect;
 export type InsertJob = z.infer<typeof insertJobSchema>;
 export type JobRun = typeof jobRuns.$inferSelect;
 export type InsertJobRun = z.infer<typeof insertJobRunSchema>;
+export type JobLock = typeof jobLocks.$inferSelect;
+export type InsertJobLock = z.infer<typeof insertJobLockSchema>;
+export type RateLimitBucket = typeof rateLimitBuckets.$inferSelect;
+export type InsertRateLimitBucket = z.infer<typeof insertRateLimitBucketSchema>;
 export type Trace = typeof traces.$inferSelect;
 export type InsertTrace = z.infer<typeof insertTraceSchema>;
 export type Span = typeof spans.$inferSelect;

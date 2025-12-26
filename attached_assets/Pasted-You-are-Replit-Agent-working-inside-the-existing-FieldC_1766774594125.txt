@@ -1,0 +1,224 @@
+You are Replit Agent working inside the existing FieldCopilot repository. The repo currently scores ~4/10 because key “enterprise-grade” capabilities exist only as schema scaffolding and are NOT wired into the runtime paths.
+
+Your task: IMPLEMENT the missing functionality end-to-end and prove it works. Do not hand-wave. After coding, RUN the app, seed data, run jobs, run evals, and show evidence in your final response (commands, logs, DB rows created, and routes/pages verified).
+
+Use the existing stack ONLY:
+- Frontend: React + TypeScript + Tailwind + shadcn/ui
+- Backend: Express.js + TypeScript
+- DB: PostgreSQL + Drizzle ORM
+- AI: OpenAI GPT-4o + text-embedding-3-small
+
+Do not remove existing features. Extend and wire them correctly.
+
+========================
+P0 (MUST FIX FIRST)
+========================
+
+1) Manual upload ingestion must be a JOB (not inline)
+Current issue: /api/ingest processes inline (routes.ts around the ingest handler). This defeats reliability.
+
+Implement:
+- Change /api/ingest to:
+  - create or update the “sources” identity row (or create a pending source record)
+  - enqueue a job: kind="ingest_manual_upload" with payload including sourceId + file reference
+  - return immediately with jobId
+- In the worker job handler:
+  - download/read the uploaded file
+  - extract text
+  - compute contentHash/versionHash
+  - create a sourceVersion (see section 2)
+  - chunk + embed + upsert chunks for that active version
+  - store progress counts in jobRuns.statsJson:
+    { discovered: number, processed: number, skipped: number, failed: number, durationMs: number }
+- Ensure ingestion is idempotent:
+  - Same user uploads identical content => do NOT create duplicate chunks, do NOT create a new active sourceVersion
+  - Uploading changed content => create a new sourceVersion and mark it active
+
+2) Source versioning must be real (no chunk mixing)
+Current issue: schema exists but not used; retrieval ignores isActive; citations use sourceId/chunkId.
+
+Implement the correct model:
+- sources = identity
+- sourceVersions = immutable snapshots
+- chunks belong to sourceVersions
+
+Requirements:
+- On ingestion (manual or connector):
+  - compute versionHash/contentHash
+  - if the newest active version already has the same hash, SKIP processing
+  - else create new sourceVersion with isActive=true and set all previous versions inactive
+- Update storage/query layer:
+  - retrieval MUST ONLY search chunks whose sourceVersion isActive=true for that user
+- Update citations everywhere:
+  - citations must reference sourceVersionId + charStart/charEnd
+  - update assistant response schema and frontend citation rendering so clicking a citation opens the correct source version and highlights the exact span
+
+3) Job runner locking, concurrency, and connector rate limiting must be real
+Current issue: worker exists but not SKIP LOCKED; no concurrency or QPS.
+
+Implement:
+- Claiming jobs must use safe locking:
+  - SELECT ... FOR UPDATE SKIP LOCKED in a transaction
+- Concurrency limits:
+  - per connectorType AND per connectorAccountId
+  - enforce via jobLocks table (with TTL) OR via DB-based counters; must work even with multiple worker processes
+- Rate limiting:
+  - per connectorAccountId QPS caps (token bucket or leaky bucket; DB-backed preferred)
+- Retries:
+  - exponential backoff already exists; keep it
+  - retry only 429/5xx; fail-fast on most 4xx except auth refresh cases
+- Dead letter queue:
+  - after maxAttempts mark job dead_letter and keep jobRuns trail
+
+========================
+P1 (ENTERPRISE MEASUREMENT)
+========================
+
+4) Observability: traces/spans must be emitted in real paths + dashboards must exist
+Current issue: traces/spans tables and tracer helper exist but are not used; no observability UI.
+
+Backend instrumentation MUST be added to:
+- ingest job handler: extract → chunk → embed → upsert
+- sync job handler: list → fetch → process → upsert
+- chat endpoint: embed query → vector search → prompt build → LLM call → validate/repair
+- policy check span
+- approvals create/decision span
+- tool execution span (Jira/Slack/Confluence handlers)
+
+Span attrs MUST include (where relevant):
+- connectorType, connectorAccountId
+- topK, similarityMin/Max/Avg (retrieval)
+- token usage + estimated cost
+- tool name + result status + error code
+- latency breakdown
+
+Frontend: build /admin/observability
+- Must look polished (shadcn/ui, clean layout, nice empty states, skeleton loading)
+- Must have tabs: Chat, Retrieval, Citations, Actions, Sync
+- Must have filters: date range + connector + tool (minimum)
+- Must have KPI cards and charts (choose a lightweight chart lib OR implement simple charts; keep it clean)
+
+Dashboards required:
+- Chat: request count, error rate, latency p50/p95, token usage + cost, latency split
+- Retrieval: similarity distribution, chunk/source diversity, “0 useful chunk” rate
+- Citations: citation rate, citation integrity rate, unsupported-claim heuristic rate
+- Actions: propose→approve→execute funnel, deny reasons, success per tool/connector
+- Sync: throughput, failures by connector/type, staleness per scope
+
+5) Evaluation suite must compute real metrics + regression diffs + CI gate + seed data
+Current issue: tables exist but metrics not implemented, no baseline, no seed, no CI scripts.
+
+Implement:
+- Seed at least ~20 evaluation cases automatically (script or seed route)
+- Add UI to:
+  - view suites
+  - create/edit cases (expectedJson editor)
+  - run suite with progress
+  - view results with failure reasons
+  - regression diff view vs baseline run
+- Implement metrics and store in evalResults.metricsJson and aggregated on evalRuns:
+RAG metrics:
+- Recall@k (expected sourceVersionId retrieved)
+- Citation integrity (citations valid offsets + from retrieved set)
+- Unsupported-claim heuristic rate (simple heuristic acceptable; must exist and be measurable)
+Actions metrics:
+- Tool selection accuracy
+- Parameter correctness/completeness
+- Policy compliance rate
+- First-call success rate
+Agentic metrics:
+- Task success rate
+- Steps-to-success
+- Loop rate
+- Cost-per-success
+
+Regression tracking:
+- allow marking one evalRun as “baseline”
+- implement diff endpoint and UI
+- implement CI gate script (npm run ci) that fails if:
+  - TSR drops >3%
+  - unsupported-claim rises >2%
+  - cost-per-success rises >10% without TSR improvement
+
+Add npm scripts:
+- worker
+- eval (headless suite run)
+- ci (regression gate)
+Update README with exact commands.
+
+6) Governance: hard JSON schema validation + repair pass + explainable denies
+Current issue: “json_schema param” exists but no actual validation/repair; denies not explainable.
+
+Implement:
+- Strict JSON schema validation for:
+  - assistant chat response
+  - citations (sourceVersionId + charStart/charEnd)
+  - suggestedAction (tool + params)
+- If invalid:
+  - attempt ONE auto-repair (re-prompt model with validation errors)
+  - if still invalid: return safe error response; do not execute anything
+- Tool execution must accept only validated tool calls (no raw model output)
+- Policy denies must return explainable reason to UI (rule name / constraint violated)
+
+========================
+P2 (DIFFERENTIATOR)
+========================
+
+7) Implement “Incident → Work Order Playbooks” end-to-end
+Current issue: playbooks schema exists only; no API or UI.
+
+Implement:
+Backend:
+- POST /api/playbooks: create playbook from incident text
+  - retrieve SOP chunks with RAG (active sourceVersions only)
+  - generate playbook output with structured schema:
+    - SOP steps with citations
+    - checklist (must include PPE + shutdown procedure sections)
+    - draft Jira create issue action
+    - draft Slack post message action
+  - store playbooks + playbook_items rows
+  - all action drafts must go through policy + approval workflow
+- GET /api/playbooks: list
+- GET /api/playbooks/:id: detail
+- (optional) POST /api/playbooks/:id/replay to regenerate
+
+Frontend:
+- /playbooks: list page
+- /playbooks/new: create page
+- /playbooks/:id: detail page that renders:
+  - SOP steps with clickable citations (open source version + highlight span)
+  - checklist UI
+  - action draft cards with Approve/Reject
+
+========================
+DELIVERABLES
+========================
+
+1) Code changes implementing everything above.
+2) README.md that includes:
+- how to run web/api
+- how to run worker
+- how to seed demo data and eval cases
+- how to run evals headlessly
+- how to run CI regression gate
+- how to demo playbooks end-to-end
+3) Proof it works:
+In your final response, include:
+- commands you ran
+- key logs showing jobs executed
+- SQL queries showing rows in jobs/job_runs, source_versions, traces/spans, eval_runs/results, playbooks
+- list of verified UI routes you opened and what you saw
+
+========================
+IMPLEMENTATION ORDER (FOLLOW THIS)
+========================
+Step 1: Inspect repo routes and Drizzle schema; identify exact current handlers for ingest, sync, chat, eval, playbooks.
+Step 2: Fix job runner locking (FOR UPDATE SKIP LOCKED) + concurrency + QPS.
+Step 3: Convert manual upload ingestion to queued job + progress stats.
+Step 4: Wire source versioning into all ingestions and retrieval (active versions only) and update citation schema/UI.
+Step 5: Add tracing spans to chat, jobs, policy, approvals, tool execution; confirm spans are written.
+Step 6: Build /admin/observability dashboards with filters and charts; confirm metrics populate from spans.
+Step 7: Implement eval metrics + baseline + regression diffs + seed + scripts (worker/eval/ci).
+Step 8: Implement playbooks API + UI and ensure it uses RAG + citations + action drafts behind policy.
+
+Proceed now. Do not stop at schema scaffolding—wire and validate runtime behavior.
