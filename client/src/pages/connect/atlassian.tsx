@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import {
   ArrowLeft,
   Loader2,
   Save,
@@ -25,8 +25,10 @@ import {
 } from "lucide-react";
 import { SiJira, SiConfluence, SiAtlassian } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { normalizeScopes, saveScope } from "@/lib/scopes";
 import type { UserConnectorAccount, UserConnectorScope } from "@shared/schema";
 import { Link } from "wouter";
+import { SyncProgress } from "@/components/SyncProgress";
 
 interface JiraProject {
   id: string;
@@ -54,10 +56,12 @@ export default function AtlassianScopesPage() {
 
   const atlassianAccount = accounts?.find((a) => a.type === "atlassian");
 
-  const { data: existingScope } = useQuery<UserConnectorScope>({
+  const { data: scopes } = useQuery<UserConnectorScope[]>({
     queryKey: ["/api/user-connector-scopes", atlassianAccount?.id],
     enabled: !!atlassianAccount?.id,
   });
+
+  const existingScope = normalizeScopes(scopes);
 
   const { data: projects, isLoading: projectsLoading, refetch: refetchProjects } = useQuery<JiraProject[]>({
     queryKey: ["/api/oauth/atlassian/projects"],
@@ -71,22 +75,24 @@ export default function AtlassianScopesPage() {
 
   useEffect(() => {
     if (existingScope) {
-      setSyncMode(existingScope.syncMode as typeof syncMode);
-      setContentStrategy(existingScope.contentStrategy as typeof contentStrategy);
+      setSyncMode((existingScope.syncMode as typeof syncMode) || "smart");
+      setContentStrategy((existingScope.contentStrategy as typeof contentStrategy) || "smart");
       const config = existingScope.scopeConfigJson as Record<string, unknown>;
-      if (config?.jiraProjects && Array.isArray(config.jiraProjects)) {
-        setSelectedProjects(config.jiraProjects as string[]);
+      if (config?.projects && Array.isArray(config.projects)) {
+        setSelectedProjects(config.projects as string[]);
       }
-      if (config?.confluenceSpaces && Array.isArray(config.confluenceSpaces)) {
-        setSelectedSpaces(config.confluenceSpaces as string[]);
+      if (config?.spaces && Array.isArray(config.spaces)) {
+        setSelectedSpaces(config.spaces as string[]);
       }
+      const exclusions = existingScope.exclusionsJson as Record<string, unknown>;
+      // ... exclusions handling if needed
     }
   }, [existingScope]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!atlassianAccount) throw new Error("No Atlassian account connected");
-      
+
       const data = {
         accountId: atlassianAccount.id,
         userId: atlassianAccount.userId,
@@ -94,20 +100,16 @@ export default function AtlassianScopesPage() {
         syncMode,
         contentStrategy,
         scopeConfigJson: {
-          jiraProjects: selectedProjects,
-          confluenceSpaces: selectedSpaces,
+          projects: selectedProjects,
+          spaces: selectedSpaces,
         },
-        exclusionsJson: {
-          issueTypes: [],
-          pageLabels: [],
-        },
+        exclusionsJson: {},
       };
-      
-      if (existingScope) {
-        await apiRequest("PATCH", `/api/user-connector-scopes/${existingScope.id}`, data);
-      } else {
-        await apiRequest("POST", "/api/user-connector-scopes", data);
-      }
+
+      await saveScope({
+        existingScopeId: existingScope?.id,
+        data,
+      });
     },
     onSuccess: () => {
       toast({ title: "Settings saved successfully" });
@@ -389,6 +391,11 @@ export default function AtlassianScopesPage() {
             )}
           </Button>
         </div>
+
+        {/* Sync Progress */}
+        {existingScope?.id && (
+          <SyncProgress scopeId={existingScope.id} />
+        )}
       </div>
     </Layout>
   );

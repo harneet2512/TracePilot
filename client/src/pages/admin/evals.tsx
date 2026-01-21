@@ -209,7 +209,7 @@ export default function EvalsPage() {
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const text = await file.text();
-      const json = JSON.parse(text);
+      const json = JSON.parse(text) as Record<string, unknown>;
       const res = await apiRequest("POST", "/api/eval-suites", json);
       return res.json();
     },
@@ -421,9 +421,9 @@ export default function EvalsPage() {
           </Card>
         </div>
 
-        {latestRun?.resultsJson && Array.isArray(latestRun.resultsJson) && (
+        {latestRun?.resultsJson && Array.isArray(latestRun.resultsJson) ? (
           <LatestRunFailures results={latestRun.resultsJson as EvalCaseResult[]} />
-        )}
+        ) : null}
 
         <Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">

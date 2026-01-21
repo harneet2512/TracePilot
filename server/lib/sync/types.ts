@@ -3,11 +3,24 @@ import type { UserConnectorScope, Source, Chunk } from "@shared/schema";
 export type SyncMode = "metadata_first" | "full" | "smart" | "on_demand";
 export type ContentStrategy = "smart" | "full" | "on_demand";
 
+export interface SyncProgress {
+  stage: "fetching" | "persisting" | "chunking" | "embedding" | "done" | "error";
+  docsDiscovered: number;
+  docsFetched: number;
+  sourcesUpserted: number;
+  versionsCreated: number;
+  chunksCreated: number;
+  charsProcessed: number;
+  throughputCharsPerSec?: number;
+  etaSeconds?: number;
+}
+
 export interface SyncContext {
   userId: string;
   accountId: string;
   scope: UserConnectorScope;
   accessToken: string;
+  onProgress?: (stats: Partial<SyncProgress>) => Promise<void>;
 }
 
 export interface SyncResult {
@@ -28,6 +41,7 @@ export interface SyncableItem {
   contentHash?: string;
   mimeType?: string;
   modifiedAt?: Date;
+  metadata?: Record<string, unknown>; // Added for connector-specific metadata
 }
 
 export interface SyncableContent extends SyncableItem {

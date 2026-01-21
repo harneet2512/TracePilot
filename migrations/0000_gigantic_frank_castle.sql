@@ -88,9 +88,12 @@ CREATE TABLE "eval_runs" (
 	"suite_id" varchar(36) NOT NULL,
 	"baseline_run_id" varchar(36),
 	"status" text DEFAULT 'running' NOT NULL,
+	"channel" text DEFAULT 'http' NOT NULL,
 	"started_at" timestamp DEFAULT now() NOT NULL,
 	"finished_at" timestamp,
+	"summary_json" jsonb,
 	"metrics_json" jsonb,
+	"results_json" jsonb,
 	"regression_json" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
@@ -99,6 +102,7 @@ CREATE TABLE "eval_suites" (
 	"id" varchar(36) PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
+	"json_text" text,
 	"is_baseline" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -321,6 +325,7 @@ CREATE INDEX "eval_results_case_id_idx" ON "eval_results" USING btree ("case_id"
 CREATE INDEX "eval_results_status_idx" ON "eval_results" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "eval_runs_suite_id_idx" ON "eval_runs" USING btree ("suite_id");--> statement-breakpoint
 CREATE INDEX "eval_runs_status_idx" ON "eval_runs" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "eval_runs_channel_idx" ON "eval_runs" USING btree ("channel");--> statement-breakpoint
 CREATE INDEX "job_runs_job_id_idx" ON "job_runs" USING btree ("job_id");--> statement-breakpoint
 CREATE INDEX "job_runs_status_idx" ON "job_runs" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "jobs_status_next_run_idx" ON "jobs" USING btree ("status","next_run_at");--> statement-breakpoint

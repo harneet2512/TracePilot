@@ -1,7 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { ApprovalModal } from "@/components/ApprovalModal";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useRoute, useLocation, Redirect } from "wouter";
 import { Layout } from "@/components/layout";
+import { ChatSidebar } from "@/components/ChatSidebar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { SourceCard } from "@/components/SourceCard";
 import {
   Send,
   Loader2,
@@ -19,10 +22,19 @@ import {
   XCircle,
   AlertCircle,
   Edit3,
+  Ticket,
+  ExternalLink,
 } from "lucide-react";
 import { SiJira, SiSlack, SiConfluence } from "react-icons/si";
 import type { ChatResponse, Citation, Action } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import {
+  getOrCreateActiveConversation,
+  getMessages,
+  saveMessages,
+  addMessage as addStoredMessage,
+  type Message as StoredMessage,
+} from "@/lib/conversations";
 
 interface Message {
   id: string;
@@ -46,7 +58,47 @@ const toolLabels: Record<string, string> = {
   "confluence.upsert_page": "Upsert Confluence Page",
 };
 
+// Source type icons for citations
+const sourceIcons: Record<string, string> = {
+  drive: '📄',
+  google_drive: '📄',
+  confluence: '📋',
+  slack: '💬',
+  jira: '🎫',
+  upload: '📁',
+};
+
 function CitationBadge({ citation, index }: { citation: Citation; index: number }) {
+  // Try to open external URL if available, otherwise fallback to internal viewer
+  const handleClick = (e: React.MouseEvent) => {
+    // If citation has url, open it directly
+    if (citation.url) {
+      e.preventDefault();
+      window.open(citation.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    // Otherwise let Link component handle navigation to internal viewer
+  };
+
+  const sourceName = citation.label || `Source ${index + 1}`;
+
+  // If there's an external URL, use a button instead of Link
+  if (citation.url) {
+    return (
+      <button
+        onClick={handleClick}
+        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors border border-blue-200 cursor-pointer"
+        title={`Open ${sourceName}`}
+        data-testid={`citation-${index}`}
+      >
+        <FileText className="h-3 w-3 flex-shrink-0" />
+        <span className="font-medium max-w-[100px] truncate">{sourceName}</span>
+        <ExternalLink className="h-3 w-3 flex-shrink-0" />
+      </button>
+    );
+  }
+
+  // Fallback: internal link to sources viewer
   return (
     <Link
       href={`/sources/${citation.sourceId}?chunk=${citation.chunkId}`}
@@ -184,11 +236,13 @@ function MessageBubble({
   onApprove,
   onCancel,
   isPending,
+  onProposeJira,
 }: {
   message: Message;
   onApprove?: (action: Action, editedDraft: Record<string, unknown>) => void;
   onCancel?: () => void;
   isPending?: boolean;
+  onProposeJira: (citation: Citation) => void;
 }) {
   if (message.role === "user") {
     return (
@@ -237,16 +291,57 @@ function MessageBubble({
                     <div>
                       <span className="text-sm">{bullet.claim}</span>
                       {bullet.citations.length > 0 && (
-                        <span className="ml-2 inline-flex gap-1 flex-wrap">
-                          {bullet.citations.map((c, j) => (
-                            <CitationBadge key={j} citation={c} index={j} />
-                          ))}
-                        </span>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          <span className="ml-2 inline-flex gap-1 flex-wrap">
+                            {bullet.citations.map((c, j) => (
+                              <CitationBadge key={j} citation={c} index={j} />
+                            ))}
+                          </span>
+                          {/* Show Jira CTA if citations include slack */}
+                          {bullet.citations.some(c => c.sourceId.includes("slack")) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-xs px-2"
+                              onClick={() => {
+                                const slackCit = bullet.citations.find(c => c.sourceId.includes("slack"));
+                                if (slackCit) onProposeJira(slackCit);
+                              }}
+                            >
+                              <Ticket className="h-3 w-3 mr-1" />
+                              Create Jira Ticket
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </li>
                 ))}
               </ul>
+            )}
+
+            {/* Sources Used Section */}
+            {((response as any)?.sources && (response as any).sources.length > 0) && (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">Sources Used</span>
+                  <Badge variant="secondary" className="text-xs">{(response as any).sources.length}</Badge>
+                </div>
+                <div className="grid gap-2">
+                  {(response as any).sources.map((source: { id: string; title?: string; name?: string; url?: string; type?: string; sourceType?: string; chunkCount?: number }) => (
+                    <SourceCard
+                      key={source.id}
+                      source={{
+                        id: source.id,
+                        title: source.title || source.name || 'Untitled',
+                        url: source.url,
+                        type: (source.type || source.sourceType || 'upload') as 'drive' | 'confluence' | 'slack' | 'jira' | 'upload',
+                        chunkCount: source.chunkCount,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
             )}
           </>
         )}
@@ -269,14 +364,63 @@ function MessageBubble({
 }
 
 export default function ChatPage() {
+  // Get conversationId from URL params
+  const [matchConversation, params] = useRoute("/chat/:conversationId");
+  const [, navigate] = useLocation();
+
+  // Get or create active conversation for redirect
+  const activeConversation = getOrCreateActiveConversation();
+  const conversationId = params?.conversationId;
+
+  // If no conversationId in URL, redirect to active conversation
+  if (!matchConversation || !conversationId) {
+    return <Redirect to={`/chat/${activeConversation.id}`} />;
+  }
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [pendingAction, setPendingAction] = useState<{
     action: Action;
     requestId: string;
   } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Approval Modal State
+  const [isApprovalOpen, setIsApprovalOpen] = useState(false);
+  const [approvalId, setApprovalId] = useState<number | null>(null);
+  const [proposal, setProposal] = useState<any>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Load messages from localStorage when conversationId changes
+  useEffect(() => {
+    const stored = getMessages(conversationId);
+    const loadedMessages: Message[] = stored.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      response: m.response,
+      timestamp: new Date(m.timestamp),
+    }));
+    setMessages(loadedMessages);
+    setInput("");
+    setPendingAction(null);
+  }, [conversationId, refreshKey]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      const toStore: StoredMessage[] = messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        response: m.response,
+        timestamp: m.timestamp.toISOString(),
+      }));
+      saveMessages(conversationId, toStore);
+    }
+  }, [messages, conversationId]);
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -380,6 +524,24 @@ export default function ChatPage() {
     });
   };
 
+  const handleProposeJira = async (citation: Citation) => {
+    try {
+      const res = await apiRequest("POST", "/api/decision/jira/propose", {
+        citation,
+      });
+      const data = await res.json();
+      setApprovalId(data.approvalId);
+      setProposal(data.proposal);
+      setIsApprovalOpen(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate Jira proposal",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -417,6 +579,7 @@ export default function ChatPage() {
                       : undefined
                   }
                   isPending={executeMutation.isPending}
+                  onProposeJira={handleProposeJira}
                 />
               ))}
               {chatMutation.isPending && (
@@ -455,6 +618,15 @@ export default function ChatPage() {
             </Button>
           </div>
         </div>
+
+        {isApprovalOpen && proposal && approvalId && (
+          <ApprovalModal
+            isOpen={isApprovalOpen}
+            onClose={() => setIsApprovalOpen(false)}
+            approvalId={approvalId}
+            proposal={proposal}
+          />
+        )}
       </div>
     </Layout>
   );

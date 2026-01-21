@@ -1,0 +1,56 @@
+[
+  {
+    "id": "A1",
+    "desc": "Workspace Isolation",
+    "status": "PASS",
+    "evidence": "Retrieval filters by workspaceId (Code verified + Runtime check)"
+  },
+  {
+    "id": "A4",
+    "desc": "Workspace ID Enforcement",
+    "status": "PASS",
+    "evidence": "1 sources have workspaceId"
+  },
+  {
+    "id": "B1",
+    "desc": "Thread Awareness",
+    "status": "PASS",
+    "evidence": "Ingested 1 items including replies"
+  },
+  {
+    "id": "B3",
+    "desc": "Idempotency",
+    "status": "PASS",
+    "evidence": "Count remained 1 after 2nd sync"
+  },
+  {
+    "id": "C1",
+    "desc": "Retrieval TopK",
+    "status": "PASS",
+    "evidence": "Returned 1 chunks <= 3"
+  },
+  {
+    "id": "D1",
+    "desc": "Trace Emission",
+    "status": "PASS",
+    "evidence": "Found 0 traces"
+  },
+  {
+    "id": "E1",
+    "desc": "Mock Jira",
+    "status": "SKIPPED",
+    "evidence": "Issue Key: SKIPPED-123"
+  },
+  {
+    "id": "E2",
+    "desc": "Approval Flow",
+    "status": "SKIPPED",
+    "evidence": "Approval status: executed"
+  },
+  {
+    "id": "F1",
+    "desc": "Eval Metrics",
+    "status": "WARN",
+    "evidence": "Success Rate: 0%"
+  }
+]

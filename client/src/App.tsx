@@ -19,6 +19,10 @@ import PoliciesPage from "@/pages/admin/policies";
 import AuditPage from "@/pages/admin/audit";
 import EvalsPage from "@/pages/admin/evals";
 import ObservabilityPage from "@/pages/admin/observability";
+import PlaybooksPage from "@/pages/playbooks";
+import NewPlaybookPage from "@/pages/playbooks/new";
+import PlaybookDetailPage from "@/pages/playbooks/[id]";
+import VoicePage from "@/pages/voice";
 import { Loader2 } from "lucide-react";
 
 function ProtectedRoute({ component: Component, adminOnly = false }: { component: React.ComponentType; adminOnly?: boolean }) {
@@ -47,6 +51,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
+      <Route path="/chat/:conversationId">
+        {() => <ProtectedRoute component={ChatPage} />}
+      </Route>
       <Route path="/chat">
         {() => <ProtectedRoute component={ChatPage} />}
       </Route>
@@ -82,6 +89,18 @@ function Router() {
       </Route>
       <Route path="/admin/observability">
         {() => <ProtectedRoute component={ObservabilityPage} adminOnly />}
+      </Route>
+      <Route path="/playbooks">
+        {() => <ProtectedRoute component={PlaybooksPage} />}
+      </Route>
+      <Route path="/playbooks/new">
+        {() => <ProtectedRoute component={NewPlaybookPage} />}
+      </Route>
+      <Route path="/playbooks/:id">
+        {() => <ProtectedRoute component={PlaybookDetailPage} />}
+      </Route>
+      <Route path="/voice">
+        {() => <ProtectedRoute component={VoicePage} />}
       </Route>
       <Route path="/">
         {() => <Redirect to="/chat" />}

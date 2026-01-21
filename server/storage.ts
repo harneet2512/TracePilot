@@ -1,10 +1,11 @@
-import { db, pool } from "./db";
+import { db as _db, pool } from "./db";
+const db = _db as any; // Bypass Drizzle strict union check for cross-dialect compatibility
 import { eq, desc, and, inArray, lte, isNull, sql, gt } from "drizzle-orm";
 import {
   users, sessions, connectors, userConnectorAccounts, userConnectorScopes,
   sources, chunks, policies, auditEvents, approvals, evalSuites, evalRuns,
   jobs, jobRuns, traces, spans, sourceVersions, evalCases, evalResults, playbooks, playbookItems,
-  jobLocks, rateLimitBuckets,
+  jobLocks, rateLimitBuckets, voiceCalls, voiceTurns,
   type User, type InsertUser, type Session, type InsertSession,
   type Connector, type InsertConnector,
   type UserConnectorAccount, type InsertUserConnectorAccount,
@@ -18,7 +19,8 @@ import {
   type Trace, type InsertTrace, type Span, type InsertSpan,
   type SourceVersion, type InsertSourceVersion,
   type EvalCase, type InsertEvalCase, type EvalResult, type InsertEvalResult,
-  type Playbook, type InsertPlaybook, type PlaybookItem, type InsertPlaybookItem
+  type Playbook, type InsertPlaybook, type PlaybookItem, type InsertPlaybookItem,
+  type VoiceCall, type InsertVoiceCall, type VoiceTurn, type InsertVoiceTurn
 } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
@@ -29,27 +31,28 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   validatePassword(email: string, password: string): Promise<User | null>;
-  
+
   // Sessions
   createSession(userId: string): Promise<Session>;
   getSessionByToken(token: string): Promise<Session | undefined>;
   deleteSession(token: string): Promise<void>;
-  
+
   // Connectors
   getConnectors(): Promise<Connector[]>;
   getConnector(id: string): Promise<Connector | undefined>;
   createConnector(connector: InsertConnector): Promise<Connector>;
   updateConnector(id: string, updates: Partial<InsertConnector>): Promise<Connector | undefined>;
   deleteConnector(id: string): Promise<void>;
-  
+
   // User Connector Accounts
   getUserConnectorAccounts(userId: string): Promise<UserConnectorAccount[]>;
+  getAllConnectorAccounts(): Promise<UserConnectorAccount[]>;
   getUserConnectorAccount(id: string): Promise<UserConnectorAccount | undefined>;
   getUserConnectorAccountByType(userId: string, type: string): Promise<UserConnectorAccount | undefined>;
   createUserConnectorAccount(account: InsertUserConnectorAccount): Promise<UserConnectorAccount>;
   updateUserConnectorAccount(id: string, updates: Partial<InsertUserConnectorAccount>): Promise<UserConnectorAccount | undefined>;
   deleteUserConnectorAccount(id: string): Promise<void>;
-  
+
   // User Connector Scopes
   getUserConnectorScopes(userId: string): Promise<UserConnectorScope[]>;
   getUserConnectorScopesByAccount(accountId: string): Promise<UserConnectorScope[]>;
@@ -57,7 +60,7 @@ export interface IStorage {
   createUserConnectorScope(scope: InsertUserConnectorScope): Promise<UserConnectorScope>;
   updateUserConnectorScope(id: string, updates: Partial<InsertUserConnectorScope>): Promise<UserConnectorScope | undefined>;
   deleteUserConnectorScope(id: string): Promise<void>;
-  
+
   // Sources
   getSources(): Promise<Source[]>;
   getSource(id: string): Promise<Source | undefined>;
@@ -66,50 +69,62 @@ export interface IStorage {
   getSourcesByUserAndType(userId: string, type: string): Promise<Source[]>;
   getSourceByExternalId(externalId: string, userId: string): Promise<Source | undefined>;
   createSource(source: InsertSource): Promise<Source>;
+  updateSource(id: string, updates: Partial<InsertSource>): Promise<Source | undefined>;
   deleteSource(id: string): Promise<void>;
-  
+  upsertSource(workspaceId: string, externalId: string, type: string, userId: string, source: InsertSource): Promise<Source>;
+
   // Chunks
+  getChunk(id: string): Promise<Chunk | undefined>;
   createChunk(chunk: InsertChunk): Promise<Chunk>;
   createChunks(chunks: InsertChunk[]): Promise<Chunk[]>;
   getChunksBySourceId(sourceId: string): Promise<Chunk[]>;
   getChunksByIds(ids: string[]): Promise<Chunk[]>;
   getAllChunks(): Promise<Chunk[]>;
-  
+
   // Policies
   getPolicies(): Promise<Policy[]>;
   getActivePolicy(): Promise<Policy | undefined>;
   createPolicy(policy: InsertPolicy): Promise<Policy>;
   updatePolicy(id: string, updates: Partial<InsertPolicy>): Promise<Policy | undefined>;
   deletePolicy(id: string): Promise<void>;
-  
+
   // Audit Events
   getAuditEvents(limit?: number): Promise<AuditEvent[]>;
   getAuditEvent(id: string): Promise<AuditEvent | undefined>;
   getAuditEventByRequestId(requestId: string): Promise<AuditEvent | undefined>;
   createAuditEvent(event: InsertAuditEvent): Promise<AuditEvent>;
-  
+
   // Approvals
   createApproval(approval: InsertApproval): Promise<Approval>;
   getApproval(id: string): Promise<Approval | undefined>;
   getApprovalByIdempotencyKey(key: string): Promise<Approval | undefined>;
   updateApproval(id: string, updates: Partial<InsertApproval>): Promise<Approval | undefined>;
-  
-  // Eval Suites
+
+  // Eval
   getEvalSuites(): Promise<EvalSuite[]>;
   getEvalSuite(id: string): Promise<EvalSuite | undefined>;
   createEvalSuite(suite: InsertEvalSuite): Promise<EvalSuite>;
   deleteEvalSuite(id: string): Promise<void>;
-  
+  createEvalCase(evalCase: InsertEvalCase): Promise<EvalCase>;
+  getEvalCase(id: string): Promise<EvalCase | undefined>;
+  getEvalCasesBySuiteId(suiteId: string): Promise<EvalCase[]>;
+
   // Eval Runs
+  getEvalRun(id: string): Promise<EvalRun | undefined>;
   getEvalRuns(): Promise<EvalRun[]>;
   getEvalRunsBySuiteId(suiteId: string): Promise<EvalRun[]>;
   createEvalRun(run: InsertEvalRun): Promise<EvalRun>;
   updateEvalRun(id: string, updates: Partial<InsertEvalRun>): Promise<EvalRun | undefined>;
 
+  // Eval Results
+  getEvalResults(runId: string): Promise<EvalResult[]>;
+  createEvalResult(result: InsertEvalResult): Promise<EvalResult>;
+
   // Jobs
   getJob(id: string): Promise<Job | undefined>;
   getJobByIdempotencyKey(key: string): Promise<Job | undefined>;
   getPendingJobs(limit?: number): Promise<Job[]>;
+  getPendingJobCount(): Promise<number>;
   getJobsByUser(userId: string): Promise<Job[]>;
   getDeadLetterJobs(): Promise<Job[]>;
   createJob(job: InsertJob): Promise<Job>;
@@ -118,57 +133,71 @@ export interface IStorage {
   unlockJob(jobId: string): Promise<void>;
   unlockStaleJob(jobId: string, expectedWorkerId: string): Promise<boolean>;
   getStaleRunningJobs(staleThreshold: Date): Promise<Job[]>;
-  
+
   // Job Runs
   getJobRuns(jobId: string): Promise<JobRun[]>;
+  getLatestJobRun(jobId: string): Promise<JobRun | undefined>;
+  getLatestSyncJobForScope(scopeId: string): Promise<Job | undefined>;
+  getCountsByScope(scopeId: string): Promise<{ sources: number; chunks: number }>;
   createJobRun(run: InsertJobRun): Promise<JobRun>;
   updateJobRun(id: string, updates: Partial<InsertJobRun>): Promise<JobRun | undefined>;
-  
+
   // Job locking with SKIP LOCKED
   claimJobWithLock(workerId: string, limit?: number): Promise<Job | undefined>;
-  
+  getLatestJobByScope(scopeId: string): Promise<Job | undefined>;
+
   // Concurrency control
   getOrCreateJobLock(connectorType: string, accountId?: string): Promise<JobLock>;
   incrementJobLockCount(lockId: string): Promise<boolean>;
   decrementJobLockCount(lockId: string): Promise<void>;
   canAcquireConcurrencySlot(connectorType: string, accountId?: string): Promise<boolean>;
-  
+
   // Rate limiting
   getOrCreateRateLimitBucket(accountId: string, connectorType: string): Promise<RateLimitBucket>;
   consumeRateLimitToken(accountId: string, connectorType: string): Promise<boolean>;
-  
+
   // Active chunks retrieval (respecting source versioning)
   getActiveChunks(): Promise<Chunk[]>;
   getActiveChunksByUser(userId: string): Promise<Chunk[]>;
-  
+
   // Traces
   getTrace(id: string): Promise<Trace | undefined>;
   getTracesByUser(userId: string, limit?: number): Promise<Trace[]>;
   getRecentTraces(limit?: number): Promise<Trace[]>;
   createTrace(trace: InsertTrace): Promise<Trace>;
   updateTrace(id: string, updates: Partial<InsertTrace>): Promise<Trace | undefined>;
-  
+
   // Spans
   getSpansByTrace(traceId: string): Promise<Span[]>;
   createSpan(span: InsertSpan): Promise<Span>;
   updateSpan(id: string, updates: Partial<InsertSpan>): Promise<Span | undefined>;
-  
+
   // Source Versions
   getSourceVersions(sourceId: string): Promise<SourceVersion[]>;
   getActiveSourceVersion(sourceId: string): Promise<SourceVersion | undefined>;
   createSourceVersion(version: InsertSourceVersion): Promise<SourceVersion>;
   deactivateSourceVersions(sourceId: string): Promise<void>;
-  
+
   // Playbooks
   getPlaybook(id: string): Promise<Playbook | undefined>;
   getPlaybooksByUser(userId: string): Promise<Playbook[]>;
   createPlaybook(playbook: InsertPlaybook): Promise<Playbook>;
   updatePlaybook(id: string, updates: Partial<InsertPlaybook>): Promise<Playbook | undefined>;
-  
+
   // Playbook Items
   getPlaybookItems(playbookId: string): Promise<PlaybookItem[]>;
   createPlaybookItem(item: InsertPlaybookItem): Promise<PlaybookItem>;
   updatePlaybookItem(id: string, updates: Partial<InsertPlaybookItem>): Promise<PlaybookItem | undefined>;
+
+  // Voice Calls
+  createVoiceCall(call: InsertVoiceCall): Promise<VoiceCall>;
+  getVoiceCall(id: string): Promise<VoiceCall | undefined>;
+  updateVoiceCall(id: string, updates: Partial<InsertVoiceCall>): Promise<VoiceCall | undefined>;
+  getVoiceCallsByUser(userId: string): Promise<VoiceCall[]>;
+
+  // Voice Turns
+  createVoiceTurn(turn: InsertVoiceTurn): Promise<VoiceTurn>;
+  getVoiceTurnsByCall(callId: string): Promise<VoiceTurn[]>;
 }
 
 const SALT_ROUNDS = 10;
@@ -187,10 +216,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const passwordHash = insertUser.passwordHash 
+    const passwordHash = insertUser.passwordHash
       ? await bcrypt.hash(insertUser.passwordHash, SALT_ROUNDS)
       : null;
-    
+
     const [user] = await db.insert(users).values({
       ...insertUser,
       passwordHash,
@@ -201,7 +230,7 @@ export class DatabaseStorage implements IStorage {
   async validatePassword(email: string, password: string): Promise<User | null> {
     const user = await this.getUserByEmail(email);
     if (!user || !user.passwordHash) return null;
-    
+
     const valid = await bcrypt.compare(password, user.passwordHash);
     return valid ? user : null;
   }
@@ -210,7 +239,7 @@ export class DatabaseStorage implements IStorage {
   async createSession(userId: string): Promise<Session> {
     const token = randomUUID();
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-    
+
     const [session] = await db.insert(sessions).values({
       userId,
       token,
@@ -224,7 +253,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         eq(sessions.token, token),
       ));
-    
+
     if (session && new Date(session.expiresAt) < new Date()) {
       await this.deleteSession(token);
       return undefined;
@@ -274,6 +303,11 @@ export class DatabaseStorage implements IStorage {
     const [account] = await db.select().from(userConnectorAccounts)
       .where(eq(userConnectorAccounts.id, id));
     return account;
+  }
+
+  async getAllConnectorAccounts(): Promise<UserConnectorAccount[]> {
+    return db.select().from(userConnectorAccounts)
+      .orderBy(desc(userConnectorAccounts.createdAt));
   }
 
   async getUserConnectorAccountByType(userId: string, type: string): Promise<UserConnectorAccount | undefined> {
@@ -351,11 +385,11 @@ export class DatabaseStorage implements IStorage {
   async getSourceWithChunks(id: string): Promise<{ source: Source; chunks: Chunk[] } | undefined> {
     const source = await this.getSource(id);
     if (!source) return undefined;
-    
+
     const sourceChunks = await db.select().from(chunks)
       .where(eq(chunks.sourceId, id))
       .orderBy(chunks.chunkIndex);
-    
+
     return { source, chunks: sourceChunks };
   }
 
@@ -381,8 +415,37 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async updateSource(id: string, updates: Partial<InsertSource>): Promise<Source | undefined> {
+    const [updated] = await db.update(sources)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(sources.id, id))
+      .returning();
+    return updated;
+  }
+
   async deleteSource(id: string): Promise<void> {
     await db.delete(sources).where(eq(sources.id, id));
+  }
+
+  async upsertSource(workspaceId: string, externalId: string, type: string, userId: string, sourceData: InsertSource): Promise<Source> {
+    const [existing] = await db.select().from(sources)
+      .where(and(
+        eq(sources.workspaceId, workspaceId),
+        eq(sources.externalId, externalId),
+        eq(sources.type, type as any),
+        eq(sources.userId, userId)
+      ));
+
+    if (existing) {
+      const [updated] = await db.update(sources)
+        .set({ ...sourceData, updatedAt: new Date() })
+        .where(eq(sources.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(sources).values(sourceData).returning();
+      return created;
+    }
   }
 
   // Chunks
@@ -512,6 +575,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Eval Runs
+  // Eval Cases
+  async getEvalCase(id: string): Promise<EvalCase | undefined> {
+    const [evalCase] = await db.select().from(evalCases).where(eq(evalCases.id, id));
+    return evalCase;
+  }
+
+  async getEvalCasesBySuiteId(suiteId: string): Promise<EvalCase[]> {
+    return db.select().from(evalCases).where(eq(evalCases.suiteId, suiteId));
+  }
+
+  async createEvalCase(evalCase: InsertEvalCase): Promise<EvalCase> {
+    const [newItem] = await db
+      .insert(evalCases)
+      .values(evalCase)
+      .returning();
+    return newItem;
+  }
+
   async getEvalRuns(): Promise<EvalRun[]> {
     return db.select().from(evalRuns).orderBy(desc(evalRuns.createdAt));
   }
@@ -520,6 +601,11 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(evalRuns)
       .where(eq(evalRuns.suiteId, suiteId))
       .orderBy(desc(evalRuns.createdAt));
+  }
+
+  async getEvalRun(id: string): Promise<EvalRun | undefined> {
+    const [run] = await db.select().from(evalRuns).where(eq(evalRuns.id, id));
+    return run;
   }
 
   async createEvalRun(run: InsertEvalRun): Promise<EvalRun> {
@@ -535,9 +621,30 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  // Eval Results
+  async getEvalResults(runId: string): Promise<EvalResult[]> {
+    return db.select().from(evalResults)
+      .where(eq(evalResults.runId, runId))
+      .orderBy(desc(evalResults.createdAt));
+  }
+
+  async createEvalResult(result: InsertEvalResult): Promise<EvalResult> {
+    const [created] = await db.insert(evalResults).values(result).returning();
+    return created;
+  }
+
+
   // Jobs
   async getJob(id: string): Promise<Job | undefined> {
     const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+    return job;
+  }
+
+  async getLatestJobByScope(scopeId: string): Promise<Job | undefined> {
+    const [job] = await db.select().from(jobs)
+      .where(eq(jobs.scopeId, scopeId))
+      .orderBy(desc(jobs.createdAt))
+      .limit(1);
     return job;
   }
 
@@ -556,6 +663,17 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(jobs.priority), jobs.nextRunAt)
       .limit(limit);
+  }
+
+  async getPendingJobCount(): Promise<number> {
+    const now = new Date();
+    const result = await db.select({ count: sql<number>`count(*)::int` }).from(jobs)
+      .where(and(
+        eq(jobs.status, "pending"),
+        lte(jobs.nextRunAt, now),
+        isNull(jobs.lockedAt)
+      ));
+    return result[0]?.count ?? 0;
   }
 
   async getJobsByUser(userId: string): Promise<Job[]> {
@@ -627,6 +745,37 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(jobRuns)
       .where(eq(jobRuns.jobId, jobId))
       .orderBy(desc(jobRuns.createdAt));
+  }
+
+  async getLatestJobRun(jobId: string): Promise<JobRun | undefined> {
+    const [run] = await db.select().from(jobRuns)
+      .where(eq(jobRuns.jobId, jobId))
+      .orderBy(desc(jobRuns.createdAt))
+      .limit(1);
+    return run;
+  }
+
+  async getLatestSyncJobForScope(scopeId: string): Promise<Job | undefined> {
+    const [job] = await db.select().from(jobs)
+      .where(and(eq(jobs.scopeId, scopeId), eq(jobs.type, "sync")))
+      .orderBy(desc(jobs.createdAt))
+      .limit(1);
+    return job;
+  }
+
+  async getCountsByScope(scopeId: string): Promise<{ sources: number; chunks: number }> {
+    // Count sources linked to this scope via metadata
+    const sourcesResult = await db.select({ count: sql<number>`count(*)::int` }).from(sources)
+      .where(sql`metadata_json->>'scopeId' = ${scopeId}`);
+
+    // Count chunks from those sources using raw SQL
+    const chunksResult = await db.select({ count: sql<number>`count(*)::int` }).from(chunks)
+      .where(sql`source_id IN (SELECT id FROM sources WHERE metadata_json->>'scopeId' = ${scopeId})`);
+
+    return {
+      sources: sourcesResult[0]?.count ?? 0,
+      chunks: chunksResult[0]?.count ?? 0
+    };
   }
 
   async createJobRun(run: InsertJobRun): Promise<JobRun> {
@@ -768,43 +917,69 @@ export class DatabaseStorage implements IStorage {
 
   // Job locking with SKIP LOCKED - atomic job claiming
   async claimJobWithLock(workerId: string, limit = 1): Promise<Job | undefined> {
-    const client = await pool.connect();
+    // If using pool (Postgres), connect. SQLite doesn't need explicit connect.
+    console.log(`[claimJobWithLock] pool defined: ${!!pool}`);
+    if (!pool) {
+      console.log('[claimJobWithLock] pool is null, returning undefined');
+      return undefined;
+    }
+
+    let client;
     try {
+      console.log('[claimJobWithLock] Connecting to pool...');
+      client = await pool.connect();
+      console.log('[claimJobWithLock] Connected, starting transaction...');
       await client.query('BEGIN');
-      
-      const now = new Date();
-      const result = await client.query<Job>(
+
+      console.log(`[claimJobWithLock] Querying for pending jobs...`);
+
+      // Use NOW() directly in SQL to avoid JavaScript Date timezone issues
+      const result = await client.query(
         `SELECT * FROM jobs 
          WHERE status = 'pending' 
-         AND next_run_at <= $1 
+         AND next_run_at <= NOW() 
          AND locked_at IS NULL
          ORDER BY priority DESC, next_run_at ASC
-         LIMIT $2
+         LIMIT $1
          FOR UPDATE SKIP LOCKED`,
-        [now, limit]
+        [limit]
       );
-      
+
+      console.log(`[claimJobWithLock] Query returned ${result.rows.length} rows`);
+
       if (result.rows.length === 0) {
         await client.query('COMMIT');
+        client.release();
         return undefined;
       }
-      
-      const job = result.rows[0];
-      
+
+      const job = result.rows[0] as any;
+      console.log(`[claimJobWithLock] Claiming job id=${job.id}, type=${job.type}, connector_type=${job.connector_type}`);
+
+      // Use NOW() for locking too
       await client.query(
-        `UPDATE jobs SET locked_at = $1, locked_by = $2, status = 'running', updated_at = $1 WHERE id = $3`,
-        [now, workerId, job.id]
+        `UPDATE jobs SET locked_at = NOW(), locked_by = $1, status = 'running', updated_at = NOW() WHERE id = $2`,
+        [workerId, job.id]
       );
-      
+
       await client.query('COMMIT');
-      
-      const [updatedJob] = await db.select().from(jobs).where(eq(jobs.id, job.id));
-      return updatedJob;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
       client.release();
+
+      const [updatedJob] = await db.select().from(jobs).where(eq(jobs.id, job.id));
+      console.log(`[claimJobWithLock] Successfully claimed job ${job.id}`);
+      return updatedJob;
+    } catch (error: any) {
+      console.error('[claimJobWithLock] ERROR:', error.message);
+      console.error('[claimJobWithLock] Stack:', error.stack);
+      if (client) {
+        try {
+          await client.query('ROLLBACK');
+          client.release();
+        } catch (releaseErr) {
+          console.error('[claimJobWithLock] Error releasing client:', releaseErr);
+        }
+      }
+      return undefined;
     }
   }
 
@@ -815,9 +990,9 @@ export class DatabaseStorage implements IStorage {
         eq(jobLocks.connectorType, connectorType as "google" | "atlassian" | "slack" | "upload"),
         accountId ? eq(jobLocks.accountId, accountId) : isNull(jobLocks.accountId)
       ));
-    
+
     if (existing.length > 0) return existing[0];
-    
+
     const [created] = await db.insert(jobLocks).values({
       connectorType: connectorType as "google" | "atlassian" | "slack" | "upload",
       accountId: accountId || null,
@@ -825,27 +1000,27 @@ export class DatabaseStorage implements IStorage {
       maxConcurrency: connectorType === "upload" ? 5 : 2,
       updatedAt: new Date(),
     }).returning();
-    
+
     return created;
   }
 
   async incrementJobLockCount(lockId: string): Promise<boolean> {
     const lock = await db.select().from(jobLocks).where(eq(jobLocks.id, lockId));
     if (lock.length === 0) return false;
-    
+
     if (lock[0].activeCount >= lock[0].maxConcurrency) return false;
-    
+
     await db.update(jobLocks)
       .set({ activeCount: lock[0].activeCount + 1, updatedAt: new Date() })
       .where(eq(jobLocks.id, lockId));
-    
+
     return true;
   }
 
   async decrementJobLockCount(lockId: string): Promise<void> {
     const lock = await db.select().from(jobLocks).where(eq(jobLocks.id, lockId));
     if (lock.length === 0) return;
-    
+
     await db.update(jobLocks)
       .set({ activeCount: Math.max(0, lock[0].activeCount - 1), updatedAt: new Date() })
       .where(eq(jobLocks.id, lockId));
@@ -863,21 +1038,21 @@ export class DatabaseStorage implements IStorage {
         eq(rateLimitBuckets.accountId, accountId),
         eq(rateLimitBuckets.connectorType, connectorType as "google" | "atlassian" | "slack" | "upload")
       ));
-    
+
     if (existing.length > 0) {
       const bucket = existing[0];
       const now = Date.now();
       const lastRefillTime = new Date(bucket.lastRefill).getTime();
       const secondsElapsed = Math.floor((now - lastRefillTime) / 1000);
-      
+
       if (secondsElapsed > 0) {
         const tokensToAdd = Math.min(secondsElapsed * bucket.refillRate, bucket.maxTokens - bucket.tokens);
         if (tokensToAdd > 0) {
           const [updated] = await db.update(rateLimitBuckets)
-            .set({ 
-              tokens: bucket.tokens + tokensToAdd, 
+            .set({
+              tokens: bucket.tokens + tokensToAdd,
               lastRefill: new Date(),
-              updatedAt: new Date() 
+              updatedAt: new Date()
             })
             .where(eq(rateLimitBuckets.id, bucket.id))
             .returning();
@@ -886,7 +1061,7 @@ export class DatabaseStorage implements IStorage {
       }
       return bucket;
     }
-    
+
     const maxTokens = connectorType === "upload" ? 20 : 10;
     const [created] = await db.insert(rateLimitBuckets).values({
       accountId,
@@ -897,19 +1072,19 @@ export class DatabaseStorage implements IStorage {
       lastRefill: new Date(),
       updatedAt: new Date(),
     }).returning();
-    
+
     return created;
   }
 
   async consumeRateLimitToken(accountId: string, connectorType: string): Promise<boolean> {
     const bucket = await this.getOrCreateRateLimitBucket(accountId, connectorType);
-    
+
     if (bucket.tokens <= 0) return false;
-    
+
     await db.update(rateLimitBuckets)
       .set({ tokens: bucket.tokens - 1, updatedAt: new Date() })
       .where(eq(rateLimitBuckets.id, bucket.id));
-    
+
     return true;
   }
 
@@ -918,19 +1093,19 @@ export class DatabaseStorage implements IStorage {
     const activeVersionIds = await db.select({ id: sourceVersions.id })
       .from(sourceVersions)
       .where(eq(sourceVersions.isActive, true));
-    
+
     if (activeVersionIds.length === 0) {
       return db.select().from(chunks).where(isNull(chunks.sourceVersionId));
     }
-    
-    const versionIds = activeVersionIds.map(v => v.id);
-    
+
+    const versionIds = activeVersionIds.map((v: { id: string }) => v.id);
+
     const activeChunks = await db.select().from(chunks)
       .where(inArray(chunks.sourceVersionId, versionIds));
-    
+
     const legacyChunks = await db.select().from(chunks)
       .where(isNull(chunks.sourceVersionId));
-    
+
     return [...activeChunks, ...legacyChunks];
   }
 
@@ -938,21 +1113,63 @@ export class DatabaseStorage implements IStorage {
     const activeVersionIds = await db.select({ id: sourceVersions.id })
       .from(sourceVersions)
       .where(eq(sourceVersions.isActive, true));
-    
+
     if (activeVersionIds.length === 0) {
       return db.select().from(chunks)
         .where(and(eq(chunks.userId, userId), isNull(chunks.sourceVersionId)));
     }
-    
-    const versionIds = activeVersionIds.map(v => v.id);
-    
+
+    const versionIds = activeVersionIds.map((v: { id: string }) => v.id);
+
     const activeChunks = await db.select().from(chunks)
       .where(and(eq(chunks.userId, userId), inArray(chunks.sourceVersionId, versionIds)));
-    
+
     const legacyChunks = await db.select().from(chunks)
       .where(and(eq(chunks.userId, userId), isNull(chunks.sourceVersionId)));
-    
+
     return [...activeChunks, ...legacyChunks];
+  }
+
+  async getChunk(id: string): Promise<Chunk | undefined> {
+    const [chunk] = await db.select().from(chunks).where(eq(chunks.id, id));
+    return chunk;
+  }
+
+  // Voice Calls
+  async createVoiceCall(call: InsertVoiceCall): Promise<VoiceCall> {
+    const [created] = await db.insert(voiceCalls).values(call).returning();
+    return created;
+  }
+
+  async getVoiceCall(id: string): Promise<VoiceCall | undefined> {
+    const [call] = await db.select().from(voiceCalls).where(eq(voiceCalls.id, id));
+    return call;
+  }
+
+  async updateVoiceCall(id: string, updates: Partial<InsertVoiceCall>): Promise<VoiceCall | undefined> {
+    const [updated] = await db.update(voiceCalls)
+      .set(updates)
+      .where(eq(voiceCalls.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getVoiceCallsByUser(userId: string): Promise<VoiceCall[]> {
+    return await db.select().from(voiceCalls)
+      .where(eq(voiceCalls.userId, userId))
+      .orderBy(desc(voiceCalls.startedAt));
+  }
+
+  // Voice Turns
+  async createVoiceTurn(turn: InsertVoiceTurn): Promise<VoiceTurn> {
+    const [created] = await db.insert(voiceTurns).values(turn).returning();
+    return created;
+  }
+
+  async getVoiceTurnsByCall(callId: string): Promise<VoiceTurn[]> {
+    return await db.select().from(voiceTurns)
+      .where(eq(voiceTurns.callId, callId))
+      .orderBy(voiceTurns.createdAt);
   }
 }
 

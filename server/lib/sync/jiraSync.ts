@@ -1,4 +1,6 @@
 import type { SyncContext, SyncEngine, SyncableItem, SyncableContent } from "./types";
+import { sanitizeContent, wrapUntrustedContent, type SourceType } from "../safety/sanitize";
+import { detectInjection, stripSuspiciousLines } from "../safety/detector";
 
 interface JiraIssue {
   id: string;
@@ -34,6 +36,20 @@ export const jiraSyncEngine: SyncEngine = {
   name: "jira",
 
   async fetchMetadata(ctx: SyncContext): Promise<SyncableItem[]> {
+    if (process.env.DEV_CONNECTOR_FIXTURES === "1" || (process.env.NODE_ENV === "development" && !ctx.accessToken)) {
+      console.log("[jiraSync] Returning fixture metadata");
+      return [
+        {
+          externalId: "fixture-issue-1",
+          title: "PROJ-123: Implement Login Flow (Fixture)",
+          url: "https://jira.atlassian.com/browse/PROJ-123",
+          mimeType: "text/plain",
+          contentHash: "fixture-jira-hash-1",
+          modifiedAt: new Date(),
+        }
+      ];
+    }
+
     const items: SyncableItem[] = [];
     const scopeConfig = ctx.scope.scopeConfigJson as {
       cloudId?: string;
@@ -47,7 +63,7 @@ export const jiraSyncEngine: SyncEngine = {
     }
 
     const baseUrl = `https://api.atlassian.com/ex/jira/${scopeConfig.cloudId}/rest/api/3`;
-    
+
     let jql = scopeConfig.jql || "";
     if (scopeConfig.projectKeys && scopeConfig.projectKeys.length > 0) {
       const projectFilter = `project in (${scopeConfig.projectKeys.join(",")})`;
@@ -96,6 +112,19 @@ export const jiraSyncEngine: SyncEngine = {
   },
 
   async fetchContent(ctx: SyncContext, item: SyncableItem): Promise<SyncableContent | null> {
+    if (process.env.DEV_CONNECTOR_FIXTURES === "1" || (process.env.NODE_ENV === "development" && !ctx.accessToken)) {
+      console.log(`[jiraSync] Returning fixture content for ${item.externalId}`);
+      return {
+        ...item,
+        content: `PROJ-123: Implement Login Flow\n\nStatus: In Progress\nPriority: High\nAssignee: Fixture User\n\nDescription:\nUser must be able to login with email/password.\n\nComments:\nfixture-user: This is urgent.`.repeat(20),
+        metadata: {
+          source: "jira",
+          issueKey: "PROJ-123",
+          issueType: "Story",
+        },
+      };
+    }
+
     const scopeConfig = ctx.scope.scopeConfigJson as { cloudId?: string } | null;
     if (!scopeConfig?.cloudId) return null;
 
@@ -116,7 +145,26 @@ export const jiraSyncEngine: SyncEngine = {
 
     const issue: JiraIssue = await response.json();
 
-    const content = formatJiraIssue(issue);
+    let content = formatJiraIssue(issue);
+
+    // Sanitize content to prevent prompt injection
+    const detection = detectInjection(content);
+    const sanitizeResult = sanitizeContent(content, {
+      maxLength: 10000,
+      sourceType: "jira",
+      stripMarkers: true,
+    });
+
+    // If highly suspicious, strip suspicious lines
+    if (detection.isSuspicious && detection.score >= 20) {
+      const stripped = stripSuspiciousLines(sanitizeResult.sanitized, detection);
+      content = stripped.cleaned;
+    } else {
+      content = sanitizeResult.sanitized;
+    }
+
+    // Wrap in untrusted context delimiters
+    content = wrapUntrustedContent(content, "jira", issue.key);
 
     return {
       ...item,
@@ -130,6 +178,8 @@ export const jiraSyncEngine: SyncEngine = {
         assignee: issue.fields.assignee?.displayName,
         reporter: issue.fields.reporter?.displayName,
         labels: issue.fields.labels,
+        injectionDetected: detection.isSuspicious,
+        injectionScore: detection.score,
       },
     };
   },

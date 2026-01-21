@@ -1,11 +1,13 @@
 import { createEmbedding, createEmbeddings } from "./openai";
-import type { Chunk } from "@shared/schema";
+import type { Chunk } from "../../shared/schema";
+import { storage } from "../storage";
 
 // In-memory vector store with persistence via chunk vectorRef field
 // Embeddings are stored in memory but chunk IDs are tracked in DB
 // On startup, re-index all chunks that don't have cached embeddings
 const vectorStore: Map<string, number[]> = new Map();
 let initialized = false;
+let hydrationPromise: Promise<void> | null = null;
 
 export async function initializeVectorStore(allChunks: Chunk[]): Promise<void> {
   if (initialized) return;
@@ -40,11 +42,60 @@ export async function indexChunks(chunks: Chunk[]): Promise<void> {
   }
 }
 
+/**
+ * Ensures the vector store is hydrated from the database.
+ * Called lazily on first retrieval if the store is empty.
+ */
+export async function ensureVectorStoreHydrated(): Promise<void> {
+  // If hydration is in progress, wait for it
+  if (hydrationPromise) {
+    await hydrationPromise;
+    return;
+  }
+  
+  // If store already has data and is initialized, skip
+  if (initialized && vectorStore.size > 0) {
+    return;
+  }
+  
+  // Check if store is empty - hydrate from DB if needed
+  if (vectorStore.size === 0) {
+    hydrationPromise = (async () => {
+      try {
+        const activeChunks = await storage.getActiveChunks();
+        if (activeChunks.length > 0) {
+          console.log(`[vectorstore] Hydrating vector store with ${activeChunks.length} chunks from database...`);
+          await indexChunks(activeChunks);
+          initialized = true;
+          console.log(`[vectorstore] Hydrated vector store with ${vectorStore.size} chunks`);
+        } else {
+          // No chunks in DB - mark as initialized to avoid repeated DB queries
+          initialized = true;
+          console.log(`[vectorstore] No active chunks found in database`);
+        }
+      } catch (error) {
+        console.error(`[vectorstore] Failed to hydrate vector store:`, error);
+        throw error;
+      } finally {
+        hydrationPromise = null;
+      }
+    })();
+    
+    await hydrationPromise;
+  } else {
+    // Store has data but wasn't marked initialized - mark it now
+    initialized = true;
+  }
+}
+
 export async function searchSimilar(
   query: string,
   allChunks: Chunk[],
   topK: number = 5
 ): Promise<{ chunk: Chunk; score: number }[]> {
+  // Ensure vector store is hydrated before searching
+  await ensureVectorStoreHydrated();
+  
   if (allChunks.length === 0) return [];
   
   const queryEmbedding = await createEmbedding(query);

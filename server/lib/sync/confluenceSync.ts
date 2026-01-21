@@ -1,4 +1,6 @@
 import type { SyncContext, SyncEngine, SyncableItem, SyncableContent } from "./types";
+import { sanitizeContent, wrapUntrustedContent } from "../safety/sanitize";
+import { detectInjection, stripSuspiciousLines } from "../safety/detector";
 
 interface ConfluencePage {
   id: string;
@@ -37,6 +39,20 @@ export const confluenceSyncEngine: SyncEngine = {
   name: "confluence",
 
   async fetchMetadata(ctx: SyncContext): Promise<SyncableItem[]> {
+    if (process.env.DEV_CONNECTOR_FIXTURES === "1" || (process.env.NODE_ENV === "development" && !ctx.accessToken)) {
+      console.log("[confluenceSync] Returning fixture metadata");
+      return [
+        {
+          externalId: "fixture-page-1",
+          title: "Engineering Onboarding (Fixture)",
+          url: "https://confluence.atlassian.com/display/ENG/Onboarding",
+          mimeType: "text/html",
+          contentHash: "v1",
+          modifiedAt: new Date(),
+        }
+      ];
+    }
+
     const items: SyncableItem[] = [];
     const scopeConfig = ctx.scope.scopeConfigJson as {
       cloudId?: string;
@@ -71,6 +87,20 @@ export const confluenceSyncEngine: SyncEngine = {
   },
 
   async fetchContent(ctx: SyncContext, item: SyncableItem): Promise<SyncableContent | null> {
+    if (process.env.DEV_CONNECTOR_FIXTURES === "1" || (process.env.NODE_ENV === "development" && !ctx.accessToken)) {
+      console.log(`[confluenceSync] Returning fixture content for ${item.externalId}`);
+      return {
+        ...item,
+        content: `Engineering Onboarding\n\nWelcome to the team! Here is what you need to know.\n\n1. Setup laptop\n2. Clone repo\n3. Run tests\n\nContact: fixture-manager`.repeat(20),
+        metadata: {
+          source: "confluence",
+          spaceKey: "ENG",
+          spaceName: "Engineering",
+          version: 1,
+        },
+      };
+    }
+
     const scopeConfig = ctx.scope.scopeConfigJson as { cloudId?: string } | null;
     if (!scopeConfig?.cloudId) return null;
 
@@ -94,16 +124,39 @@ export const confluenceSyncEngine: SyncEngine = {
       const page: ConfluencePage = await response.json();
 
       const htmlContent = page.body?.storage?.value || page.body?.view?.value || "";
-      const textContent = stripHtml(htmlContent);
+      let textContent = stripHtml(htmlContent);
+
+      // Sanitize content to prevent prompt injection
+      const detection = detectInjection(textContent);
+      const sanitizeResult = sanitizeContent(textContent, {
+        maxLength: 10000,
+        sourceType: "confluence",
+        stripMarkers: true,
+      });
+
+      // If highly suspicious, strip suspicious lines
+      if (detection.isSuspicious && detection.score >= 20) {
+        const stripped = stripSuspiciousLines(sanitizeResult.sanitized, detection);
+        textContent = stripped.cleaned;
+      } else {
+        textContent = sanitizeResult.sanitized;
+      }
+
+      let content = formatConfluencePage(page.title, textContent, page);
+
+      // Wrap in untrusted context delimiters
+      content = wrapUntrustedContent(content, "confluence", page.id);
 
       return {
         ...item,
-        content: formatConfluencePage(page.title, textContent, page),
+        content,
         metadata: {
           source: "confluence",
           spaceKey: page.space?.key,
           spaceName: page.space?.name,
           version: page.version?.number,
+          injectionDetected: detection.isSuspicious,
+          injectionScore: detection.score,
         },
       };
     } catch (error) {

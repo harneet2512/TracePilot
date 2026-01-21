@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import {
   ArrowLeft,
   Folder,
   Loader2,
@@ -23,8 +23,10 @@ import {
 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { normalizeScopes, saveScope } from "@/lib/scopes";
 import type { UserConnectorAccount, UserConnectorScope } from "@shared/schema";
 import { Link, useLocation } from "wouter";
+import { SyncProgress } from "@/components/SyncProgress";
 
 interface FolderItem {
   id: string;
@@ -47,10 +49,12 @@ export default function GoogleScopesPage() {
 
   const googleAccount = accounts?.find((a) => a.type === "google");
 
-  const { data: existingScope } = useQuery<UserConnectorScope>({
+  const { data: scopes } = useQuery<UserConnectorScope[]>({
     queryKey: ["/api/user-connector-scopes", googleAccount?.id],
     enabled: !!googleAccount?.id,
   });
+
+  const existingScope = normalizeScopes(scopes);
 
   const { data: folders, isLoading: foldersLoading, refetch: refetchFolders } = useQuery<FolderItem[]>({
     queryKey: ["/api/oauth/google/folders"],
@@ -59,8 +63,8 @@ export default function GoogleScopesPage() {
 
   useEffect(() => {
     if (existingScope) {
-      setSyncMode(existingScope.syncMode as typeof syncMode);
-      setContentStrategy(existingScope.contentStrategy as typeof contentStrategy);
+      setSyncMode((existingScope.syncMode as typeof syncMode) || "smart");
+      setContentStrategy((existingScope.contentStrategy as typeof contentStrategy) || "smart");
       const config = existingScope.scopeConfigJson as Record<string, unknown>;
       if (config?.folders && Array.isArray(config.folders)) {
         setSelectedFolders(config.folders as string[]);
@@ -75,7 +79,7 @@ export default function GoogleScopesPage() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!googleAccount) throw new Error("No Google account connected");
-      
+
       const data = {
         accountId: googleAccount.id,
         userId: googleAccount.userId,
@@ -91,12 +95,11 @@ export default function GoogleScopesPage() {
           fileTypes: [],
         },
       };
-      
-      if (existingScope) {
-        await apiRequest("PATCH", `/api/user-connector-scopes/${existingScope.id}`, data);
-      } else {
-        await apiRequest("POST", "/api/user-connector-scopes", data);
-      }
+
+      await saveScope({
+        existingScopeId: existingScope?.id,
+        data,
+      });
     },
     onSuccess: () => {
       toast({ title: "Settings saved successfully" });
@@ -284,6 +287,13 @@ export default function GoogleScopesPage() {
             )}
           </CardContent>
         </Card>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium">Sync Status</h3>
+          </div>
+          {existingScope?.id && <SyncProgress scopeId={existingScope.id} />}
+        </div>
 
         <div className="flex justify-end gap-3">
           <Button variant="outline" asChild>

@@ -6,10 +6,10 @@ const POLL_INTERVAL_MS = 5000;
 const MAX_ATTEMPTS = 3;
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
-type JobType = "sync" | "ingest" | "eval" | "playbook";
-type JobHandler = (job: Job) => Promise<{ 
-  success: boolean; 
-  output?: unknown; 
+type JobType = "sync" | "ingest" | "eval" | "playbook" | "ingest_call_transcript";
+type JobHandler = (job: Job, runId?: string) => Promise<{
+  success: boolean;
+  output?: unknown;
   error?: string;
   errorCode?: string;
   stats?: JobStats;
@@ -35,7 +35,7 @@ function calculateBackoff(attempt: number): number {
 
 function shouldRetry(errorCode?: string, errorMessage?: string): boolean {
   if (!errorCode && !errorMessage) return true;
-  
+
   if (errorCode === "429" || errorMessage?.includes("rate limit") || errorMessage?.includes("429")) {
     return true;
   }
@@ -48,7 +48,7 @@ function shouldRetry(errorCode?: string, errorMessage?: string): boolean {
   if (errorCode?.startsWith("4") && errorCode !== "401" && errorCode !== "403") {
     return false;
   }
-  
+
   return true;
 }
 
@@ -75,7 +75,7 @@ export class JobRunner {
       clearTimeout(this.pollTimer);
       this.pollTimer = null;
     }
-    
+
     const entries = Array.from(this.activeLocks.entries());
     for (let i = 0; i < entries.length; i++) {
       const [jobId, lockId] = entries[i];
@@ -86,7 +86,7 @@ export class JobRunner {
       }
     }
     this.activeLocks.clear();
-    
+
     console.log(`[JobRunner] Stopped worker ${this.workerId}`);
   }
 
@@ -95,9 +95,13 @@ export class JobRunner {
 
     try {
       await this.cleanupStaleJobs();
-      
+
       const job = await storage.claimJobWithLock(this.workerId, 1);
-      
+
+      // Heartbeat log for diagnosis
+      const pendingCount = await storage.getPendingJobCount();
+      console.log(`[JobRunner] poll: pendingJobs=${pendingCount}, claimed=${job ? job.id : 'none'}`);
+
       if (job) {
         await this.processJob(job);
       }
@@ -113,7 +117,7 @@ export class JobRunner {
   private async cleanupStaleJobs() {
     const now = new Date();
     const staleThreshold = new Date(now.getTime() - LOCK_TIMEOUT_MS);
-    
+
     const staleJobs = await storage.getStaleRunningJobs(staleThreshold);
     for (const job of staleJobs) {
       if (job.lockedBy) {
@@ -129,7 +133,7 @@ export class JobRunner {
 
     const connectorType = job.connectorType || "upload";
     const accountId = (job.inputJson as { accountId?: string })?.accountId;
-    
+
     const canAcquire = await storage.canAcquireConcurrencySlot(connectorType, accountId);
     if (!canAcquire) {
       console.log(`[JobRunner] Concurrency limit reached for ${connectorType}/${accountId}, requeueing job ${job.id}`);
@@ -158,7 +162,7 @@ export class JobRunner {
 
     const lock = await storage.getOrCreateJobLock(connectorType, accountId);
     const acquired = await storage.incrementJobLockCount(lock.id);
-    
+
     if (!acquired) {
       console.log(`[JobRunner] Failed to acquire concurrency slot for job ${job.id}`);
       await storage.updateJob(job.id, {
@@ -169,7 +173,7 @@ export class JobRunner {
       });
       return;
     }
-    
+
     this.activeLocks.set(job.id, lock.id);
 
     const run: InsertJobRun = {
@@ -178,7 +182,7 @@ export class JobRunner {
       status: "running",
       startedAt: new Date(),
     };
-    
+
     const createdRun = await storage.createJobRun(run);
     console.log(`[JobRunner] Processing job ${job.id} (${job.type}), attempt ${attemptNumber}`);
 
@@ -189,25 +193,37 @@ export class JobRunner {
     }
 
     try {
-      const result = await handler(job);
-      
+      const result = await handler(job, createdRun.id);
+
       if (result.success) {
         await this.handleSuccess(job, createdRun.id, startTime, result.output, result.stats);
       } else {
         const canRetry = shouldRetry(result.errorCode, result.error);
         await this.handleFailure(
-          job, 
-          createdRun.id, 
-          startTime, 
+          job,
+          createdRun.id,
+          startTime,
           result.error || "Job failed without error message",
           result.errorCode,
           result.stats,
           canRetry
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      await this.handleFailure(job, createdRun.id, startTime, errorMessage);
+
+      const pgErrorStats: any = {};
+      if (error && typeof error === 'object') {
+        if (error.code) pgErrorStats.pgCode = error.code;
+        if (error.detail) pgErrorStats.pgDetail = error.detail;
+        if (error.table) pgErrorStats.pgTable = error.table;
+        if (error.column) pgErrorStats.pgColumn = error.column;
+        if (error.constraint) pgErrorStats.pgConstraint = error.constraint;
+        if (error.where) pgErrorStats.pgWhere = error.where;
+      }
+
+      console.error(`[JobRunner] Job ${job.id} failed:`, errorMessage, pgErrorStats);
+      await this.handleFailure(job, createdRun.id, startTime, errorMessage, error.code, pgErrorStats);
     } finally {
       await storage.decrementJobLockCount(lock.id);
       this.activeLocks.delete(job.id);
@@ -216,12 +232,12 @@ export class JobRunner {
 
   private async handleSuccess(job: Job, runId: string, startTime: number, output?: unknown, stats?: JobStats) {
     const duration = Date.now() - startTime;
-    
+
     await storage.updateJobRun(runId, {
       status: "completed",
       finishedAt: new Date(),
-      statsJson: { 
-        durationMs: duration, 
+      statsJson: {
+        durationMs: duration,
         output,
         ...stats
       },
@@ -238,9 +254,9 @@ export class JobRunner {
   }
 
   private async handleFailure(
-    job: Job, 
-    runId: string, 
-    startTime: number, 
+    job: Job,
+    runId: string,
+    startTime: number,
     error: string,
     errorCode?: string,
     stats?: JobStats,
@@ -270,7 +286,7 @@ export class JobRunner {
     } else {
       const backoff = calculateBackoff(attempts);
       const nextRunAt = new Date(Date.now() + backoff);
-      
+
       await storage.updateJob(job.id, {
         status: "pending",
         attempts,
@@ -315,6 +331,7 @@ export async function enqueueJob(options: {
     nextRunAt: options.runAt || new Date(),
   });
 
+  console.log(`[enqueue] job=${job.id} scope=${options.scopeId || 'null'} connector=${options.connectorType || 'null'}`);
   console.log(`[JobRunner] Enqueued job ${job.id} (${job.type})`);
   return job;
 }

@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import {
   ArrowLeft,
   Loader2,
   Save,
@@ -25,8 +25,10 @@ import {
 } from "lucide-react";
 import { SiSlack } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { normalizeScopes, saveScope } from "@/lib/scopes";
 import type { UserConnectorAccount, UserConnectorScope } from "@shared/schema";
 import { Link } from "wouter";
+import { SyncProgress } from "@/components/SyncProgress";
 
 interface SlackChannel {
   id: string;
@@ -49,10 +51,12 @@ export default function SlackScopesPage() {
 
   const slackAccount = accounts?.find((a) => a.type === "slack");
 
-  const { data: existingScope } = useQuery<UserConnectorScope>({
+  const { data: scopes } = useQuery<UserConnectorScope[]>({
     queryKey: ["/api/user-connector-scopes", slackAccount?.id],
     enabled: !!slackAccount?.id,
   });
+
+  const existingScope = normalizeScopes(scopes);
 
   const { data: channels, isLoading: channelsLoading, refetch: refetchChannels } = useQuery<SlackChannel[]>({
     queryKey: ["/api/oauth/slack/channels"],
@@ -61,14 +65,11 @@ export default function SlackScopesPage() {
 
   useEffect(() => {
     if (existingScope) {
-      setSyncMode(existingScope.syncMode as typeof syncMode);
-      setContentStrategy(existingScope.contentStrategy as typeof contentStrategy);
+      setSyncMode((existingScope.syncMode as typeof syncMode) || "full");
+      setContentStrategy((existingScope.contentStrategy as typeof contentStrategy) || "smart");
       const config = existingScope.scopeConfigJson as Record<string, unknown>;
       if (config?.channels && Array.isArray(config.channels)) {
         setSelectedChannels(config.channels as string[]);
-      }
-      if (config?.includeThreads !== undefined) {
-        setIncludeThreads(config.includeThreads as boolean);
       }
     }
   }, [existingScope]);
@@ -76,7 +77,7 @@ export default function SlackScopesPage() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!slackAccount) throw new Error("No Slack account connected");
-      
+
       const data = {
         accountId: slackAccount.id,
         userId: slackAccount.userId,
@@ -85,19 +86,14 @@ export default function SlackScopesPage() {
         contentStrategy,
         scopeConfigJson: {
           channels: selectedChannels,
-          includeThreads,
         },
-        exclusionsJson: {
-          userIds: [],
-          botMessages: true,
-        },
+        exclusionsJson: {},
       };
-      
-      if (existingScope) {
-        await apiRequest("PATCH", `/api/user-connector-scopes/${existingScope.id}`, data);
-      } else {
-        await apiRequest("POST", "/api/user-connector-scopes", data);
-      }
+
+      await saveScope({
+        existingScopeId: existingScope?.id,
+        data,
+      });
     },
     onSuccess: () => {
       toast({ title: "Settings saved successfully" });
@@ -258,32 +254,43 @@ export default function SlackScopesPage() {
                 ))}
               </div>
             ) : channels && channels.length > 0 ? (
-              <div className="space-y-2 max-h-64 overflow-auto">
-                {channels.map((channel) => (
-                  <div
-                    key={channel.id}
-                    className="flex items-center gap-3 p-2 rounded-md hover-elevate cursor-pointer"
-                    onClick={() => toggleChannel(channel.id)}
-                    data-testid={`channel-item-${channel.id}`}
-                  >
-                    <Checkbox
-                      checked={selectedChannels.includes(channel.id)}
-                      onCheckedChange={() => toggleChannel(channel.id)}
-                    />
-                    {channel.is_private ? (
-                      <Lock className="h-4 w-4 text-muted-foreground" />
-                    ) : (
+              <>
+                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    <strong>Workspace Knowledge:</strong> Only public channels can be indexed as workspace-wide knowledge.
+                    Private channels are automatically filtered out for security.
+                  </p>
+                </div>
+                <div className="space-y-2 max-h-64 overflow-auto">
+                  {channels.filter(ch => !ch.is_private).map((channel) => (
+                    <div
+                      key={channel.id}
+                      className="flex items-center gap-3 p-2 rounded-md hover-elevate cursor-pointer"
+                      onClick={() => toggleChannel(channel.id)}
+                      data-testid={`channel-item-${channel.id}`}
+                    >
+                      <Checkbox
+                        checked={selectedChannels.includes(channel.id)}
+                        onCheckedChange={() => toggleChannel(channel.id)}
+                      />
                       <Hash className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span className="text-sm flex-1">{channel.name}</span>
-                    {channel.num_members && (
-                      <Badge variant="secondary" className="text-xs">
-                        {channel.num_members} members
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      <span className="text-sm flex-1">{channel.name}</span>
+                      {channel.num_members && (
+                        <Badge variant="secondary" className="text-xs">
+                          {channel.num_members} members
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                  {channels.filter(ch => !ch.is_private).length === 0 && (
+                    <div className="text-center py-6 text-sm text-muted-foreground">
+                      <Hash className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No public channels found.</p>
+                      <p className="text-xs mt-1">Only public channels can be indexed as workspace knowledge.</p>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <div className="text-center py-6 text-sm text-muted-foreground">
                 <Hash className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -293,7 +300,7 @@ export default function SlackScopesPage() {
 
             {selectedChannels.length > 0 && (
               <p className="text-xs text-muted-foreground mt-4">
-                {selectedChannels.length} channel(s) selected
+                {selectedChannels.length} public channel(s) selected
               </p>
             )}
           </CardContent>
@@ -321,6 +328,11 @@ export default function SlackScopesPage() {
             )}
           </Button>
         </div>
+
+        {/* Sync Progress */}
+        {existingScope?.id && (
+          <SyncProgress scopeId={existingScope.id} />
+        )}
       </div>
     </Layout>
   );

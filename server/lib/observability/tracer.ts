@@ -6,7 +6,7 @@ export interface TraceContext {
   traceId: string;
   requestId: string;
   userId?: string;
-  kind: "chat" | "action" | "sync" | "eval" | "playbook";
+  kind: "chat" | "action" | "sync" | "eval" | "playbook" | "voice";
   parentSpanId?: string;
 }
 
