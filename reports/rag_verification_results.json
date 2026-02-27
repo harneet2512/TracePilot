@@ -1,0 +1,388 @@
+{
+  "timestamp": "2026-02-15T14:37:53.359Z",
+  "environment": {
+    "proofMode": false,
+    "nodeEnv": "development"
+  },
+  "indexingSummary": {
+    "sourceCount": 6,
+    "chunkCount": 66,
+    "workspaceId": "golden-eval-workspace"
+  },
+  "demoQueryResults": [
+    {
+      "caseId": "q1-q4-okrs",
+      "query": "What are our Q4 OKRs for the AI search project?",
+      "passed": false,
+      "answerText": "Here are the Q4 OKRs for the AI search project\n\n**Key facts:** October deadline • November deadline • December deadline\n\n**Advanced Capabilities**\n- Multi-language support for 20+ languages — Due: October\n- Custom fine-tuning beta — Due: November\n- Analytics dashboard GA — Due: December",
+      "answerLength": 287,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 55272,
+      "expectedFactsTotal": 4,
+      "expectedFactsFound": 1,
+      "expectedFactsMissing": [
+        "Launch semantic search: November 15, 2024",
+        "Document indexing target: 500K",
+        "Q4 budget: $180,000"
+      ],
+      "hasRawJson": false,
+      "needsClarification": true,
+      "failures": [
+        "Missing facts: Launch semantic search: November 15, 2024; Document indexing target: 500K; Q4 budget: $180,000"
+      ]
+    },
+    {
+      "caseId": "q2-blockers",
+      "query": "Are there any blockers for the AI search launch?",
+      "passed": false,
+      "answerText": "Yes, there is a significant blocker for the AI search launch related to AWS capacity approval. The main concern is the internal approval process for large quota increases at AWS, which is causing delays. This issue has been escalated to an AWS VP, and there is a fallback plan in place if the quota is not approved by November 11, 2024.",
+      "answerLength": 336,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 6675,
+      "expectedFactsTotal": 3,
+      "expectedFactsFound": 2,
+      "expectedFactsMissing": [
+        "Pinecone costs over budget: 15%"
+      ],
+      "hasRawJson": false,
+      "needsClarification": false,
+      "failures": [
+        "Missing facts: Pinecone costs over budget: 15%",
+        "Expected at least 2 sources, got 1"
+      ]
+    },
+    {
+      "caseId": "q3-vector-db",
+      "query": "What vector database are we using and why?",
+      "passed": false,
+      "answerText": "## Summary\n\nThe team has selected Pinecone as the vector database for the project.\n\n## Details\n\n- Pinecone was chosen due to its faster time-to-market compared to self-hosted alternatives, taking approximately 2 weeks versus 8+ weeks for self-hosted solutions such as Milvus.\n- Pinecone offers a managed service which reduces operational overhead and allows the team to focus on improving search quality rather than managing infrastructure.",
+      "answerLength": 440,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 3476,
+      "expectedFactsTotal": 6,
+      "expectedFactsFound": 2,
+      "expectedFactsMissing": [
+        "Pod configuration: p1.x4",
+        "Embedding dimensions: 3072",
+        "Similarity metric: cosine",
+        "Monthly cost: $300"
+      ],
+      "hasRawJson": false,
+      "needsClarification": false,
+      "failures": [
+        "Missing facts: Pod configuration: p1.x4; Embedding dimensions: 3072; Similarity metric: cosine; Monthly cost: $300"
+      ]
+    },
+    {
+      "caseId": "q4-aws-owner-deadline",
+      "query": "Who is responsible for fixing the AWS blocker and when is the deadline?",
+      "passed": false,
+      "answerText": "The person responsible for addressing the AWS EU Region Quota Blocker is Jordan Martinez, the Infrastructure Lead. The mitigation plan specifies that if the quota is not approved by November 11, 2024, alternative steps will be taken.",
+      "answerLength": 233,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 4958,
+      "expectedFactsTotal": 4,
+      "expectedFactsFound": 2,
+      "expectedFactsMissing": [
+        "Deadline: November 11, 2024",
+        "Revenue impact: $500K, ARR"
+      ],
+      "hasRawJson": false,
+      "needsClarification": false,
+      "failures": [
+        "Missing facts: Deadline: November 11, 2024; Revenue impact: $500K, ARR",
+        "Expected at least 2 sources, got 1"
+      ]
+    },
+    {
+      "caseId": "q5-2025-roadmap",
+      "query": "What's our 2025 product roadmap?",
+      "passed": false,
+      "answerText": "The 2025 product roadmap for Project Phoenix focuses on enhancing enterprise readiness and differentiating through advanced capabilities.",
+      "answerLength": 137,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 10321,
+      "expectedFactsTotal": 4,
+      "expectedFactsFound": 0,
+      "expectedFactsMissing": [
+        "Q1 features: Multi-tenancy, real-time sync, advanced filters",
+        "Q2 features: Conversational search, automated summaries",
+        "Q3 features: Microsoft 365, Slack bot, mobile apps",
+        "Q4 features: Multi-language, custom fine-tuning, analytics"
+      ],
+      "hasRawJson": false,
+      "needsClarification": false,
+      "failures": [
+        "Missing facts: Q1 features: Multi-tenancy, real-time sync, advanced filters; Q2 features: Conversational search, automated summaries; Q3 features: Microsoft 365, Slack bot, mobile apps; Q4 features: Multi-language, custom fine-tuning, analytics"
+      ]
+    },
+    {
+      "caseId": "q6-infra-contact",
+      "query": "Who should I contact about infrastructure issues?",
+      "passed": false,
+      "answerText": "For infrastructure issues, you should contact Jordan Martinez, the Infrastructure Lead. He is responsible for AWS infrastructure, Pinecone operations, scaling, and monitoring.",
+      "answerLength": 175,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 5803,
+      "expectedFactsTotal": 4,
+      "expectedFactsFound": 2,
+      "expectedFactsMissing": [
+        "Email: jordan.m@company.com",
+        "Slack: @jordan"
+      ],
+      "hasRawJson": false,
+      "needsClarification": false,
+      "failures": [
+        "Missing facts: Email: jordan.m@company.com; Slack: @jordan"
+      ]
+    },
+    {
+      "caseId": "q7-project-cost",
+      "query": "How much is the AI search project costing us?",
+      "passed": false,
+      "answerText": "The specific cost of the AI search project is not detailed in the provided context. However, there is information on the cost comparison between different AI models used for answer generation, such as Claude Sonnet 3.5 and GPT-4o. Claude Sonnet 3.5 is noted to be 30% cheaper than GPT-4o for their use case.",
+      "answerLength": 307,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 5148,
+      "expectedFactsTotal": 5,
+      "expectedFactsFound": 0,
+      "expectedFactsMissing": [
+        "Total budget allocated: $2,565,000, $2.565M",
+        "Amount spent: $214,000, $214K",
+        "Infrastructure allocation: $2,300,000, $2.3M",
+        "LLM API costs: $180,000, $180K",
+        "Tooling costs: $85,000, $85K"
+      ],
+      "hasRawJson": false,
+      "needsClarification": false,
+      "failures": [
+        "Missing facts: Total budget allocated: $2,565,000, $2.565M; Amount spent: $214,000, $214K; Infrastructure allocation: $2,300,000, $2.3M; LLM API costs: $180,000, $180K; Tooling costs: $85,000, $85K"
+      ]
+    },
+    {
+      "caseId": "q8-biggest-risk",
+      "query": "What's the biggest risk to our Nov 15 launch and what are we doing about it?",
+      "passed": false,
+      "answerText": "The biggest risk to the November 15 launch of the Project Phoenix AI-powered semantic search platform is the AWS quota blocker. This issue affects GDPR compliance requirements and could impact the launch capacity. To mitigate this risk, the issue has been escalated to the AWS Technical Account Manager and an executive escalation to the AWS VP is planned. Jordan Martinez expects a resolution by November 11, 2024. Additionally, a fallback plan is in place to deploy with 50 instances (reduced capacity) if the quota is not approved in time.",
+      "answerLength": 542,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 6794,
+      "expectedFactsTotal": 5,
+      "expectedFactsFound": 4,
+      "expectedFactsMissing": [
+        "Impact: $500K, EU customers"
+      ],
+      "hasRawJson": false,
+      "needsClarification": false,
+      "failures": [
+        "Missing facts: Impact: $500K, EU customers",
+        "Expected at least 2 sources, got 1"
+      ]
+    },
+    {
+      "caseId": "q9-claude-vs-gpt",
+      "query": "Why did we choose Claude over GPT-4?",
+      "passed": false,
+      "answerText": "## Summary\n\nWe chose Claude Sonnet 3.5 over GPT-4 primarily due to cost efficiency and better citation accuracy for our use case. Specifically, Claude Sonnet 3.5 is 30% cheaper than GPT-4 and has a higher citation accuracy of 95% compared to 78% for GPT-4. Additionally, Anthropic's responsible AI practices align with our company values.\n\n## Details\n\n- Claude Sonnet 3.5 is 30% cheaper than GPT-4.\n- Claude Sonnet 3.5 has better citation accuracy (95%) compared to GPT-4 (78%).\n- Anthropic's responsible AI practices align with company values.",
+      "answerLength": 544,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 9457,
+      "expectedFactsTotal": 3,
+      "expectedFactsFound": 2,
+      "expectedFactsMissing": [
+        "Decision date: September 20, 2024"
+      ],
+      "hasRawJson": false,
+      "needsClarification": false,
+      "failures": [
+        "Missing facts: Decision date: September 20, 2024"
+      ]
+    },
+    {
+      "caseId": "q10-project-phoenix-overview",
+      "query": "I'm new to the team - what should I know about Project Phoenix?",
+      "passed": false,
+      "answerText": "## Summary\n\nProject Phoenix is a strategic initiative aimed at replacing the legacy keyword-based search system with an AI-powered semantic search platform. This project is an important part of the company's objectives for Q4 2024.\n\n## Details\n\n- Project Phoenix aims to launch a production-ready semantic search platform.\n- The target date for launching this platform to 100% of internal users is November 15, 2024.\n- The project aims to achieve a 2s p95 latency for search queries, index 500K+ documents, and reach a 92% user satisfaction score.\n- The project is led by Alex Kim, VP of Engineering, and involves a team of approximately 15 engineers.",
+      "answerLength": 651,
+      "citationCount": 1,
+      "sourceCount": 1,
+      "latencyMs": 10279,
+      "expectedFactsTotal": 10,
+      "expectedFactsFound": 6,
+      "expectedFactsMissing": [
+        "Launch date: November 15, 2024",
+        "Status: beta, on track",
+        "Budget: $2,565,000, $2.565M",
+        "Current blocker: AWS, EU, quota"
+      ],
+      "hasRawJson": false,
+      "needsClarification": false,
+      "failures": [
+        "Missing facts: Launch date: November 15, 2024; Status: beta, on track; Budget: $2,565,000, $2.565M; Current blocker: AWS, EU, quota",
+        "Expected at least 3 sources, got 1"
+      ]
+    }
+  ],
+  "ambiguityResults": [
+    {
+      "caseId": "amb1-okrs-vague",
+      "passed": false,
+      "needsClarificationSet": false,
+      "clarifyingQuestionsCount": 0,
+      "keywordsMatched": [
+        "project"
+      ],
+      "keywordsMissing": [
+        "quarter",
+        "which"
+      ],
+      "gaveDefinitiveAnswer": true,
+      "failures": [
+        "needsClarification was not set to true",
+        "No clarifying questions provided",
+        "Model gave a definitive answer with specific data instead of asking for clarification"
+      ]
+    },
+    {
+      "caseId": "amb2-on-track",
+      "passed": false,
+      "needsClarificationSet": false,
+      "clarifyingQuestionsCount": 0,
+      "keywordsMatched": [
+        "project"
+      ],
+      "keywordsMissing": [
+        "milestone",
+        "which",
+        "goal"
+      ],
+      "gaveDefinitiveAnswer": true,
+      "failures": [
+        "needsClarification was not set to true",
+        "No clarifying questions provided",
+        "Model gave a definitive answer with specific data instead of asking for clarification"
+      ]
+    },
+    {
+      "caseId": "amb3-budget",
+      "passed": false,
+      "needsClarificationSet": false,
+      "clarifyingQuestionsCount": 0,
+      "keywordsMatched": [
+        "budget"
+      ],
+      "keywordsMissing": [
+        "project",
+        "quarter",
+        "which"
+      ],
+      "gaveDefinitiveAnswer": true,
+      "failures": [
+        "needsClarification was not set to true",
+        "No clarifying questions provided",
+        "Model gave a definitive answer with specific data instead of asking for clarification"
+      ]
+    },
+    {
+      "caseId": "amb4-owner",
+      "passed": true,
+      "needsClarificationSet": true,
+      "clarifyingQuestionsCount": 3,
+      "keywordsMatched": [
+        "which",
+        "what"
+      ],
+      "keywordsMissing": [
+        "component",
+        "feature"
+      ],
+      "gaveDefinitiveAnswer": false,
+      "failures": []
+    },
+    {
+      "caseId": "amb5-blocker",
+      "passed": true,
+      "needsClarificationSet": true,
+      "clarifyingQuestionsCount": 3,
+      "keywordsMatched": [
+        "which",
+        "blocker",
+        "specific"
+      ],
+      "keywordsMissing": [],
+      "gaveDefinitiveAnswer": false,
+      "failures": []
+    },
+    {
+      "caseId": "amb6-next-steps",
+      "passed": true,
+      "needsClarificationSet": true,
+      "clarifyingQuestionsCount": 3,
+      "keywordsMatched": [
+        "context",
+        "task",
+        "project"
+      ],
+      "keywordsMissing": [
+        "role"
+      ],
+      "gaveDefinitiveAnswer": false,
+      "failures": []
+    },
+    {
+      "caseId": "amb7-architecture",
+      "passed": false,
+      "needsClarificationSet": false,
+      "clarifyingQuestionsCount": 0,
+      "keywordsMatched": [
+        "which"
+      ],
+      "keywordsMissing": [
+        "depth",
+        "component",
+        "level",
+        "area"
+      ],
+      "gaveDefinitiveAnswer": false,
+      "failures": [
+        "needsClarification was not set to true",
+        "No clarifying questions provided"
+      ]
+    },
+    {
+      "caseId": "amb8-risks",
+      "passed": false,
+      "needsClarificationSet": false,
+      "clarifyingQuestionsCount": 0,
+      "keywordsMatched": [
+        "project"
+      ],
+      "keywordsMissing": [
+        "timeframe",
+        "which",
+        "type"
+      ],
+      "gaveDefinitiveAnswer": false,
+      "failures": [
+        "needsClarification was not set to true",
+        "No clarifying questions provided"
+      ]
+    }
+  ],
+  "summary": {
+    "demoQueriesTotal": 10,
+    "demoQueriesPassed": 0,
+    "ambiguityTotal": 8,
+    "ambiguityPassed": 3,
+    "overallPass": false
+  }
+}

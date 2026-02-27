@@ -1,0 +1,293 @@
+{
+  "tone_invariants": {
+    "min_narrative_sentences": 2,
+    "max_narrative_sentences": 4,
+    "banned_openers": [
+      "I found",
+      "Found \\d+",
+      "The following results",
+      "I reviewed",
+      "Retrieved",
+      "Here are the blockers"
+    ],
+    "must_end_with_question": true,
+    "banned_narrative_phrases": [
+      "Last Updated:",
+      "Status:",
+      "Planning Horizon:",
+      "as an AI"
+    ],
+    "no_emojis": true
+  },
+  "queries": {
+    "q1_okrs": {
+      "text": "What are our Q4 OKRs for the AI search project?",
+      "must_include": [
+        "November 15",
+        "2s",
+        "500K",
+        "$180"
+      ],
+      "must_include_variants": {
+        "$180": ["$180", "$180K", "$180,000", "180,000", "180000"]
+      },
+      "must_cite_source": [
+        "Q4_2024_OKRs"
+      ],
+      "allowed_sources": [
+        "Q4_2024_OKRs"
+      ],
+      "allowed_source_types": ["okr_doc"],
+      "disallowed_source_types": [],
+      "banned_sources_for_query": [],
+      "requires_multi_source": false,
+      "min_evidence_count": 1,
+      "max_evidence_count": 2
+    },
+    "q2_blockers": {
+      "text": "Are there any blockers for the AI search launch?",
+      "must_include": [
+        "AWS",
+        "Pinecone",
+        "Google Drive"
+      ],
+      "must_include_variants": {
+        "Google Drive": ["Google Drive", "rate limit", "rate-limit", "Drive API"]
+      },
+      "must_cite_source": [
+        "JIRA_INFRA",
+        "Engineering_AllHands"
+      ],
+      "allowed_sources": [
+        "JIRA_INFRA",
+        "Engineering_AllHands"
+      ],
+      "allowed_source_types": ["jira_ticket", "meeting_notes"],
+      "disallowed_source_types": ["team_directory", "okr_doc", "roadmap_doc", "architecture_doc"],
+      "banned_sources_for_query": [
+        "Team_Quick_Reference"
+      ],
+      "requires_multi_source": true,
+      "min_evidence_count": 2,
+      "max_evidence_count": 3
+    },
+    "q3_architecture": {
+      "text": "What vector database are we using and why?",
+      "must_include": [
+        "Pinecone",
+        "cosine",
+        "$300"
+      ],
+      "must_include_variants": {
+        "cosine": ["cosine", "3072"],
+        "$300": ["$300", "300/month", "$300/month", "300 per month"]
+      },
+      "must_cite_source": [
+        "AI_Search_Architecture"
+      ],
+      "allowed_sources": [
+        "AI_Search_Architecture"
+      ],
+      "allowed_source_types": ["architecture_doc"],
+      "disallowed_source_types": ["team_directory"],
+      "banned_sources_for_query": [
+        "Team_Quick_Reference"
+      ],
+      "requires_multi_source": false,
+      "min_evidence_count": 1,
+      "max_evidence_count": 2
+    },
+    "q4_owner_deadline": {
+      "text": "Who is responsible for fixing the AWS blocker and when is the deadline?",
+      "must_include": [
+        "Jordan Martinez",
+        "November 11",
+        "$500"
+      ],
+      "must_include_variants": {
+        "$500": ["$500", "500K ARR", "$500K", "500,000"]
+      },
+      "must_cite_source": [
+        "JIRA_INFRA"
+      ],
+      "allowed_sources": [
+        "JIRA_INFRA",
+        "Engineering_AllHands",
+        "Team_Quick_Reference"
+      ],
+      "allowed_source_types": ["jira_ticket", "meeting_notes", "team_directory"],
+      "disallowed_source_types": [],
+      "banned_sources_for_query": [],
+      "requires_multi_source": false,
+      "min_evidence_count": 1,
+      "max_evidence_count": 3
+    },
+    "q5_roadmap": {
+      "text": "What's our 2025 product roadmap?",
+      "must_include": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4"
+      ],
+      "must_include_variants": {},
+      "must_cite_source": [
+        "Product_Roadmap_2025"
+      ],
+      "allowed_sources": [
+        "Product_Roadmap_2025"
+      ],
+      "allowed_source_types": ["roadmap_doc"],
+      "disallowed_source_types": ["team_directory"],
+      "banned_sources_for_query": [
+        "Team_Quick_Reference"
+      ],
+      "requires_multi_source": false,
+      "min_evidence_count": 1,
+      "max_evidence_count": 2
+    },
+    "q6_infra_contact": {
+      "text": "Who should I contact about infrastructure issues?",
+      "must_include": [
+        "Jordan Martinez",
+        "jordan.m@company.com",
+        "@jordan"
+      ],
+      "must_include_variants": {},
+      "must_cite_source": [
+        "Team_Quick_Reference"
+      ],
+      "allowed_sources": [
+        "Team_Quick_Reference"
+      ],
+      "allowed_source_types": ["team_directory"],
+      "disallowed_source_types": [],
+      "banned_sources_for_query": [],
+      "requires_multi_source": false,
+      "min_evidence_count": 1,
+      "max_evidence_count": 2
+    },
+    "q7_budget": {
+      "text": "How much is the AI search project costing us?",
+      "must_include": [
+        "2.565",
+        "214",
+        "2.3",
+        "180",
+        "85"
+      ],
+      "must_include_variants": {
+        "2.565": ["2.565", "2,565", "$2,565,000", "$2.565M"],
+        "214": ["214", "$214K", "$214,000"],
+        "2.3": ["2.3", "2,300", "$2,300,000", "$2.3M"],
+        "180": ["180", "$180K", "$180,000"],
+        "85": ["85", "$85K", "$85,000"]
+      },
+      "must_cite_source": [
+        "Q4_2024_OKRs"
+      ],
+      "allowed_sources": [
+        "Q4_2024_OKRs",
+        "Engineering_AllHands"
+      ],
+      "allowed_source_types": ["okr_doc", "meeting_notes"],
+      "disallowed_source_types": ["team_directory"],
+      "banned_sources_for_query": [
+        "Team_Quick_Reference"
+      ],
+      "requires_multi_source": false,
+      "min_evidence_count": 1,
+      "max_evidence_count": 3
+    },
+    "q8_biggest_risk": {
+      "text": "What's the biggest risk to our November 15 launch and what are we doing about it?",
+      "must_include": [
+        "AWS",
+        "500",
+        "November 11",
+        "fallback"
+      ],
+      "must_include_variants": {
+        "500": ["500", "$500K", "500K ARR", "$500,000"],
+        "fallback": ["fallback", "GCP", "alternative"]
+      },
+      "must_cite_source": [
+        "JIRA_INFRA",
+        "Engineering_AllHands"
+      ],
+      "allowed_sources": [
+        "JIRA_INFRA",
+        "Engineering_AllHands",
+        "AI_Search_Architecture",
+        "Q4_2024_OKRs"
+      ],
+      "allowed_source_types": ["jira_ticket", "meeting_notes"],
+      "disallowed_source_types": ["team_directory"],
+      "banned_sources_for_query": [
+        "Team_Quick_Reference"
+      ],
+      "requires_multi_source": true,
+      "min_evidence_count": 1,
+      "max_evidence_count": 4
+    },
+    "q9_claude_vs_gpt": {
+      "text": "Why did we choose Claude over GPT-4?",
+      "must_include": [
+        "30%",
+        "95%"
+      ],
+      "must_include_variants": {
+        "30%": ["30%", "cheaper", "30 percent"],
+        "95%": ["95%", "78%", "citation accuracy"]
+      },
+      "must_cite_source": [
+        "AI_Search_Architecture"
+      ],
+      "allowed_sources": [
+        "AI_Search_Architecture",
+        "Engineering_AllHands"
+      ],
+      "allowed_source_types": null,
+      "disallowed_source_types": ["team_directory"],
+      "banned_sources_for_query": [
+        "Team_Quick_Reference"
+      ],
+      "requires_multi_source": false,
+      "min_evidence_count": 0,
+      "max_evidence_count": 2,
+      "note": "If facts absent from docs, 'not specified in current docs' is acceptable and coverage is waived."
+    },
+    "q10_new_hire": {
+      "text": "I'm new to the team - what should I know about Project Phoenix?",
+      "must_include": [
+        "November 15",
+        "Pinecone",
+        "semantic",
+        "2s",
+        "500K"
+      ],
+      "must_include_variants": {
+        "2s": ["2s", "latency", "2 second", "p95"],
+        "500K": ["500K", "500,000", "500000"]
+      },
+      "must_cite_source": [
+        "Q4_2024_OKRs",
+        "AI_Search_Architecture"
+      ],
+      "allowed_sources": [
+        "Q4_2024_OKRs",
+        "Engineering_AllHands",
+        "JIRA_INFRA",
+        "AI_Search_Architecture",
+        "Product_Roadmap_2025",
+        "Team_Quick_Reference"
+      ],
+      "allowed_source_types": null,
+      "disallowed_source_types": [],
+      "banned_sources_for_query": [],
+      "requires_multi_source": true,
+      "min_evidence_count": 2,
+      "max_evidence_count": 6
+    }
+  }
+}

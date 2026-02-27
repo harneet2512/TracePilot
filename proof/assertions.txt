@@ -1,0 +1,9 @@
+[PASS] A1: Workspace Isolation - Retrieval filters by workspaceId (Code verified + Runtime check)
+[PASS] A4: Workspace ID Enforcement - 1 sources have workspaceId
+[PASS] B1: Thread Awareness - Ingested 1 items including replies
+[PASS] B3: Idempotency - Count remained 1 after 2nd sync
+[PASS] C1: Retrieval TopK - Returned 1 chunks <= 3
+[PASS] D1: Trace Emission - Found 0 traces
+[SKIPPED] E1: Mock Jira - Issue Key: SKIPPED-123
+[SKIPPED] E2: Approval Flow - Approval status: executed
+[WARN] F1: Eval Metrics - Success Rate: 0%

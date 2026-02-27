@@ -1,0 +1,88 @@
+{
+  "greetingTemplate": "Hello! I'm TracePilot. I search across your connected sources — {connectors}. What would you like to find?",
+  "noConnectorsMessage": "Hello! I'm TracePilot. No sources are connected yet. Connect sources in settings to search your knowledge.",
+  "connectorTypeLabels": {
+    "google": "Google Drive",
+    "atlassian": "Confluence and Jira",
+    "slack": "Slack",
+    "upload": "Upload"
+  },
+  "connectorSuggestions": {
+    "google": [
+      { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
+      { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },
+      { "label": "What's our roadmap?", "text": "What's our 2025 product roadmap?" },
+      { "label": "What can you help with?", "text": "What can you help me with?" }
+    ],
+    "atlassian": [
+      { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
+      { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },
+      { "label": "Who handles infrastructure?", "text": "Who should I contact about infrastructure issues?" },
+      { "label": "What's our roadmap?", "text": "What's our 2025 product roadmap?" }
+    ],
+    "slack": [
+      { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
+      { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },
+      { "label": "What can you help with?", "text": "What can you help me with?" }
+    ],
+    "default": [
+      { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
+      { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },
+      { "label": "What's our roadmap?", "text": "What's our 2025 product roadmap?" },
+      { "label": "What can you help with?", "text": "What can you help me with?" }
+    ]
+  },
+  "rules": [
+    {
+      "triggerType": "thanks",
+      "matchPatterns": ["^(thanks|thank you|thx)[\\s!.?]*$"],
+      "response": "You're welcome. Want help with anything else?",
+      "quickReplies": [
+        { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
+        { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },
+        { "label": "What can you help with?", "text": "What can you help me with?" }
+      ]
+    },
+    {
+      "triggerType": "greeting",
+      "matchPatterns": ["^(hi|hello|hey|yo|sup|good morning|good afternoon|good evening)[\\s!.?]*$"],
+      "response": "__DYNAMIC_GREETING__",
+      "quickReplies": [
+        { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
+        { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },
+        { "label": "What's our roadmap?", "text": "What's our 2025 product roadmap?" },
+        { "label": "What can you help with?", "text": "What can you help me with?" }
+      ]
+    },
+    {
+      "triggerType": "help",
+      "matchPatterns": [
+        "^(help(?: me)?|what are you|who are you|how do you work|how do i use (?:this|it)|what can you do|what do you do|what you do|what can u do|what do u do|what u do|what can you help me with|capabilities)[\\s!.?]*$",
+        "^(what|how|who)\\b.*\\b(you|u|assistant|this|it)\\b"
+      ],
+      "response": "I search across your workspace docs — OKRs, architecture, meeting notes, Jira issues, and more. I answer questions and cite sources for every claim. What would you like to look up?",
+      "quickReplies": [
+        { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
+        { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },
+        { "label": "Who handles infrastructure?", "text": "Who should I contact about infrastructure issues?" },
+        { "label": "What's our roadmap?", "text": "What's our 2025 product roadmap?" }
+      ]
+    },
+    {
+      "triggerType": "short",
+      "maxLength": 10,
+      "response": "Hello! I'm TracePilot. I search across your company knowledge. What would you like to find?",
+      "quickReplies": [
+        { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
+        { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },
+        { "label": "What can you help with?", "text": "What can you help me with?" }
+      ]
+    }
+  ],
+  "defaultQuickReplies": [
+    { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
+    { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },
+    { "label": "What's our roadmap?", "text": "What's our 2025 product roadmap?" },
+    { "label": "Who handles infrastructure?", "text": "Who should I contact about infrastructure issues?" }
+  ]
+}

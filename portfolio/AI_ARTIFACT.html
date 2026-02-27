@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FieldCopilot — AI Artifact (Hiring Manager)</title>
+    <style>
+      :root{
+        --ink:#0b1220;
+        --muted:#475569;
+        --faint:#64748b;
+        --bg:#ffffff;
+        --panel:#f8fafc;
+        --line:#e2e8f0;
+        --brand:#2563eb;
+        --brand2:#0f172a;
+        --good:#166534;
+        --warn:#92400e;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{
+        margin:0;
+        background:var(--bg);
+        color:var(--ink);
+        font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      }
+      .page{
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 36px 42px;
+      }
+      .topbar{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-end;
+        gap: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 18px;
+      }
+      .title{
+        margin:0;
+        font-size: 26px;
+        line-height:1.15;
+        letter-spacing:-0.02em;
+      }
+      .subtitle{
+        margin: 6px 0 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .meta{
+        text-align:right;
+        color: var(--faint);
+        font-size: 12px;
+        white-space:nowrap;
+      }
+      h2{
+        margin: 18px 0 10px 0;
+        font-size: 15px;
+        letter-spacing: -0.01em;
+      }
+      h3{
+        margin: 14px 0 8px 0;
+        font-size: 13px;
+        color: var(--brand2);
+      }
+      p{margin: 8px 0}
+      ul{margin: 8px 0 8px 18px; padding:0}
+      li{margin: 5px 0}
+      .grid{
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .card{
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 12px;
+        padding: 12px 12px;
+      }
+      .card strong{color: var(--brand2)}
+      .pill{
+        display:inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--muted);
+        font-size: 11px;
+        margin-right: 6px;
+      }
+      .evidence{
+        color: var(--faint);
+        font-size: 11px;
+        margin-left: 6px;
+        white-space:nowrap;
+      }
+      .callout{
+        border-left: 4px solid var(--brand);
+        background: #eff6ff;
+        padding: 10px 12px;
+        border-radius: 10px;
+      }
+      .callout .label{
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: #1d4ed8;
+        margin-bottom: 4px;
+      }
+      .diagram{
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px;
+      }
+      .diagram img{
+        width: 100%;
+        height: auto;
+        display:block;
+      }
+      .small{
+        font-size: 12px;
+        color: var(--muted);
+      }
+      table{
+        width:100%;
+        border-collapse: collapse;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow:hidden;
+        font-size: 12px;
+      }
+      th,td{
+        padding: 10px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th{
+        text-align:left;
+        background:#f1f5f9;
+        font-size: 12px;
+      }
+      tr:last-child td{border-bottom:none}
+      .section{
+        margin-top: 14px;
+      }
+      .hr{height:1px;background:var(--line);margin: 18px 0}
+      .pb{page-break-before: always;}
+      @page{ size: A4; margin: 14mm; }
+      @media print{
+        .page{ padding: 0; }
+        .pb{ page-break-before: always; }
+      }
+      .kpi{
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+      }
+      .kpi .k{
+        border:1px solid var(--line);
+        background:#fff;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- PAGE 1 -->
+    <div class="page">
+      <div class="topbar">
+        <div>
+          <h1 class="title">FieldCopilot — AI System Artifact</h1>
+          <p class="subtitle">Hiring-manager summary (2–4 pages). Focus: what shipped, how it works, and how impact is measured.</p>
+        </div>
+        <div class="meta">
+          <div>Date: 2026-01-28</div>
+          <div>Artifact: <span class="pill">AI_ARTIFACT.pdf</span></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2 style="margin-top:0">TL;DR</h2>
+          <ul>
+            <li><strong>What it is</strong>: A full‑stack AI assistant with ingestion + retrieval‑augmented answering + observability + eval gates. <span class="evidence">[Evidence: README.md, server/index.ts, server/lib/retrieval.ts, server/lib/openai.ts, server/lib/observability/prometheus.ts, eval/golden/runner.ts]</span></li>
+            <li><strong>Who it’s for</strong>: Teams who need grounded answers over connected sources (Google/Atlassian/Slack) and uploaded documents. <span class="evidence">[Evidence: README.md, server/lib/jobs/handlers/syncHandler.ts, server/lib/oauth.ts, shared/schema.ts]</span></li>
+            <li><strong>Why it matters</strong>: It ships “guardrailable AI” (schema‑validated outputs, job retries + rate limits, traces/metrics, and regression eval gates). <span class="evidence">[Evidence: shared/schema.ts, server/lib/jobs/runner.ts, server/index.ts, server/routes_v2.ts, README.md]</span></li>
+          </ul>
+
+          <div class="callout" style="margin-top:12px">
+            <div class="label">Executive Snapshot</div>
+            <div>
+              Users ask questions via chat; the server retrieves relevant chunks scoped to workspace/visibility, calls the model with a strict JSON schema, and returns answers with citations.
+              <span class="evidence">[Evidence: server/routes_v2.ts, server/lib/retrieval.ts, server/lib/vectorstore.ts, shared/schema.ts]</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin-top:0">Shipped workflow (end-to-end)</h2>
+          <ol style="margin:8px 0 8px 18px">
+            <li><strong>Ingest data</strong> via upload (`/api/ingest`) or connector sync jobs (Google / Atlassian / Slack). <span class="evidence">[Evidence: README.md, server/routes_v2.ts, server/lib/jobs/handlers/syncHandler.ts]</span></li>
+            <li><strong>Normalize + store</strong> sources, immutable source versions, and chunks per workspace. <span class="evidence">[Evidence: shared/schema.ts]</span></li>
+            <li><strong>Index</strong> chunk embeddings in an in‑memory vector store with vectors persisted on chunks (`vectorRef`). <span class="evidence">[Evidence: server/lib/vectorstore.ts, shared/schema.ts]</span></li>
+            <li><strong>Ask in chat</strong> (`POST /api/chat`) and receive answers with citations/sources; trivial prompts use a fast-path. <span class="evidence">[Evidence: server/routes_v2.ts]</span></li>
+            <li><strong>Observe + evaluate</strong> with Prometheus metrics and eval runners (offline + golden) used in CI gating. <span class="evidence">[Evidence: server/lib/observability/prometheus.ts, eval/runner.ts, eval/golden/runner.ts, README.md]</span></li>
+          </ol>
+          <div class="kpi">
+            <div class="k">RAG: top‑k + fallback retrieval</div>
+            <div class="k">Answers: citations + schema</div>
+            <div class="k">Ops: retries + rate limits</div>
+            <div class="k">Quality: eval + CI gate</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>System design (high-level)</h2>
+        <div class="diagram">
+          <img src="diagrams/architecture.svg" alt="Architecture diagram" />
+        </div>
+        <p class="small">
+          Key components: Web UI, Express API, Retrieval (vector + lexical fallback + neighbor expansion), Job Runner/Worker (sync + ingest), DB schema (sources/sourceVersions/chunks/jobs),
+          Observability (Prometheus + traces/spans), OpenAI (GPT‑4o + embeddings).
+          <span class="evidence">[Evidence: README.md, server/index.ts, server/routes_v2.ts, server/lib/retrieval.ts, server/lib/vectorstore.ts, server/lib/jobs/runner.ts, shared/schema.ts, server/lib/openai.ts, server/lib/observability/prometheus.ts]</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- PAGE 2 -->
+    <div class="page pb">
+      <div class="topbar">
+        <div>
+          <h1 class="title" style="font-size:18px;margin:0">FieldCopilot — Request + Data Flows</h1>
+          <p class="subtitle" style="margin-top:4px">How a typical question turns into a grounded answer.</p>
+        </div>
+        <div class="meta">Page 2</div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <h2>Request flow (sequence)</h2>
+          <div class="diagram">
+            <img src="diagrams/request_sequence.svg" alt="Sequence diagram" />
+          </div>
+          <p class="small">
+            The `/api/chat` route is a thin adapter over agent core and persists messages + citations.
+            <span class="evidence">[Evidence: server/routes_v2.ts, shared/schema.ts]</span>
+          </p>
+        </div>
+        <div>
+          <h2>Data lifecycle / pipeline</h2>
+          <div class="diagram">
+            <img src="diagrams/data_pipeline.svg" alt="Pipeline diagram" />
+          </div>
+          <p class="small">
+            Embeddings use `text-embedding-3-small`, chat uses `gpt-4o`, and vectors can be persisted in `chunks.vectorRef`.
+            <span class="evidence">[Evidence: server/lib/openai.ts, server/lib/vectorstore.ts, shared/schema.ts]</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="grid">
+        <div class="card">
+          <h2 style="margin-top:0">Reliability & safety (what exists)</h2>
+          <ul>
+            <li><strong>Job retries + backoff + dead-letter</strong> for sync/ingest/eval/playbook jobs. <span class="evidence">[Evidence: server/lib/jobs/runner.ts, shared/schema.ts]</span></li>
+            <li><strong>Concurrency + rate limiting</strong> per connector/account to protect external APIs. <span class="evidence">[Evidence: server/lib/jobs/runner.ts, shared/schema.ts]</span></li>
+            <li><strong>Workspace/visibility boundaries</strong> in retrieval (private vs workspace; Slack private channel filtering). <span class="evidence">[Evidence: server/lib/retrieval.ts, shared/schema.ts]</span></li>
+            <li><strong>Schema-validated outputs</strong> via Zod schemas (citations, actions, chat response shape). <span class="evidence">[Evidence: shared/schema.ts, server/lib/voice/websocket.ts]</span></li>
+            <li><strong>Prod guard</strong>: server refuses to start with `EVAL_MODE=1` in production. <span class="evidence">[Evidence: server/index.ts]</span></li>
+            <li><strong>Token handling</strong>: OAuth tokens are encrypted/decrypted via helper functions. <span class="evidence">[Evidence: server/lib/oauth.ts, server/lib/jobs/handlers/syncHandler.ts]</span></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2 style="margin-top:0">Reliability & safety (not found → recommended)</h2>
+          <ul>
+            <li><strong>PII redaction policy</strong>: Not evidenced in repo → add structured redaction for logs/audit events (emails, phone numbers) and document retention policy. <span class="evidence">[Evidence: shared/schema.ts (audit_events), server/index.ts (API logging)]</span></li>
+            <li><strong>Explicit model cost budget per request</strong>: Not evidenced in repo → enforce max tokens + refuse/ask to narrow scope on large context. <span class="evidence">[Evidence: server/lib/observability/prometheus.ts (token counters), shared/schema.ts (token fields)]</span></li>
+            <li><strong>AuthZ for connectors</strong>: Some checks exist (workspaceId, visibility), but end-to-end connector permission mapping is not fully described → document and test scope enforcement. <span class="evidence">[Evidence: server/lib/retrieval.ts, shared/schema.ts]</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3 -->
+    <div class="page pb">
+      <div class="topbar">
+        <div>
+          <h1 class="title" style="font-size:18px;margin:0">Impact, Demo, Evidence</h1>
+          <p class="subtitle" style="margin-top:4px">Impact is only stated if evidenced; otherwise a concrete measurement plan.</p>
+        </div>
+        <div class="meta">Page 3</div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2 style="margin-top:0">Impact</h2>
+          <p><strong>Impact: Not evidenced in repo.</strong></p>
+          <p class="small">
+            The repo defines measurement infrastructure (eval runners, metrics schemas, CI regression gate) but does not state real-world adoption or outcome metrics.
+            <span class="evidence">[Evidence: README.md, shared/schema.ts, eval/golden/runner.ts]</span>
+          </p>
+          <h3>Measurement plan (concrete)</h3>
+          <ul>
+            <li><strong>Answer quality</strong>: grounded claim rate, citation coverage rate, hallucination count, numeric mismatch count. <span class="evidence">[Evidence: eval/golden/runner.ts]</span></li>
+            <li><strong>Retrieval quality</strong>: recall@k, citation integrity, unsupported claim rate. <span class="evidence">[Evidence: README.md, shared/schema.ts]</span></li>
+            <li><strong>Ops health</strong>: job success vs dead_letter, retry frequency, sync error rate. <span class="evidence">[Evidence: server/lib/jobs/runner.ts, shared/schema.ts]</span></li>
+            <li><strong>Latency & cost</strong>: chat TTFT, total duration, LLM duration, tokens in/out. <span class="evidence">[Evidence: server/lib/observability/prometheus.ts, shared/schema.ts]</span></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2 style="margin-top:0">What I owned</h2>
+          <p class="small"><strong>Not evidenced in repo</strong> (no contribution attribution in code/documents). Use these as grounded talking points about shipped decisions:</p>
+          <ul>
+            <li><strong>Retrieval design</strong>: vector similarity + confidence threshold + lexical fallback + neighbor expansion, with retrieval diagnostics for debugging. <span class="evidence">[Evidence: server/lib/retrieval.ts]</span></li>
+            <li><strong>Operational design</strong>: job runner with concurrency locks, rate limiting, retries, and dead-letter queue. <span class="evidence">[Evidence: server/lib/jobs/runner.ts, shared/schema.ts]</span></li>
+            <li><strong>Quality gates</strong>: golden eval runner + CI regression thresholds to prevent groundedness regressions. <span class="evidence">[Evidence: eval/golden/runner.ts, README.md]</span></li>
+            <li><strong>Observability</strong>: Prometheus metrics plus trace/span storage for drill-down. <span class="evidence">[Evidence: server/lib/observability/prometheus.ts, shared/schema.ts, server/routes_v2.ts]</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>2-minute demo script</h2>
+        <div class="card">
+          <ol style="margin:8px 0 8px 18px">
+            <li>
+              <strong>Start server</strong>: `npm run dev` (serves on port 5000).
+              <span class="evidence">[Evidence: README.md, server/index.ts]</span>
+            </li>
+            <li>
+              <strong>Start worker</strong>: `npm run worker` (job runner polls, claims jobs).
+              <span class="evidence">[Evidence: README.md, package.json, server/lib/jobs/runner.ts]</span>
+            </li>
+            <li>
+              <strong>Ingest a document</strong> (admin): open `/admin/ingest` or call `POST /api/ingest`.
+              <span class="evidence">[Evidence: README.md, server/routes_v2.ts]</span>
+            </li>
+            <li>
+              <strong>Ask a question</strong>: open `/chat` and send; backend uses retrieval + schema output and persists citations.
+              <span class="evidence">[Evidence: README.md, server/routes_v2.ts, server/lib/retrieval.ts, shared/schema.ts]</span>
+            </li>
+            <li>
+              <strong>Show observability</strong>: open `/admin/observability` and/or fetch `/api/metrics/prometheus`.
+              <span class="evidence">[Evidence: README.md, docs/enterprise_readme.md, server/routes_v2.ts, server/lib/observability/prometheus.ts]</span>
+            </li>
+            <li>
+              <strong>Show quality gate</strong>: run `npm run eval` (golden runner writes reports) and explain CI thresholds.
+              <span class="evidence">[Evidence: package.json, eval/golden/runner.ts, README.md]</span>
+            </li>
+          </ol>
+          <p class="small">
+            Expected signals (examples): server logs request timing for `/api/*`; voice server logs “WebSocket server listening on /ws/voice”; job runner logs pending/claimed jobs.
+            <span class="evidence">[Evidence: server/index.ts, server/lib/voice/websocket.ts, server/lib/jobs/runner.ts]</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Evidence map (claim → evidence)</h2>
+        <table>
+          <thead>
+            <tr><th style="width:52%">Claim</th><th>Evidence (file paths)</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Repo is FieldCopilot: “field operations AI assistant” with React + TS frontend and Express + TS backend</td>
+              <td>README.md, server/index.ts, client/src/App.tsx</td>
+            </tr>
+            <tr>
+              <td>Chat API exists and uses a fast-path for trivial prompts; persists conversations/messages</td>
+              <td>server/routes_v2.ts, shared/schema.ts</td>
+            </tr>
+            <tr>
+              <td>RAG retrieval enforces workspace boundaries + visibility, does vector search and lexical fallback</td>
+              <td>server/lib/retrieval.ts, server/lib/vectorstore.ts, shared/schema.ts</td>
+            </tr>
+            <tr>
+              <td>Embeddings + chat model are OpenAI-based (text-embedding-3-small, gpt-4o)</td>
+              <td>server/lib/openai.ts, README.md</td>
+            </tr>
+            <tr>
+              <td>Jobs support retries/backoff, concurrency locks, and rate limiting</td>
+              <td>server/lib/jobs/runner.ts, shared/schema.ts</td>
+            </tr>
+            <tr>
+              <td>Connector sync handler supports Google, Atlassian, Slack; OAuth tokens are decrypted before use</td>
+              <td>server/lib/jobs/handlers/syncHandler.ts, server/lib/oauth.ts, shared/schema.ts</td>
+            </tr>
+            <tr>
+              <td>Observability endpoints and Prometheus metrics exist</td>
+              <td>server/routes_v2.ts, server/lib/observability/prometheus.ts, docs/enterprise_readme.md</td>
+            </tr>
+            <tr>
+              <td>Evaluation runners exist; golden runner writes reports and tracks groundedness/hallucinations</td>
+              <td>eval/runner.ts, eval/golden/runner.ts, README.md</td>
+            </tr>
+            <tr>
+              <td>Impact is not claimed as real-world results in repo; measurement plan is derived from existing metric/eval hooks</td>
+              <td>README.md, shared/schema.ts, eval/golden/runner.ts, server/lib/observability/prometheus.ts</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+

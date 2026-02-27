@@ -1,0 +1,237 @@
+event: meta
+data: {"conversationId":"31e6464a-816a-4287-95a6-d49309dfd44b","traceId":"3fb4402a-b383-4998-8133-aa4c74a479b1","startedAt":1772112410089}
+
+event: phase
+data: {"phase":"SEARCHING"}
+
+event: phase
+data: {"phase":"RETRIEVING"}
+
+event: phase
+data: {"phase":"DRAFTING"}
+
+event: ttft
+data: {"ttftMs":786}
+
+event: delta
+data: {"text":"The"}
+
+event: delta
+data: {"text":" AI"}
+
+event: delta
+data: {"text":" search"}
+
+event: delta
+data: {"text":" project"}
+
+event: delta
+data: {"text":" utilizes"}
+
+event: delta
+data: {"text":" Pine"}
+
+event: delta
+data: {"text":"cone"}
+
+event: delta
+data: {"text":" as"}
+
+event: delta
+data: {"text":" its"}
+
+event: delta
+data: {"text":" vector"}
+
+event: delta
+data: {"text":" database"}
+
+event: delta
+data: {"text":"."}
+
+event: delta
+data: {"text":" This"}
+
+event: delta
+data: {"text":" decision"}
+
+event: delta
+data: {"text":" was"}
+
+event: delta
+data: {"text":" made"}
+
+event: delta
+data: {"text":" to"}
+
+event: delta
+data: {"text":" leverage"}
+
+event: delta
+data: {"text":" Pine"}
+
+event: delta
+data: {"text":"cone"}
+
+event: delta
+data: {"text":"'s"}
+
+event: delta
+data: {"text":" managed"}
+
+event: delta
+data: {"text":" service"}
+
+event: delta
+data: {"text":" capabilities"}
+
+event: delta
+data: {"text":","}
+
+event: delta
+data: {"text":" which"}
+
+event: delta
+data: {"text":" offer"}
+
+event: delta
+data: {"text":" faster"}
+
+event: delta
+data: {"text":" time"}
+
+event: delta
+data: {"text":"-to"}
+
+event: delta
+data: {"text":"-market"}
+
+event: delta
+data: {"text":" advantages"}
+
+event: delta
+data: {"text":"."}
+
+event: delta
+data: {"text":" Pine"}
+
+event: delta
+data: {"text":"cone"}
+
+event: delta
+data: {"text":" is"}
+
+event: delta
+data: {"text":" configured"}
+
+event: delta
+data: {"text":" with"}
+
+event: delta
+data: {"text":" a"}
+
+event: delta
+data: {"text":" cosine"}
+
+event: delta
+data: {"text":" similarity"}
+
+event: delta
+data: {"text":" metric"}
+
+event: delta
+data: {"text":" and"}
+
+event: delta
+data: {"text":" supports"}
+
+event: delta
+data: {"text":" multi"}
+
+event: delta
+data: {"text":"-A"}
+
+event: delta
+data: {"text":"Z"}
+
+event: delta
+data: {"text":" deployments"}
+
+event: delta
+data: {"text":" to"}
+
+event: delta
+data: {"text":" ensure"}
+
+event: delta
+data: {"text":" reliability"}
+
+event: delta
+data: {"text":" and"}
+
+event: delta
+data: {"text":" performance"}
+
+event: delta
+data: {"text":"."}
+
+event: delta
+data: {"text":" \n\n"}
+
+event: delta
+data: {"text":"*"}
+
+event: delta
+data: {"text":"Review"}
+
+event: delta
+data: {"text":" the"}
+
+event: delta
+data: {"text":" Pine"}
+
+event: delta
+data: {"text":"cone"}
+
+event: delta
+data: {"text":" setup"}
+
+event: delta
+data: {"text":" and"}
+
+event: delta
+data: {"text":" ensure"}
+
+event: delta
+data: {"text":" it"}
+
+event: delta
+data: {"text":" aligns"}
+
+event: delta
+data: {"text":" with"}
+
+event: delta
+data: {"text":" your"}
+
+event: delta
+data: {"text":" project"}
+
+event: delta
+data: {"text":" requirements"}
+
+event: delta
+data: {"text":".*"}
+
+event: phase
+data: {"phase":"VALIDATING"}
+
+event: phase
+data: {"phase":"DONE"}
+
+event: final
+data: {"answer":"The AI search project utilizes Pinecone as its vector database. This decision was made to leverage Pinecone's managed service capabilities, which offer faster time-to-market advantages. Pinecone is configured with a cosine similarity metric and supports multi-AZ deployments to ensure reliability and performance.\n\n- This decision was made to leverage Pinecone's managed service capabilities, which offer faster time-to-market advantages. [1]\n- Pinecone is configured with a cosine similarity metric and supports multi-AZ deployments to ensure reliability and performance. [1]\n- Review the Pinecone setup and ensure it aligns with your project requirements. [1]\n\nWould you like me to go deeper on timeline, owners, or risks?","answer_text":"The AI search project utilizes Pinecone as its vector database. This decision was made to leverage Pinecone's managed service capabilities, which offer faster time-to-market advantages. Pinecone is configured with a cosine similarity metric and supports multi-AZ deployments to ensure reliability and performance.\n\n- This decision was made to leverage Pinecone's managed service capabilities, which offer faster time-to-market advantages. [1]\n- Pinecone is configured with a cosine similarity metric and supports multi-AZ deployments to ensure reliability and performance. [1]\n- Review the Pinecone setup and ensure it aligns with your project requirements. [1]\n\nWould you like me to go deeper on timeline, owners, or risks?","bullets":[],"sources_used":[{"id":"82b9fe07-ba26-415c-82ca-41614f25977e","sourceId":"82b9fe07-ba26-415c-82ca-41614f25977e","title":"AI_Search_Architecture.pdf","url":"https://drive.google.com/file/d/1OaWf-KzyUEnNp_aUm9dGc9g9scyr-x0n/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"},{"id":"1602cb5c-021a-4f74-9abc-944fbb22c19e","sourceId":"1602cb5c-021a-4f74-9abc-944fbb22c19e","title":"Product_Roadmap_2025.pdf","url":"https://drive.google.com/file/d/1-z6r1IrvdWltGMYOjsUlg6t7A9WU6xt_/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"},{"id":"96677b12-e487-41e8-b321-e696e442eaa2","sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","title":"Q4_2024_OKRs.pdf","url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"citations":[],"sources":[{"id":"82b9fe07-ba26-415c-82ca-41614f25977e","sourceId":"82b9fe07-ba26-415c-82ca-41614f25977e","title":"AI_Search_Architecture.pdf","url":"https://drive.google.com/file/d/1OaWf-KzyUEnNp_aUm9dGc9g9scyr-x0n/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"},{"id":"1602cb5c-021a-4f74-9abc-944fbb22c19e","sourceId":"1602cb5c-021a-4f74-9abc-944fbb22c19e","title":"Product_Roadmap_2025.pdf","url":"https://drive.google.com/file/d/1-z6r1IrvdWltGMYOjsUlg6t7A9WU6xt_/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"},{"id":"96677b12-e487-41e8-b321-e696e442eaa2","sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","title":"Q4_2024_OKRs.pdf","url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"citationIndexMap":{},"conversationId":"31e6464a-816a-4287-95a6-d49309dfd44b","traceId":"3fb4402a-b383-4998-8133-aa4c74a479b1","ttftMs":786,"totalDurationMs":1765,"retrievalSummary":{"chunksConsidered":17,"distinctSources":0,"topSimilarityScore":0,"fallbackRetrievalUsed":false},"trustSignal":{"level":"warning","label":"warning","detail":"source support limited, verify details"},"replyId":"cc91a718-99b4-4881-a28f-8c4c4c5a4a78"}
+
+event: done
+data: {}
+

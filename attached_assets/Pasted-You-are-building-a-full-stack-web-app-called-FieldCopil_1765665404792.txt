@@ -1,0 +1,335 @@
+You are building a full-stack web app called FieldCopilot inside this single Replit project.
+
+Core value:
+1) Users ask questions in a chat UI and receive answers WITH citations (chunk-level references).
+2) Users can request actions (Jira/Slack/Confluence). The system produces an editable draft, requires approval, then executes via APIs.
+3) The system enforces policy (role/tool constraints), logs everything (audit trail), and includes an evaluation suite/dashboard to measure correctness and regressions.
+
+NON-NEGOTIABLES:
+- Everything must run in Replit.
+- Must be reliable: schema validation, safe fallbacks, no silent failures.
+- Must be debuggable: audit logs, request IDs, stored intermediate artifacts.
+- Must be measurable: eval runner + reports.
+- Must not leak secrets: secrets only in Replit Secrets or env vars, never printed.
+
+TECH CHOICES (use exactly this unless blocked):
+- Next.js (App Router) + TypeScript
+- Prisma ORM
+- Postgres for app data
+- Vector store: implement a VectorStore abstraction with two implementations:
+  (A) Postgres + pgvector if available
+  (B) Qdrant Cloud fallback (REST API)
+- Zod for validation
+- Tailwind for UI (or minimal CSS if Tailwind setup fails)
+
+ENV VARS (read from process.env; do not hardcode):
+# App / Auth
+- DATABASE_URL
+- APP_URL (the deployed base URL)
+- AUTH_MODE = "simple" | "nextauth" (default "simple")
+- SESSION_SECRET (required if AUTH_MODE="simple")
+- NEXTAUTH_SECRET (required if AUTH_MODE="nextauth")
+- NEXTAUTH_URL (required if AUTH_MODE="nextauth")
+
+# LLM
+- LLM_PROVIDER="openai" (design provider interface so others can be added)
+- LLM_API_KEY
+- LLM_MODEL
+- EMBEDDING_MODEL
+
+# Vector store (fallback)
+- VECTOR_STORE="pgvector" | "qdrant" (auto-detect: try pgvector, else qdrant if vars exist)
+- QDRANT_URL (if VECTOR_STORE="qdrant")
+- QDRANT_API_KEY (if VECTOR_STORE="qdrant")
+- QDRANT_COLLECTION="fieldcopilot_chunks"
+
+# Jira
+- JIRA_BASE_URL
+- JIRA_EMAIL (optional if using OAuth later; required if using token auth)
+- JIRA_API_TOKEN
+
+# Slack
+- SLACK_BOT_TOKEN
+- SLACK_SIGNING_SECRET (optional unless verifying inbound requests)
+- SLACK_APP_TOKEN (only if using Socket Mode; otherwise omit)
+
+# Confluence (optional but supported as draft+diff+approve)
+- CONF_BASE_URL
+- CONF_EMAIL
+- CONF_API_TOKEN
+
+# Optional encryption for stored connector data (preferred)
+- ENCRYPTION_KEY (32 bytes base64 or hex; if present, encrypt any stored connector secrets)
+
+DATA MODEL (Prisma schema must include at least these tables):
+- User: id, email, passwordHash? (if simple auth), role ("admin"|"member"), createdAt
+- Session: id, userId, token, expiresAt
+- Connector: id, type ("jira"|"slack"|"confluence"), configJson (masked), status, createdAt, updatedAt
+- Source: id, type ("upload"|"confluence"|"drive"|"jira"|"slack"), title, url?, contentHash, metadataJson, createdAt, updatedAt
+- Chunk: id, sourceId, chunkIndex, text, charStart?, charEnd?, tokenEstimate, createdAt, vectorRef? (string for qdrant point id)
+- Policy: id, name, yamlText, isActive, createdAt
+- AuditEvent: id, requestId, userId, role, kind ("chat"|"action_execute"|"eval"), prompt, retrievedJson, responseJson, toolProposalsJson, toolExecutionsJson, policyJson, approvalJson, success, error, latencyMs, createdAt
+- Approval: id, auditEventId, userId, toolName, draftJson, finalJson, approvedAt
+- EvalSuite: id, name, jsonText, createdAt
+- EvalRun: id, suiteId, startedAt, finishedAt, summaryJson, resultsJson, createdAt
+
+Vector storage:
+- If using pgvector, add a Vector table or add a vector column to Chunk (preferred). If pgvector extension isn’t available, automatically use Qdrant.
+- Implement /lib/vectorstore interface with methods:
+  - upsertChunks(chunks: {chunkId, embedding, metadata}[])
+  - query(embedding, topK, filters) -> {chunkId, score}[]
+  - deleteBySourceId(sourceId)
+
+DOCUMENT INGESTION:
+- Build an ingestion pipeline that supports file upload of .txt/.md initially.
+- Create /admin/ingest UI for admins.
+- Chunking rules:
+  - chunk size target: 900–1200 characters
+  - overlap: 150–200 characters
+- Store chunk offsets (charStart/charEnd) so citations can highlight the exact span.
+- Dedupe: if Source.contentHash already exists, skip ingestion unless forced.
+- Produce ingestion report in UI: processed/skipped/failed + counts.
+
+RETRIEVAL + CITED ANSWERS:
+- Implement /chat page for members.
+- /api/chat:
+  1) authenticate user
+  2) create requestId
+  3) embed query
+  4) retrieve topK chunks (default 8) with any filters (role/acl placeholder)
+  5) call LLM to produce a STRICT JSON output with citations tied to chunkId/sourceId
+  6) validate output via Zod; if invalid JSON, retry with a “JSON only” repair prompt
+  7) write AuditEvent with retrievedJson, responseJson, latency
+
+Output JSON schema (enforced):
+{
+  "answer": "string",
+  "bullets": [
+    {
+      "claim": "string",
+      "citations": [
+        { "sourceId": "string", "chunkId": "string" }
+      ]
+    }
+  ],
+  "action": null | {
+    "type": "jira.create_issue" | "slack.post_message" | "confluence.upsert_page",
+    "draft": { ...toolArgs },
+    "rationale": "string",
+    "citations": [{ "sourceId":"...", "chunkId":"..." }]
+  },
+  "needsClarification": boolean,
+  "clarifyingQuestions": string[]
+}
+
+UI requirements:
+- Show assistant answer + bullets.
+- Each citation is clickable and opens /sources/[sourceId]?chunk=[chunkId] and highlights chunk text.
+- If needsClarification=true, show questions and do not propose actions.
+
+SOURCES VIEWER:
+- Create /sources/[sourceId] page:
+  - shows source title, metadata, and full text (or stitched chunks).
+  - if chunk query param provided, scroll to and highlight chunk.
+  - show adjacent chunks for context.
+
+AGENTIC ORCHESTRATION (simple state machine; no overengineering):
+Implement /lib/orchestrator that follows:
+- classify (QNA vs ACTION vs MIXED)
+- retrieve evidence (always)
+- draft response (structured JSON)
+- verify stage:
+  - citation sanity: every bullet must have >=1 citation unless explicitly “unknown”
+  - tool schema validity (Zod)
+  - policy permission checks
+- if action present: return draft to UI for editing + approval
+- execution happens ONLY via explicit /api/actions/execute after approval click
+
+TOOLS + CONNECTORS:
+Implement connectors in /lib/connectors:
+
+1) Jira token auth connector
+- createIssue(projectKey, issueType, summary, description, labels?, components?, customFields?)
+- updateIssue(issueKey, fields, comment?)
+- searchIssues(jql)
+Validate HTTP status and parse errors; never silently swallow.
+
+2) Slack bot token connector
+- postMessage(channel, text, threadTs?)
+- optional: fetchRecentMessages(channel, limit) for retrieval later (keep stub if not used now)
+Channel allowlist enforced by policy.
+
+3) Confluence connector (optional)
+- upsertPage(spaceKey, parentPageId?, title, bodyStorageFormat)
+Must support preview/diff:
+- The LLM produces a DRAFT body.
+- UI shows a diff/preview.
+- Only after approval, call Confluence API.
+
+ACTION DRAFT EDITING + APPROVAL:
+PANEL:
+In /chat, if action != null:
+- Render an “Action Draft” card with tool type and editable fields based on tool schema.
+- Provide “Approve & Execute” and “Cancel”.
+- On approve, POST /api/actions/execute with:
+  - toolName
+  - draftArgs (possibly edited)
+  - citations
+  - requestId (to link to audit)
+Server must:
+- re-check policy
+- validate args with Zod
+- enforce approval-required true for any write
+- execute tool call
+- store result + postcondition
+- create Approval record (draft vs final)
+- update AuditEvent.toolExecutionsJson and success/error
+
+IDEMPOTENCY:
+Implement idempotency keys for writes:
+- Create idempotencyKey = hash(userId + toolName + normalizedArgs + citations + dateBucketOptional)
+- If an identical idempotency key already executed successfully, return the prior result instead of executing again.
+Store idempotency in DB (e.g., within Approval or a dedicated ActionExecution table).
+
+POLICY ENGINE:
+Create /admin/policies UI:
+- Admin can view/edit active YAML policy.
+- Policy YAML supports:
+roles:
+  admin:
+    tools: ["jira.create_issue","jira.update_issue","slack.post_message","confluence.upsert_page"]
+  member:
+    tools: ["jira.create_issue","slack.post_message"]
+toolConstraints:
+  jira.create_issue:
+    allowedProjects: ["ABC","OPS"]
+    requireApproval: true
+  slack.post_message:
+    allowedChannels: ["#ops","#product"]
+    requireApproval: true
+  confluence.upsert_page:
+    allowedSpaces: ["ENG","OPS"]
+    requireApproval: true
+
+Implement /lib/policy evaluator:
+- isToolAllowed(role, toolName)
+- validateConstraints(toolName, args) (projects/channels/spaces)
+- requiresApproval(toolName) (default true for writes)
+
+Blocked action behavior:
+- Return structured refusal in response JSON and do not execute any tool calls.
+- Log policy decision into AuditEvent.policyJson.
+
+AUDIT LOGS:
+Create /admin/audit:
+- List AuditEvents with filters (user, kind, success, toolName, date).
+- Detail view shows:
+  - prompt
+  - retrieved chunks (with links)
+  - model response JSON
+  - tool proposals JSON
+  - policy decision
+  - approvals
+  - tool execution results
+  - latency
+Add “Replay” feature:
+- Re-run retrieval+LLM with same prompt; do NOT execute writes (dry_run).
+- Store replay as new AuditEvent with kind="chat" and note replayOf requestId.
+
+EVALUATION SUITE:
+Create /admin/evals:
+- Upload an eval suite JSON. Store in EvalSuite.
+Suite format:
+{
+  "name": "Default Suite",
+  "cases": [
+    {
+      "id": "qna-1",
+      "type": "QNA",
+      "prompt": "...",
+      "mustCite": true,
+      "expectedSourceIds": ["...optional..."]
+    },
+    {
+      "id": "action-1",
+      "type": "ACTION",
+      "prompt": "Create a Jira ticket ...",
+      "expectedTool": "jira.create_issue",
+      "requiredFields": ["projectKey","issueType","summary","description"],
+      "mustCite": true
+    }
+  ]
+}
+
+Eval runner:
+- Runs cases through the same /api/chat pipeline in dry_run mode (never execute tools).
+- Scoring rules:
+  QNA:
+    - pass if mustCite implies: every bullet has >=1 citation
+    - if expectedSourceIds provided: at least one citation sourceId matches
+  ACTION:
+    - pass if action.type matches expectedTool
+    - requiredFields exist in action.draft
+    - if mustCite: action.citations exists and non-empty
+- Save EvalRun with summaryJson (counts, pass rate) + resultsJson (per case, failure reasons).
+Create /admin/evals/dashboard:
+- Show latest run metrics and a table of failures with “Replay” link.
+
+OBSERVABILITY:
+- Generate requestId for every /api/chat and /api/actions/execute
+- Measure latency stages:
+  - embedMs, retrievalMs, llmMs, toolMs
+Store these in AuditEvent.latencyMs and optionally in responseJson metadata.
+- Use structured logs with requestId and kind; never include secrets.
+
+SECURITY:
+- Never store plaintext passwords (bcrypt).
+- Never return connector tokens back to the client.
+- Add basic rate limiting per user/IP for /api/chat and /api/actions/execute.
+- Validate all inputs with Zod.
+- If ENCRYPTION_KEY exists, encrypt any stored sensitive connector config fields.
+
+UI PAGES REQUIRED:
+- /login
+- /chat
+- /admin (nav hub)
+- /admin/connectors
+- /admin/ingest
+- /admin/policies
+- /admin/audit
+- /admin/evals (suite upload + dashboard)
+- /sources/[sourceId]
+
+SEEDING:
+- Provide a seed script:
+  - creates an admin user with email from env ADMIN_EMAIL and password from env ADMIN_PASSWORD (or generates one and prints once)
+  - creates a default policy YAML
+  - creates a sample eval suite JSON
+Add scripts to package.json: prisma migrate, prisma seed.
+
+README:
+- Exact env var list
+- How to run migrations
+- How to seed admin
+- How to ingest sample docs
+- How to test Jira and Slack connectors
+- How to run eval suite
+
+BUILD ORDER:
+Implement in a way that each feature is testable:
+- start with auth + chat + ingestion + citations
+- then actions (draft/approve/execute) with Jira + Slack
+- then policy gating
+- then audit UI
+- then eval suite and dashboard
+Do not add unrelated features.
+
+Finally, after implementing, provide a short “Self-test checklist” in README:
+- login works
+- ingest works
+- chat shows citations and source highlighting works
+- drafting a Jira issue works
+- approval gate works
+- policy blocks forbidden tool usage
+- audit events show all artifacts
+- eval suite runs and displays report

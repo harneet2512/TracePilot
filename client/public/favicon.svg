@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <style>
+      .bg{fill:#0B0F1A;}
+      .txt{fill:#FFFFFF;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; font-weight:800;}
+      .accent{fill:#7C3AED;}
+    </style>
+  </defs>
+
+  <circle class="bg" cx="32" cy="32" r="30"/>
+  <text class="txt" x="18" y="40" font-size="26">T</text>
+  <text class="txt" x="33" y="40" font-size="26">P</text>
+  <circle class="accent" cx="47" cy="21" r="3"/>
+</svg>

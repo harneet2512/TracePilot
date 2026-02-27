@@ -1,0 +1,165 @@
+event: meta
+data: {"conversationId":"9da78b00-bbfb-47ac-83f7-aa19461fb9da","traceId":"30464608-4a4c-4713-9271-dd7fa55ef732","startedAt":1772098924356}
+
+event: phase
+data: {"phase":"SEARCHING"}
+
+event: phase
+data: {"phase":"RETRIEVING"}
+
+event: ttft
+data: {"ttftMs":8308}
+
+event: phase
+data: {"phase":"DRAFTING"}
+
+event: delta
+data: {"text":"The total budget for"}
+
+event: delta
+data: {"text":" the AI search proje"}
+
+event: delta
+data: {"text":"ct is well within li"}
+
+event: delta
+data: {"text":"mits, with a cost of"}
+
+event: delta
+data: {"text":" $0.008 per search q"}
+
+event: delta
+data: {"text":"uery, amounting to $"}
+
+event: delta
+data: {"text":"800 per day or $24,0"}
+
+event: delta
+data: {"text":"00 per month. This b"}
+
+event: delta
+data: {"text":"udget allocation is "}
+
+event: delta
+data: {"text":"managed by Alex and "}
+
+event: delta
+data: {"text":"is considered sustai"}
+
+event: delta
+data: {"text":"nable given the curr"}
+
+event: delta
+data: {"text":"ent query volume of "}
+
+event: delta
+data: {"text":"100,000 queries per "}
+
+event: delta
+data: {"text":"day. The project is "}
+
+event: delta
+data: {"text":"on track for a Novem"}
+
+event: delta
+data: {"text":"ber 15 launch, altho"}
+
+event: delta
+data: {"text":"ugh there are risks "}
+
+event: delta
+data: {"text":"associated with the "}
+
+event: delta
+data: {"text":"EU region's AWS quot"}
+
+event: delta
+data: {"text":"a approval. Would yo"}
+
+event: delta
+data: {"text":"u like details on an"}
+
+event: delta
+data: {"text":"y specific cost cate"}
+
+event: delta
+data: {"text":"gory or spend tracki"}
+
+event: delta
+data: {"text":"ng? $0.008 per query"}
+
+event: delta
+data: {"text":", $800/day, $24,000/"}
+
+event: delta
+data: {"text":"month, Nov 15 launch"}
+
+event: delta
+data: {"text":" target.\n\n- Cost per"}
+
+event: delta
+data: {"text":" search query (targe"}
+
+event: delta
+data: {"text":"t: $0.008, current: "}
+
+event: delta
+data: {"text":"Embedding + LLM + re"}
+
+event: delta
+data: {"text":"-ranking) [1]\n- Dail"}
+
+event: delta
+data: {"text":"y cost for search qu"}
+
+event: delta
+data: {"text":"eries (target: $800,"}
+
+event: delta
+data: {"text":" current: Based on 1"}
+
+event: delta
+data: {"text":"00,000 queries per d"}
+
+event: delta
+data: {"text":"ay) [1]\n- Monthly co"}
+
+event: delta
+data: {"text":"st for search querie"}
+
+event: delta
+data: {"text":"s (target: $24,000, "}
+
+event: delta
+data: {"text":"current: Based on da"}
+
+event: delta
+data: {"text":"ily cost and query v"}
+
+event: delta
+data: {"text":"olume) [1]\n\nWant me "}
+
+event: delta
+data: {"text":"to break down the li"}
+
+event: delta
+data: {"text":"ne items or compare "}
+
+event: delta
+data: {"text":"against the original"}
+
+event: delta
+data: {"text":" budget?"}
+
+event: phase
+data: {"phase":"VALIDATING"}
+
+event: phase
+data: {"phase":"DONE"}
+
+event: final
+data: {"answer":"The total budget for the AI search project is well within limits, with a cost of $0.008 per search query, amounting to $800 per day or $24,000 per month. This budget allocation is managed by Alex and is considered sustainable given the current query volume of 100,000 queries per day. The project is on track for a November 15 launch, although there are risks associated with the EU region's AWS quota approval. Would you like details on any specific cost category or spend tracking? $0.008 per query, $800/day, $24,000/month, Nov 15 launch target.\n\n- Cost per search query (target: $0.008, current: Embedding + LLM + re-ranking) [1]\n- Daily cost for search queries (target: $800, current: Based on 100,000 queries per day) [1]\n- Monthly cost for search queries (target: $24,000, current: Based on daily cost and query volume) [1]\n\nWant me to break down the line items or compare against the original budget?","answer_text":"The total budget for the AI search project is well within limits, with a cost of $0.008 per search query, amounting to $800 per day or $24,000 per month. This budget allocation is managed by Alex and is considered sustainable given the current query volume of 100,000 queries per day. The project is on track for a November 15 launch, although there are risks associated with the EU region's AWS quota approval. Would you like details on any specific cost category or spend tracking? $0.008 per query, $800/day, $24,000/month, Nov 15 launch target.\n\n- Cost per search query (target: $0.008, current: Embedding + LLM + re-ranking) [1]\n- Daily cost for search queries (target: $800, current: Based on 100,000 queries per day) [1]\n- Monthly cost for search queries (target: $24,000, current: Based on daily cost and query volume) [1]\n\nWant me to break down the line items or compare against the original budget?","bullets":[{"claim":"Cost per search query: $0.008","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"8c115ab7-aa80-4dc0-a0f9-2ac7c812606f","score":1,"sourceVersionId":"50e10024-f71d-4d49-ab5e-076e1e541a0c","charStart":5856,"charEnd":6856,"url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","label":"Engineering_AllHands_Oct28_2024.pdf"}]},{"claim":"Daily cost for search queries: $800","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"8c115ab7-aa80-4dc0-a0f9-2ac7c812606f","score":1,"sourceVersionId":"50e10024-f71d-4d49-ab5e-076e1e541a0c","charStart":5856,"charEnd":6856,"url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","label":"Engineering_AllHands_Oct28_2024.pdf"}]},{"claim":"Monthly cost for search queries: $24,000","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"8c115ab7-aa80-4dc0-a0f9-2ac7c812606f","score":1,"sourceVersionId":"50e10024-f71d-4d49-ab5e-076e1e541a0c","charStart":5856,"charEnd":6856,"url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","label":"Engineering_AllHands_Oct28_2024.pdf"}]}],"sources_used":[{"id":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"framingContext":"The total budget for the AI search project is well within limits, with a cost of $0.008 per search query, amounting to $800 per day or $24,000 per month. This budget allocation is managed by Alex and is considered sustainable given the current query volume of 100,000 queries per day. The project is on track for a November 15 launch, although there are risks associated with the EU region's AWS quota approval. Would you like details on any specific cost category or spend tracking?","summary":"$0.008 per query • $800/day • $24,000/month • Nov 15 launch target","sections":[{"title":"Budget","items":[{"text":"Cost per search query","kind":"bullet","target":"$0.008","current":"Embedding + LLM + re-ranking","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"8c115ab7-aa80-4dc0-a0f9-2ac7c812606f","score":1}]},{"text":"Daily cost for search queries","kind":"bullet","target":"$800","current":"Based on 100,000 queries per day","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"8c115ab7-aa80-4dc0-a0f9-2ac7c812606f","score":1}]},{"text":"Monthly cost for search queries","kind":"bullet","target":"$24,000","current":"Based on daily cost and query volume","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"8c115ab7-aa80-4dc0-a0f9-2ac7c812606f","score":1}]}]}],"citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"8c115ab7-aa80-4dc0-a0f9-2ac7c812606f","sourceVersionId":"50e10024-f71d-4d49-ab5e-076e1e541a0c","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","label":"Engineering_AllHands_Oct28_2024.pdf","charStart":5856,"charEnd":6856}],"sources":[{"id":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"citationIndexMap":{"d4da6b5b-9916-46cd-ac80-3ae9bc780f71":1},"details":{"summaryRows":[{"item":"Cost per search query","priority":"—","owner":"—","impact":"Embedding + LLM + re-ranking","citationIds":["1"]},{"item":"Daily cost for search queries","priority":"—","owner":"—","impact":"Based on 100,000 queries per day","citationIds":["1"]},{"item":"Monthly cost for search queries","priority":"—","owner":"—","impact":"Based on daily cost and query volume","citationIds":["1"]}],"evidenceBySource":[{"sourceKey":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","label":"Drive","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","excerpts":[{"text":"ur\ttests,\tClaude\tcited\tsources\t95%\tof\tthe\ttime\nvs.\tGPT-4o’s\t78%.\tFor\ta\tsearch\tproduct,\tcitations\tare\tcritical.\nQ:\tWhat\thappens\tif\tPinecone\tgoes\tdown?\nA\t(Jordan):\tWe\thave\ta\tfallback\tto\tkeyword\tsearch.\tPinecone\thas\n99.9%\tS"},{"text":"n:\t-\tDeploy\tto\teu-west-1\twith\treduced\tcapacity\t(50K\tDAU\nlimit)\t-\tAdd\twaiting\tlist\tfor\tEU\tenterprise\tcustomers\t-\tCommunicate\ndelays\tproactively\tto\tsales\tteam\nBLOCKER\t#2:\tOpenAI\tAPI\tRate\tLimits\t⚠\t\tMEDIUM\nPRIORITY\nOwner:\tPr"}]}]},"evidence":[{"id":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","connectorType":"drive","connectorLabel":"Drive","whyUsed":"targets, budget"}],"intentType":"budget","conversationId":"9da78b00-bbfb-47ac-83f7-aa19461fb9da","traceId":"b4777a44-4ac4-41d0-b4ac-eb052333c85b","ttftMs":8308,"totalDurationMs":9046,"retrievalSummary":{"chunksConsidered":10,"distinctSources":3,"topSimilarityScore":0.3729305165498873,"fallbackRetrievalUsed":true},"trustSignal":{"level":"warning","label":"warning","detail":"source support limited, verify details"},"replyId":"dfbcccc4-4bd0-43ac-a4a0-77898ed8d85b"}
+
+event: done
+data: {}
+

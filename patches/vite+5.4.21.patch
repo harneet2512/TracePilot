@@ -1,0 +1,17 @@
+diff --git a/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js b/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js
+index 7992b2f..5218205 100644
+--- a/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js
++++ b/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js
+@@ -37093,11 +37093,7 @@ const UrlRewritePostcssPlugin = (opts) => {
+       const promises = [];
+       root.walkDecls((declaration) => {
+         const importer = declaration.source?.input.file;
+-        if (!importer) {
+-          opts.logger.warnOnce(
+-            "\nA PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue."
+-          );
+-        }
++        if (!importer) return;
+         const isCssUrl = cssUrlRE.test(declaration.value);
+         const isCssImageSet = cssImageSetRE.test(declaration.value);
+         if (isCssUrl || isCssImageSet) {

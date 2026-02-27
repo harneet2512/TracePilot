@@ -1,0 +1,242 @@
+{
+  "scopeId": "demo-golden-scope",
+  "queries": [
+    {
+      "id": "q1_q4_okrs",
+      "query": "What are our Q4 OKRs for the AI search project?",
+      "expectedSources": ["Q4_2024_OKRs.md"],
+      "expectedSnippets": [
+        {
+          "anyOf": ["November 15", "Nov 15"],
+          "description": "Launch date"
+        },
+        {
+          "allOf": ["2s", "p95"],
+          "description": "Latency target"
+        },
+        {
+          "anyOf": ["500K", "500,000"],
+          "description": "Document count"
+        },
+        {
+          "anyOf": ["$180,000", "180,000"],
+          "description": "Budget"
+        }
+      ],
+      "forbiddenStrings": ["No OKRs found", "Not found"],
+      "minCitations": 1,
+      "minBullets": 2
+    },
+    {
+      "id": "q2_blockers",
+      "query": "Are there any blockers for the AI search launch?",
+      "expectedSources": [
+        "Engineering_AllHands_Oct28_2024.md",
+        "JIRA_INFRA-1247_AWS_EU_Blocker.md"
+      ],
+      "expectedSnippets": [
+        {
+          "anyOf": ["AWS EU", "EU region"],
+          "description": "AWS EU blocker"
+        },
+        {
+          "allOf": ["Pinecone", "15%"],
+          "description": "Pinecone budget issue"
+        },
+        {
+          "allOf": ["Google Drive", "rate limit"],
+          "description": "Google Drive rate limit"
+        }
+      ],
+      "forbiddenStrings": ["Not found"],
+      "minCitations": 1,
+      "minBullets": 2
+    },
+    {
+      "id": "q3_vector_db",
+      "query": "What vector database are we using and why?",
+      "expectedSources": ["AI_Search_Architecture.md"],
+      "expectedSnippets": [
+        {
+          "anyOf": ["Pinecone"],
+          "description": "Pinecone database"
+        },
+        {
+          "anyOf": ["managed", "managed service"],
+          "description": "Managed service"
+        },
+        {
+          "anyOf": ["cosine", "cosine similarity"],
+          "description": "Cosine similarity"
+        },
+        {
+          "anyOf": ["3072", "dimensions"],
+          "description": "Dimensions"
+        }
+      ],
+      "forbiddenStrings": ["Not found"],
+      "minCitations": 1,
+      "minBullets": 1
+    },
+    {
+      "id": "q4_aws_blocker_owner",
+      "query": "Who is responsible for fixing the AWS blocker and when is the deadline?",
+      "expectedSources": [
+        "JIRA_INFRA-1247_AWS_EU_Blocker.md",
+        "Engineering_AllHands_Oct28_2024.md"
+      ],
+      "expectedSnippets": [
+        {
+          "allOf": ["Jordan", "Martinez"],
+          "description": "Owner name"
+        },
+        {
+          "anyOf": ["November 11", "Nov 11"],
+          "description": "Deadline"
+        },
+        {
+          "allOf": ["$500K", "ARR"],
+          "description": "Revenue impact"
+        }
+      ],
+      "forbiddenStrings": ["Not found"],
+      "minCitations": 1,
+      "minBullets": 1
+    },
+    {
+      "id": "q5_2025_roadmap",
+      "query": "What's our 2025 product roadmap?",
+      "expectedSources": ["Product_Roadmap_2025.md"],
+      "expectedSnippets": [
+        {
+          "allOf": ["Q1", "Q2", "Q3", "Q4"],
+          "description": "All quarters mentioned"
+        }
+      ],
+      "forbiddenStrings": ["Not found"],
+      "minCitations": 1,
+      "minBullets": 3
+    },
+    {
+      "id": "q6_infra_contact",
+      "query": "Who should I contact about infrastructure issues?",
+      "expectedSources": ["Team_Quick_Reference_Guide.md"],
+      "expectedSnippets": [
+        {
+          "allOf": ["Jordan", "Martinez"],
+          "description": "Infrastructure lead"
+        },
+        {
+          "anyOf": ["Infrastructure Lead", "Infrastructure"],
+          "description": "Role title"
+        }
+      ],
+      "forbiddenStrings": ["Not found"],
+      "minCitations": 1,
+      "minBullets": 1
+    },
+    {
+      "id": "q7_project_cost",
+      "query": "How much is the AI search project costing us?",
+      "expectedSources": [
+        "Q4_2024_OKRs.md",
+        "AI_Search_Architecture.md"
+      ],
+      "expectedSnippets": [
+        {
+          "anyOf": ["$2.565M", "2.565", "2,565,000"],
+          "description": "Total project budget"
+        },
+        {
+          "anyOf": ["$214K", "214,000"],
+          "description": "Monthly or spent amount"
+        },
+        {
+          "anyOf": ["burn", "monthly"],
+          "description": "Burn rate mention"
+        }
+      ],
+      "forbiddenStrings": ["Not found"],
+      "minCitations": 1,
+      "minBullets": 1
+    },
+    {
+      "id": "q8_nov15_launch_risk",
+      "query": "What's the biggest risk to our November 15 launch and what are we doing about it?",
+      "expectedSources": [
+        "Engineering_AllHands_Oct28_2024.md",
+        "JIRA_INFRA-1247_AWS_EU_Blocker.md",
+        "Q4_2024_OKRs.md"
+      ],
+      "expectedSnippets": [
+        {
+          "anyOf": ["AWS EU", "EU region"],
+          "description": "AWS EU blocker"
+        },
+        {
+          "anyOf": ["November 15", "Nov 15"],
+          "description": "Launch date"
+        },
+        {
+          "anyOf": ["mitigation", "fallback", "escalat"],
+          "description": "Response/mitigation"
+        }
+      ],
+      "forbiddenStrings": ["Not found"],
+      "minCitations": 2,
+      "minBullets": 2
+    },
+    {
+      "id": "q9_claude_vs_gpt4",
+      "query": "Why did we choose Claude over GPT-4?",
+      "expectedSources": ["AI_Search_Architecture.md"],
+      "expectedSnippets": [
+        {
+          "allOf": ["30%", "cheaper"],
+          "description": "Cost advantage"
+        },
+        {
+          "allOf": ["95%", "78%"],
+          "description": "Citation accuracy comparison"
+        },
+        {
+          "anyOf": ["Sept", "September"],
+          "description": "Decision month"
+        }
+      ],
+      "forbiddenStrings": ["Not found"],
+      "minCitations": 1,
+      "minBullets": 1
+    },
+    {
+      "id": "q10_project_phoenix_intro",
+      "query": "I'm new to the team - what should I know about Project Phoenix?",
+      "expectedSources": [
+        "Q4_2024_OKRs.md",
+        "Product_Roadmap_2025.md",
+        "AI_Search_Architecture.md"
+      ],
+      "expectedSnippets": [
+        {
+          "anyOf": ["November 15", "Nov 15"],
+          "description": "Launch date"
+        },
+        {
+          "anyOf": ["Pinecone"],
+          "description": "Technology"
+        },
+        {
+          "allOf": ["2s", "p95"],
+          "description": "Performance target"
+        },
+        {
+          "anyOf": ["500K", "500,000"],
+          "description": "Document scale"
+        }
+      ],
+      "forbiddenStrings": ["Not found"],
+      "minCitations": 2,
+      "minBullets": 3
+    }
+  ]
+}

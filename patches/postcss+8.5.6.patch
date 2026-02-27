@@ -1,0 +1,21 @@
+diff --git a/node_modules/postcss/lib/container.js b/node_modules/postcss/lib/container.js
+index edb07cc..09c2710 100644
+--- a/node_modules/postcss/lib/container.js
++++ b/node_modules/postcss/lib/container.js
+@@ -186,7 +186,15 @@ class Container extends Node {
+ 
+   normalize(nodes, sample) {
+     if (typeof nodes === 'string') {
+-      nodes = cleanSource(parse(nodes).nodes)
++      let parseOpts = {}
++      try {
++        let r = this.root && this.root()
++        if (r && r.source && r.source.input && r.source.input.file) {
++          parseOpts = { from: r.source.input.file }
++        }
++      } catch (_) {}
++      let parsed = parse(nodes, parseOpts).nodes
++      nodes = parseOpts.from ? parsed : cleanSource(parsed)
+     } else if (typeof nodes === 'undefined') {
+       nodes = []
+     } else if (Array.isArray(nodes)) {

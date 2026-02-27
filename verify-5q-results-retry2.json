@@ -1,0 +1,37 @@
+﻿[
+    {
+        "query":  "Hi",
+        "answer":  "Hello! How can I help you today?",
+        "traceId":  null,
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "Who is responsible for fixing the AWS blocker?",
+        "answer":  "Jordan Martinez is leading the effort to resolve the AWS EU region quota blocker, with a hard deadline of October 30. The team has already escalated this issue to the AWS Technical Account Manager, marking it as high priority.",
+        "traceId":  "3456e72c-dd13-4a91-b8f7-87d0de82c301",
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "Are there any blockers for the AI search launch?",
+        "answer":  "Yes, there are a couple of critical blockers affecting the upcoming AI search launch. The primary issue is the AWS EU region quota blocker, which poses a significant risk to the project. The team is working on a mitigation plan, but approval from AWS is crucial to move forward smoothly.",
+        "traceId":  "e949ffb4-ff61-4f44-ab6a-64ffdabe0dcd",
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "What\u0027s the biggest risk to our November 15 launch?",
+        "answer":  "The biggest risk to the November 15 launch is related to the AWS EU region quota issue, which could impact our capacity to deploy in the EU. This has been identified as a significant blocker, and while a mitigation plan is in place, it relies on AWS approving our quota by November 11. The issue is being closely monitored, with a go/no-go decision planned for November 13. Additionally, there are financial implications if the quota is not approved, as it could affect our ability to onboard EU enterprise customers.",
+        "traceId":  "f3618352-ca3e-4fb9-88b8-aafa7bff59da",
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "What\u0027s our 2025 product roadmap?",
+        "answer":  "The 2025 product roadmap outlines our strategic focus areas and hiring plans to support these initiatives. The roadmap includes enhancements like the Analytics Dashboard, which aims to provide valuable insights for admins into team usage patterns. This initiative is owned by the Analytics Team and is prioritized as a P1 feature.\n\n- The Analytics Dashboard is a P1 priority feature, owned by the Analytics Team, and is expected to take 6 weeks of effort to complete.\n- The staffing plan for 2025 includes a total of 19 new hires, with specific focus areas each quarter like multi-tenancy, conversational AI, and global scale.\n- The budget for 2025 is set at $3.8 million, with an average loaded cost per engineer of $200,000.\n- Revenue projections for 2025 aim for an annual recurring revenue (ARR) of $15 million by Q4, with target customer numbers growing to 600.\n\nWould you like me to go deeper on timeline, owners, or risks?",
+        "traceId":  "beb75912-db48-4d5d-b79b-ad935feb3d3f",
+        "status":  "ok",
+        "attempt":  1
+    }
+]

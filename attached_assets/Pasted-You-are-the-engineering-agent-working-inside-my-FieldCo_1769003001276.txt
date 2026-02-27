@@ -1,0 +1,128 @@
+You are the engineering agent working inside my FieldCopilot repo. Your ONLY task is to fix (1) citations + “open source document” UX end-to-end and (2) inconsistent RAG retrieval where some questions fail even though the relevant docs are already indexed. Do NOT refactor, do NOT add new features, do NOT change styling, do NOT touch unrelated modules. Keep diffs minimal and isolated to the RAG + citations pipeline.
+
+CONTEXT / SYMPTOMS:
+- Backend sometimes answers questions correctly, but citations do not render, and there is no “Open source document” link.
+- Some questions return “I don’t have information” even though the doc containing the answer is already chunked and indexed.
+- Google Drive connector shows sources/chunks, so ingestion is happening.
+- Docker + DB are available and running; do not spend time on environment setup.
+
+GOALS (ACCEPTANCE CRITERIA):
+A) If retrieval returns ≥1 chunk, the /api/chat response MUST include a top-level `citations` array with deep links to the exact source doc.
+B) Frontend MUST render citations consistently under each assistant answer:
+   - Each citation shows: title, snippet, and a clickable “Open source” link that opens the specific document.
+C) The assistant must NOT output generic refusal text (“I don’t have information…”) when relevant chunks exist in the DB for the active scope/workspace.
+D) RAG must be reliable:
+   - If primary retrieval fails or weak, auto-run fallback lexical retrieval and rerank.
+   - Always return best-effort answer + citations when any relevant chunks exist.
+
+SCOPE LIMITS:
+- Only modify files necessary in these areas:
+  1) Backend chat endpoint + response shaping
+  2) Retrieval function(s) + workspace/scope filtering
+  3) Citation object construction
+  4) Frontend chat message rendering for citations
+- Do not change auth flows, connectors UI, styling systems, unrelated routes, job runner logic (unless a bug is directly causing these two issues).
+
+DELIVERABLES:
+1) A short list: “Files changed” + “Why” + “What exact bug it fixes”
+2) Example outputs:
+   - Example /api/chat JSON showing citations populated
+   - Screenshot or description of frontend rendering (where citations appear and how “Open source” works)
+3) A deterministic debug endpoint (minimal) that proves retrieval logic:
+   GET /api/debug/rag?q=...&workspaceId=...&scopeId=...
+   returning counts + top chunk previews + whether fallback was used
+
+IMPLEMENTATION REQUIREMENTS
+
+PART 1 — FIX CITATIONS END-TO-END
+
+Backend:
+1) Standardize response contract from /api/chat (or equivalent chat route). Return:
+{
+  "answer": "string",
+  "citations": [
+    {
+      "sourceId": "uuid/int",
+      "chunkId": "uuid/int",
+      "title": "string",
+      "fileId": "string|null",
+      "url": "string|null",
+      "snippet": "string",
+      "score": number
+    }
+  ],
+  "debug": { "retrievedCount": n, "usedFallback": bool, "workspaceId": "...", "scopeId": "..." }  // only in dev
+}
+
+2) Build citations from the actual retrieved chunks, not from hallucinated “Sources 1,2”.
+   - snippet = chunk.text.slice(0, 220)
+   - title/url must come from the source record for that chunk.
+3) Deep link rules:
+   - Prefer source.webViewLink if stored.
+   - Else construct links:
+     - Google Docs: https://docs.google.com/document/d/<fileId>/edit
+     - Google Sheets: https://docs.google.com/spreadsheets/d/<fileId>/edit
+     - Google Slides: https://docs.google.com/presentation/d/<fileId>/edit
+     - Drive file fallback: https://drive.google.com/file/d/<fileId>/view
+   - Do NOT link to generic Drive root.
+4) Ensure citations survive response shaping:
+   - No nesting in answer.answer.citations, message.citations, etc. Put citations at the top-level as above.
+   - Ensure the frontend’s expected field matches the backend output.
+
+Frontend:
+1) Find the single component that renders assistant messages (ChatMessage / MessageBubble / similar).
+2) Render citations whenever message.role === "assistant" AND citations.length > 0.
+   - Show a “Sources” section.
+   - For each citation: Title (as link to url), snippet, optional file icon.
+3) Fix any field mismatches:
+   - If frontend expects message.citations but backend returns citations at top-level per message object, ensure the message model includes it.
+   - If messages are stored in state as {role, content}, extend to include citations.
+4) Ensure citations show for both:
+   - streaming responses (if used)
+   - non-streaming responses
+   Do not break streaming—append citations at the end when final payload arrives.
+
+PART 2 — FIX INCONSISTENT RAG (SOME QUESTIONS FAIL)
+
+1) Implement a single retrieval function used by the text chat path (not just voice):
+retrieveForAnswer(query, ctx) -> { chunks, usedFallback, debug }
+2) Workspace/scope correctness:
+   - Determine the exact workspaceId and scopeId used to store chunks.
+   - Use the SAME values in retrieval filters.
+   - If workspaceId can be null, implement the SAME fallback used at ingestion (e.g., "default-workspace") so filters match stored chunks.
+   - Do NOT “guess” different IDs—make it consistent.
+3) Add fallback lexical retrieval:
+   - If primary retrieval returns 0 OR topScore below threshold, run lexical search (Postgres FTS preferred, else ILIKE).
+   - Search across chunk.text and source.title.
+   - Add small query expansions for OKR-like questions:
+     “OKR” ↔ “Objectives and Key Results”
+     “Q4” ↔ “Quarter 4” ↔ “Fourth quarter”
+     “AI search” ↔ “AI Search” ↔ “AISearch”
+4) Hybrid rerank:
+   - Merge vector + lexical results, dedupe by chunkId, compute hybrid score, take topK.
+5) Guardrail behavior:
+   - If chunks exist in DB for scope/workspace but retrieval returns 0, do NOT produce “I don’t have info.”
+   - Instead: run fallback; if still 0, return:
+     “No relevant sources were retrieved for this question.” + include top indexed source titles (max 5) from the active scope so the user can verify the OKR doc is indexed.
+6) Deterministic debug endpoint:
+   GET /api/debug/rag?q=...&workspaceId=...&scopeId=...
+   returns:
+   - workspaceIdUsed, scopeIdUsed
+   - chunksTotalInScope
+   - primary: {count, topScore, previews[]}
+   - fallback: {count, previews[]}
+   - final: {count, usedFallback, previews[]}
+
+PART 3 — DON’T BREAK WHAT WORKS
+- Keep existing ingestion as-is unless you find a direct bug preventing citations or retrieval filters from matching.
+- No dependency upgrades unless strictly required.
+- No schema migrations unless absolutely necessary; if required, do the smallest possible and explain.
+
+WHAT TO PRODUCE WHEN DONE:
+1) Paste the exact list of changed files and key diffs.
+2) Paste 2 example /api/chat responses:
+   - one that includes citations
+   - one where fallback is used
+3) Explain (in 6–10 bullets) why the system used to fail and how your changes fix it.
+
+Start now. Only do the work above.

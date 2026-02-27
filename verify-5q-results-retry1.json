@@ -1,0 +1,37 @@
+﻿[
+    {
+        "query":  "Hi",
+        "answer":  "Hello! How can I help you today?",
+        "traceId":  null,
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "Who is responsible for fixing the AWS blocker?",
+        "answer":  "Jordan Martinez is responsible for resolving the AWS EU region quota blocker. The team is working towards a deadline of November 11 to ensure that the required capacity is approved by AWS. Currently, an escalation with AWS\u0027s Technical Account Manager is in progress, and a fallback plan to deploy at reduced capacity is in place if the quota approval is delayed.",
+        "traceId":  "0ce150d9-50e0-4c8f-a052-e485c94c90a9",
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "Are there any blockers for the AI search launch?",
+        "answer":  "Yes, there are a couple of critical blockers for the AI search launch. The most significant one is the AWS EU region quota issue, which is crucial for the November 15 launch. This has been escalated to AWS VP and needs resolution by November 11 to ensure the launch proceeds smoothly.",
+        "traceId":  "073c4f67-6b51-4815-b9e9-8ddfc0b1f97d",
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "What\u0027s the biggest risk to our November 15 launch?",
+        "answer":  "The most significant risk to the November 15 launch of the AI-Powered Search project appears to be the financial and operational challenges related to infrastructure scaling and costs.",
+        "traceId":  "77bcb775-714b-4dbd-bebf-a7029a39d02b",
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "What\u0027s our 2025 product roadmap?",
+        "answer":  "The 2025 product roadmap for our company focuses on expanding user growth, enhancing product features, and ensuring high customer satisfaction. The overarching mission is to make enterprise knowledge instantly accessible through AI-powered search and assistance, with a goal to grow from 50,000 to 500,000 users while maintaining over 95% customer satisfaction.\n\n- Q1 2025 includes foundational features for scaling.\n- Comprehensive staffing and budget plans are in place for 2025.\n- Revenue projections indicate significant growth in 2025.\n- Risks have been identified, with mitigations planned.\n\nWould you like me to go deeper on timeline, owners, or risks?",
+        "traceId":  "901a14eb-4188-4022-a3b1-089d6f73fc79",
+        "status":  "ok",
+        "attempt":  1
+    }
+]

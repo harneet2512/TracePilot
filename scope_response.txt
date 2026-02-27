@@ -1,0 +1,93 @@
+event: meta
+data: {"conversationId":"742cabf7-a0a2-4062-af6b-0d3f5a7395e6","traceId":"824d1c35-8691-4f86-9ee6-f6378a410e02","startedAt":1772098857168}
+
+event: phase
+data: {"phase":"SEARCHING"}
+
+event: phase
+data: {"phase":"RETRIEVING"}
+
+event: ttft
+data: {"ttftMs":7619}
+
+event: phase
+data: {"phase":"DRAFTING"}
+
+event: delta
+data: {"text":"I found some relevan"}
+
+event: delta
+data: {"text":"t information in the"}
+
+event: delta
+data: {"text":" available sources.\n"}
+
+event: delta
+data: {"text":"\n- Deadline/ETA: Nov"}
+
+event: delta
+data: {"text":"ember\t15 [2]\n- For a"}
+
+event: delta
+data: {"text":" search product, cit"}
+
+event: delta
+data: {"text":"ations are critical."}
+
+event: delta
+data: {"text":" [1]\n- Security & Pe"}
+
+event: delta
+data: {"text":"rmissions Access Con"}
+
+event: delta
+data: {"text":"trol: - Workspace-le"}
+
+event: delta
+data: {"text":"vel isolation: Each "}
+
+event: delta
+data: {"text":"query filtered by wo"}
+
+event: delta
+data: {"text":"rkspaceId - User-lev"}
+
+event: delta
+data: {"text":"el permissions: Only"}
+
+event: delta
+data: {"text":" retrieve chunks use"}
+
+event: delta
+data: {"text":"r has access to - So"}
+
+event: delta
+data: {"text":"urce-level auth: OAu"}
+
+event: delta
+data: {"text":"th tokens stored enc"}
+
+event: delta
+data: {"text":"rypted [2]\n\nWould yo"}
+
+event: delta
+data: {"text":"u like me to go deep"}
+
+event: delta
+data: {"text":"er on timeline, owne"}
+
+event: delta
+data: {"text":"rs, or risks?"}
+
+event: phase
+data: {"phase":"VALIDATING"}
+
+event: phase
+data: {"phase":"DONE"}
+
+event: final
+data: {"answer":"I found some relevant information in the available sources.\n\n- Deadline/ETA: November\t15 [2]\n- For a search product, citations are critical. [1]\n- Security & Permissions Access Control: - Workspace-level isolation: Each query filtered by workspaceId - User-level permissions: Only retrieve chunks user has access to - Source-level auth: OAuth tokens stored encrypted [2]\n\nWould you like me to go deeper on timeline, owners, or risks?","answer_text":"I found some relevant information in the available sources.\n\n- Deadline/ETA: November\t15 [2]\n- For a search product, citations are critical. [1]\n- Security & Permissions Access Control: - Workspace-level isolation: Each query filtered by workspaceId - User-level permissions: Only retrieve chunks user has access to - Source-level auth: OAuth tokens stored encrypted [2]\n\nWould you like me to go deeper on timeline, owners, or risks?","bullets":[{"claim":"For a search product, citations are critical.","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"8c115ab7-aa80-4dc0-a0f9-2ac7c812606f","sourceVersionId":"50e10024-f71d-4d49-ab5e-076e1e541a0c","charStart":5856,"charEnd":6856}]},{"claim":"Security & Permissions Access Control: - Workspace-level isolation: Each query filtered by workspaceId - User-level permissions: Only retrieve chunks user has access to - Source-level auth: OAuth tokens stored encrypted","citations":[{"sourceId":"82b9fe07-ba26-415c-82ca-41614f25977e","chunkId":"c7b4d81b-26d2-4507-8767-143c507f69b6","sourceVersionId":"1ddebab2-805f-43d4-b620-9072eb91d327","charStart":3212,"charEnd":4212}]}],"sources_used":[{"id":"82b9fe07-ba26-415c-82ca-41614f25977e","sourceId":"82b9fe07-ba26-415c-82ca-41614f25977e","title":"AI_Search_Architecture.pdf","url":"https://drive.google.com/file/d/1OaWf-KzyUEnNp_aUm9dGc9g9scyr-x0n/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"},{"id":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"8c115ab7-aa80-4dc0-a0f9-2ac7c812606f","sourceVersionId":"50e10024-f71d-4d49-ab5e-076e1e541a0c","charStart":5856,"charEnd":6856},{"sourceId":"82b9fe07-ba26-415c-82ca-41614f25977e","chunkId":"c7b4d81b-26d2-4507-8767-143c507f69b6","sourceVersionId":"1ddebab2-805f-43d4-b620-9072eb91d327","charStart":3212,"charEnd":4212}],"sources":[{"id":"82b9fe07-ba26-415c-82ca-41614f25977e","sourceId":"82b9fe07-ba26-415c-82ca-41614f25977e","title":"AI_Search_Architecture.pdf","url":"https://drive.google.com/file/d/1OaWf-KzyUEnNp_aUm9dGc9g9scyr-x0n/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"},{"id":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"citationIndexMap":{"d4da6b5b-9916-46cd-ac80-3ae9bc780f71":1,"82b9fe07-ba26-415c-82ca-41614f25977e":2},"details":{"summaryRows":[],"evidenceBySource":[{"sourceKey":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","label":"Drive","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","excerpts":[{"text":"ur\ttests,\tClaude\tcited\tsources\t95%\tof\tthe\ttime\nvs.\tGPT-4o’s\t78%.\tFor\ta\tsearch\tproduct,\tcitations\tare\tcritical.\nQ:\tWhat\thappens\tif\tPinecone\tgoes\tdown?\nA\t(Jordan):\tWe\thave\ta\tfallback\tto\tkeyword\tsearch.\tPinecone\thas\n99.9%\tS"},{"text":"rive\tquota\tincrease\tfollow-\nup\nNov\t1HIGH\nAlexSecurity\treview\tprep\t(docs\t+\tdemo)Nov\t4HIGH\nSarah\nCFO\tmeeting\tre:\tGitHub\tCopilot\nbudget\nNov\t1MEDIUM\nMarcusS3\tIntelligent\tTiering\tmigrationNov\t8MEDIUM\nRachelFinalize\tSRE\thiring"}]},{"sourceKey":"82b9fe07-ba26-415c-82ca-41614f25977e","title":"AI_Search_Architecture.pdf","label":"Drive","url":"https://drive.google.com/file/d/1OaWf-KzyUEnNp_aUm9dGc9g9scyr-x0n/view?usp=drivesdk","excerpts":[{"text":"nce:\tGDPR,\nSOC\t2,\tHIPAA\t(in\tprogress)\nEncryption:\t-\tIn-transit:\tTLS\t1.3\t-\tAt-rest:\tAES-256\t(Pinecone\nmanaged\tkeys)\t-\tCustomer-managed\tkeys:\tRoadmap\tfor\tQ1\t2025\nAPI\tSpecification\nPOST\t/api/search\nRequest:\nResponse:\nMonito"},{"text":"AI-Powered\tSemantic\tSearch\t-\nTechnical\tArchitecture\nAI-Powered\tSemantic\tSearch\t-\nTechnical\tArchitecture\nProject:\tProject\tPhoenix\t(AI\tSearch)\nAuthors:\tAlex\tKim,\tPriya\tPatel,\tJordan\tMartinez\nDate:\tSeptember\t15,\t2024\nStatus"}]}]},"conversationId":"742cabf7-a0a2-4062-af6b-0d3f5a7395e6","traceId":"23e1481d-cfc5-465e-bb47-9edad4ec5580","ttftMs":7619,"totalDurationMs":7972,"retrievalSummary":{"chunksConsidered":12,"distinctSources":4,"topSimilarityScore":0.48487921473022233,"fallbackRetrievalUsed":true},"trustSignal":{"level":"warning","label":"warning","detail":"source support limited, verify details"},"replyId":"bd403991-23e4-476c-b868-7660c552e3d6"}
+
+event: done
+data: {}
+

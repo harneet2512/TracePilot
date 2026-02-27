@@ -1,0 +1,200 @@
+You are Replit Agent. You will implement a production-grade upgrade of an existing app called “FieldCopilot” using this stack ONLY:
+- Frontend: React + TypeScript + Tailwind + shadcn/ui
+- Backend: Express.js + TypeScript
+- DB: PostgreSQL + Drizzle ORM
+- AI: OpenAI (GPT-4o chat, text-embedding-3-small embeddings)
+
+Goal: push FieldCopilot to “10/10” by shipping reliability, governance, observability, evaluation + regression tracking, and one differentiator (“Incident → Work Order Playbooks”). Do not hand-wave. Implement real code, real schemas, real pages, and real metrics. Keep UI polished.
+
+Hard requirements (non-negotiable)
+1) Reliability
+- Add a real job runner for sync/ingestion with:
+  - queue in Postgres
+  - retries with exponential backoff
+  - connector-specific concurrency limits and rate limiting
+  - idempotency keys
+  - dead-letter behavior (failed permanently after max attempts)
+  - progress + partial failure reporting (statsJson)
+- Ingestion must be idempotent: same content/version must not duplicate chunks.
+- Retry logic: retry 429/5xx; fail-fast most 4xx (except auth refresh cases).
+
+2) Governance & structural safety
+- Add JSON Schema validation for:
+  - assistant response format
+  - citations (sourceVersionId + charStart/charEnd)
+  - suggestedAction (tool + params)
+- Reject invalid model outputs; attempt one auto-repair pass; if still invalid, return a safe error to UI.
+- Tool execution layer must accept ONLY validated tool calls.
+- Keep role-based and policy-based restrictions (YAML policies are fine but compile them into typed rules). Provide explainable denies.
+
+3) Observability (not just audit logs)
+- Implement structured tracing:
+  - traces + spans stored in Postgres
+  - capture latency splits, token usage, retrieval stats, tool execution stats, error codes
+- Add dashboards that answer: “what broke / why / since when”
+- Must-have dashboards:
+  - Chat: request count, error rate, latency (p50/p95), token usage + cost
+  - Retrieval: similarity distribution, chunk/source diversity, “0 useful chunk” rate
+  - Citations: citation rate, citation integrity, unsupported-claim heuristic rate
+  - Actions: propose→approve→execute funnel, policy deny reasons, execution success per tool/connector
+  - Sync: throughput, failures by connector+type, staleness per scope
+
+4) Evaluation (enterprise-grade)
+- Build a versioned evaluation harness with:
+  - dataset of 50–200 eval cases supported by the UI (seed with ~20 sample cases in code)
+  - repeatable eval runs
+  - metric computation
+  - regression diffs vs a baseline run
+  - CI gating script that fails if regressions exceed thresholds
+- Required tables:
+  - evalSuites, evalCases, evalRuns, evalResults
+- Required metrics:
+  RAG:
+    - Recall@k (expected source retrieved)
+    - Citation integrity (citations valid + from retrieved set)
+    - Unsupported-claim heuristic rate
+  Actions:
+    - Tool selection accuracy
+    - Parameter correctness/completeness
+    - Policy compliance rate
+    - First-call success rate
+  Agentic:
+    - Task success rate
+    - Steps-to-success
+    - Loop rate
+    - Cost-per-success
+- Regression rules:
+  - Fail if TSR drops > 3%
+  - Fail if unsupported-claim rate rises > 2%
+  - Fail if cost-per-success rises > 10% without TSR improvement
+
+5) Source versioning (critical)
+- Implement source versioning so new doc versions don’t mix chunks:
+  - sources = identity
+  - sourceVersions = immutable snapshots
+  - chunks belong to sourceVersions
+- Only active sourceVersions are searchable.
+- Old versions preserved for audit + reproducibility.
+
+6) Differentiator: Incident → Work Order Playbooks
+- Add a user flow:
+  - user describes an incident (“Valve leak at Site 47”)
+  - system generates a PLAYBOOK that includes:
+    - SOP steps pulled from docs with citations
+    - a draft Jira ticket/work order action
+    - a draft Slack update action
+    - a checklist (steps + PPE + shutdown procedure)
+  - all behind policy + approvals
+- Playbooks must be saved and viewable; include citations and action drafts.
+
+7) UI must look great
+- Use shadcn/ui components, clean layout, consistent spacing, nice empty states, loading skeletons.
+- Provide:
+  - Admin Console with tabs: Connectors, Health, Jobs, Observability, Evaluations, Policies
+  - Connector Health page with cards + tables
+  - Dashboards with charts (use a lightweight React chart lib OR build simple SVG charts; keep it clean)
+  - Evaluation pages: suites, cases, run, results, regression diff view
+  - Jobs page: queue + runs + DLQ + retry details
+  - Playbooks page: create, list, detail, replay
+
+Implementation plan
+A) Database + migrations (Drizzle)
+Create/modify tables:
+- jobs, jobRuns, jobLocks
+- sources, sourceVersions, chunks (migrate chunks to sourceVersionId)
+- traces, spans
+- evalSuites, evalCases, evalRuns, evalResults
+- playbooks (id, userId, title, incidentText, createdAt)
+- playbookItems (id, playbookId, kind: “sop_step” | “checklist” | “action_draft”, dataJson, citationsJson)
+Add indexes for performance (userId, connectorType, status, createdAt, sourceId, isActive, etc.)
+
+B) Backend (Express + TS)
+1) Job runner worker
+- A separate process or server route that can be started in Replit:
+  - polls for runnable jobs with SKIP LOCKED semantics
+  - respects concurrency and rate limits per connector
+  - updates jobRuns, job status, nextRunAt
+  - writes spans/traces
+2) Ingestion & sync as jobs
+- Create jobs for:
+  - connector sync scope
+  - manual document ingestion
+- Store progress stats in jobRuns.statsJson
+3) Source versioning ingestion logic
+- contentHash -> create new sourceVersion; mark active; deactivate older
+- chunking -> chunks tied to sourceVersionId
+4) RAG pipeline with tracing + citations
+- retrieval query filters active sourceVersions and userId
+- store retrieval stats on spans
+5) Agentic action pipeline
+- strict schema for action drafts
+- policy check
+- approvals flow
+- tool execution wrappers produce spans and audit events
+6) Playbook endpoint
+- /playbooks/create : runs playbook generation pipeline using RAG + structured output
+- store playbookItems
+7) Evaluation runner
+- /eval/run : runs suite; stores results; computes metrics
+- /eval/diff : compares run vs baseline
+
+C) Frontend (React + TS)
+- Create an Admin Console with routes:
+  /admin/connectors
+  /admin/health
+  /admin/jobs
+  /admin/observability
+  /admin/evals
+  /admin/policies
+  /playbooks
+- Connector Health UI:
+  - status badges (valid/expiring/expired)
+  - staleness indicator
+  - last sync + error rate
+- Jobs UI:
+  - queue table
+  - job detail (runs, attempts, errors, stats)
+  - DLQ view
+- Observability UI:
+  - dashboard cards (KPIs)
+  - charts for latency, error rate, costs, funnel
+  - filters by date range, connector, user (admin only)
+- Evaluations UI:
+  - suites list + create/edit
+  - cases list with expectedJson editor
+  - run page with progress + results
+  - regression diff view
+- Playbooks UI:
+  - create playbook form
+  - playbook detail showing SOP steps with citations, checklist, action drafts with approve buttons
+
+D) Developer ergonomics
+- Add a seed script:
+  - creates a demo user/admin
+  - creates demo documents/sources + sourceVersions + chunks
+  - creates a small evaluation suite with ~20 cases
+- Add npm scripts:
+  - dev: start web + api + worker
+  - worker: start job runner
+  - eval: run eval suite headlessly
+  - ci: run eval regression gate
+
+Output requirements
+- Modify the project with real code, not pseudocode.
+- Keep code clean and typed.
+- Add README section: “How to run worker, seed data, run evals, view dashboards, demo playbook.”
+- Dashboard should look modern and polished; no ugly raw tables-only page.
+- Do not remove existing features; extend them.
+- If anything is ambiguous, make a reasonable decision and document it in README.
+
+Start by:
+1) Inspecting current repo structure
+2) Creating Drizzle schema + migrations
+3) Implementing worker + job runner
+4) Wiring ingestion/sync through jobs
+5) Implementing source versioning
+6) Implementing tracing + dashboards
+7) Implementing eval harness + CI gate
+8) Implementing playbooks
+
+Proceed now.

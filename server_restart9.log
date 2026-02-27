@@ -1,0 +1,188 @@
+
+> rest-express@1.0.0 dev
+> cross-env NODE_ENV=development tsx server/index.ts
+
+[DB] Connecting to Postgres: localhost:5433/fieldcopilot_test
+[STARTUP] Initializing database connection...
+[DB-STATS] Total: 0, Idle: 0, Waiting: 0
+[STARTUP] Database connection ready
+[db] host=localhost port=5433 db=fieldcopilot_test user=postgres
+[STARTUP] Registering routes...
+[STARTUP] Connector Registry Loaded. Allowed Canonical Types: [google, atlassian, slack, upload, voice]
+[STARTUP] Background initialization of vector store starting...
+[STARTUP] Skipping voice WebSocket server in development (set ENABLE_VOICE_WS_IN_DEV=1 to enable)
+[STARTUP] All routes registered successfully
+[STARTUP] Routes registered
+[STARTUP] Setting up Vite dev server...
+[STARTUP-BG] Found 5000 bounded active chunks. Initializing vector store...
+[vectorstore] Initializing with 5000 chunks...
+[vectorstore] Eager warm limited to 1200/5000 chunks (set RETRIEVAL_EAGER_WARM_LIMIT to tune).
+[vectorstore] Found 1200 chunks to index. Starting background process...
+[vectorstore] Starting indexing of 1200 chunks...
+[vectorstore] Generating embeddings for 50 chunks in this batch... (This may take a while for the first run)
+[STARTUP-BG] Vector store initialization complete
+[Vite] Starting Vite setup...
+[Vite] Resolving Vite config...
+[Vite Config] Starting Vite config resolution...
+[Vite Config] Vite config resolved
+[Vite] Vite config resolved successfully
+[Vite] Creating Vite server instance...
+[Vite] Vite server instance created
+[Vite] Vite server created, setting up middleware...
+[Vite] Setting up catch-all route handler...
+[Vite] Vite setup complete
+[STARTUP] Vite dev server ready
+10:59:49 AM [express] [routes] apiMounted=true
+10:59:49 AM [express] serving on port 5000
+10:59:49 AM [express] [oauth:google] client_id=266708...nt.com
+10:59:49 AM [express] [oauth:google] redirect_uri=http://localhost:5000/api/oauth/google/callback
+10:59:49 AM [express] [oauth:google] scopes=drive.readonly,userinfo.email,userinfo.profile
+10:59:49 AM [express] [oauth:google] access_type=offline prompt=consent
+10:59:49 AM [express] [db] DATABASE_URL=localhost:5433/fieldcopilot_test
+[JobRunner] Starting worker worker-7e790cd4
+[JobRunner] db host=localhost port=5433 db=fieldcopilot_test
+10:59:49 AM [express] Job runner started
+
+🚀 Server running at http://localhost:5000
+
+[JobRunner] poll: pendingJobs=63, claimed=eeff57f2-ee14-4a5c-bc94-efb85fbf9b8d
+[JobRunner] Processing job eeff57f2-ee14-4a5c-bc94-efb85fbf9b8d (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[JobRunner] Job eeff57f2-ee14-4a5c-bc94-efb85fbf9b8d completed successfully in 6050ms
+[JobRunner] poll: pendingJobs=62, claimed=3faf8ac5-d486-4a02-b7b0-90c1d70df6ec
+[JobRunner] Processing job 3faf8ac5-d486-4a02-b7b0-90c1d70df6ec (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+11:00:06 AM [express] GET /api/health 200 in 7ms :: {"ok":true,"env":"development","ts":"2026-02-26T16:00:06.439Z","uptime":19,"heapUsedMB":83,"dbConnected":true,"indexingInProgress":true}
+[JobRunner] Job 3faf8ac5-d486-4a02-b7b0-90c1d70df6ec completed successfully in 5993ms
+[JobRunner] poll: pendingJobs=61, claimed=a171929a-2e23-4bba-8a2d-a095cd751268
+[JobRunner] Processing job a171929a-2e23-4bba-8a2d-a095cd751268 (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+11:00:14 AM [express] GET /api/auth/csrf 200 in 2ms :: {"csrfToken":"48e59c7a-5bf9-4429-8635-903194941730"}
+[AUTH-DEBUG] Login attempt for email: admin@tracepilot.com
+[STORAGE] validatePassword called for admin@tracepilot.com
+[STORAGE] getUserByEmail returned: USER_FOUND
+[STORAGE] Comparing password hash...
+[STORAGE] Password valid: true
+[AUTH-DEBUG] Credentials valid. Creating session for user: 814db98c-a699-4a42-8f87-a0f1592b6f31
+[AUTH-DEBUG] Session cookie set. Returning match.
+11:00:14 AM [express] POST /api/auth/login 200 in 62ms :: {"id":"814db98c-a699-4a42-8f87-a0f1592b6f31","email":"admin@tracepilot.com","role":"admin","csrfToken":"628e4047-607b-44aa-83ee-54bb58a5bcc2"}
+[JobRunner] Job a171929a-2e23-4bba-8a2d-a095cd751268 completed successfully in 6491ms
+{"timestamp":"2026-02-26T16:00:21.503Z","level":"info","message":"chat_stream_start","context":{"traceId":"cffa283d-3b83-41b0-8a0c-c7aa522da191","userId":"814db98c-a699-4a42-8f87-a0f1592b6f31"}}
+[Retrieval] Searching corpus: workspaceId=default-workspace, userId=814db98c-a699-4a42-8f87-a0f1592b6f31, scopeId=none, demoMode=1, demoAllowlist=1, maxCandidates=200
+[Retrieval] Found 274 total sources in workspace, filtering by visibility...
+[Retrieval] Candidate stats: lexicalCandidates=43 maxCandidates=200 totalInScope=51 allowedSources=6
+[RetrievalCoverage] intent=GENERAL_QA candidateTypes=[okr_doc,jira_ticket,roadmap_doc] routedTypes=[okr_doc,jira_ticket,roadmap_doc] routedSources=6/6
+[Retrieval] Memory: heapUsed=203MB candidates=43 totalInScope=51
+[JobRunner] poll: pendingJobs=60, claimed=8ef58198-951f-4188-a632-d5ab1a9dc364
+[JobRunner] Processing job 8ef58198-951f-4188-a632-d5ab1a9dc364 (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[vectorstore] Indexed 500/1200 chunks...
+[JobRunner] Job 8ef58198-951f-4188-a632-d5ab1a9dc364 completed successfully in 7334ms
+[JobRunner] poll: pendingJobs=59, claimed=e778ad83-dd4b-481c-828c-99b7ab1e3ded
+[JobRunner] Processing job e778ad83-dd4b-481c-828c-99b7ab1e3ded (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[JobRunner] Job e778ad83-dd4b-481c-828c-99b7ab1e3ded completed successfully in 7196ms
+[JobRunner] poll: pendingJobs=58, claimed=65a2e53a-ef1b-4420-a64c-b3cd31604f17
+[JobRunner] Processing job 65a2e53a-ef1b-4420-a64c-b3cd31604f17 (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[JobRunner] Job 65a2e53a-ef1b-4420-a64c-b3cd31604f17 completed successfully in 7389ms
+[JobRunner] poll: pendingJobs=57, claimed=99c1476f-6a2f-427e-8035-68aa36c4cf21
+[JobRunner] Processing job 99c1476f-6a2f-427e-8035-68aa36c4cf21 (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[vectorstore] Indexed 1000/1200 chunks...
+[vectorstore] Memory: heapUsed=96MB
+{"timestamp":"2026-02-26T16:01:11.211Z","level":"info","message":"chat_stream_start","context":{"traceId":"be382f80-d1e4-47b2-9c33-684290636cfa","userId":"814db98c-a699-4a42-8f87-a0f1592b6f31"}}
+[Retrieval] Searching corpus: workspaceId=default-workspace, userId=814db98c-a699-4a42-8f87-a0f1592b6f31, scopeId=none, demoMode=1, demoAllowlist=1, maxCandidates=200
+[Retrieval] Found 274 total sources in workspace, filtering by visibility...
+[Retrieval] Candidate stats: lexicalCandidates=43 maxCandidates=200 totalInScope=51 allowedSources=6
+[RetrievalCoverage] intent=GENERAL_QA candidateTypes=[okr_doc,jira_ticket,roadmap_doc] routedTypes=[okr_doc,jira_ticket,roadmap_doc] routedSources=6/6
+[Retrieval] Memory: heapUsed=215MB candidates=43 totalInScope=51
+[JobRunner] Job 99c1476f-6a2f-427e-8035-68aa36c4cf21 completed successfully in 11211ms
+[vectorstore] Indexed 1200/1200 chunks...
+[vectorstore] Indexing complete. vectorStore.size=1200
+[vectorstore] Sample stored IDs: ["b29f2b1d-03e4-404d-ac34-33955e1d99e8","cdad4d7c-242d-4c2d-bbeb-9c8387dd0deb","d87153f6-ec42-464a-81d8-3d85eafa4bd8"]
+[vectorstore] 40/43 chunks missing embeddings, embedding on-the-fly (storeSize=1200)
+[vectorstore] 40/43 chunks missing embeddings, embedding on-the-fly (storeSize=1200)
+[Retrieval] Diversifying sources: 82b9fe07-ba26-415c-82ca-41614f25977e has 6/8 chunks (max 5)
+[Retrieval] After diversification: 8 chunks from 2 sources
+[RAG] workspaceId=default-workspace scopeId=null query="xyznonexistent123 query that matches no documents" primaryRetrieved=8 topScore=0.353 usedFallback=true finalRetrieved=16 finalTopK=8 uniqueSources=2
+[JobRunner] poll: pendingJobs=56, claimed=8e40372a-263a-4e3f-a649-59b896b31608
+[JobRunner] Processing job 8e40372a-263a-4e3f-a649-59b896b31608 (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[Retrieval] Diversifying sources: 82b9fe07-ba26-415c-82ca-41614f25977e has 6/8 chunks (max 5)
+[Retrieval] After diversification: 8 chunks from 2 sources
+[RAG] workspaceId=default-workspace scopeId=null query="xyznonexistent123 query that matches no documents" primaryRetrieved=8 topScore=0.353 usedFallback=true finalRetrieved=16 finalTopK=8 uniqueSources=2
+[streaming] TTFT (general): 55594ms for request cffa283d-3b83-41b0-8a0c-c7aa522da191
+[streaming] TTFT (general): 6777ms for request be382f80-d1e4-47b2-9c33-684290636cfa
+{"timestamp":"2026-02-26T16:01:19.618Z","level":"info","message":"chat_latency","context":{"traceId":"cffa283d-3b83-41b0-8a0c-c7aa522da191","retrievalMs":54946,"generationMs":3087,"totalMs":58058,"intent":"GENERAL","ttftMs":55594}}
+[enqueue] job=221f0168-d76e-4647-9a38-9df0a36c0acd scope=null connector=null
+[JobRunner] Enqueued job 221f0168-d76e-4647-9a38-9df0a36c0acd (score_reply)
+{"timestamp":"2026-02-26T16:01:19.657Z","level":"info","message":"chat_stream_done","context":{"traceId":"cffa283d-3b83-41b0-8a0c-c7aa522da191","totalMs":58058,"ttftMs":55594}}
+{"timestamp":"2026-02-26T16:01:19.657Z","level":"info","message":"perf_chat_request","context":{"traceId":"cffa283d-3b83-41b0-8a0c-c7aa522da191","chatId":"6efe34b5-0979-42d9-80c5-02d056860f72","intent":"GENERAL","mode":"stream","retrievalMs":54946,"rerankMs":0,"generationMs":3087,"totalMs":58058,"chunkCandidates":16,"finalTopK":16,"uniqueSources":2,"heapUsedMBStart":79.6,"heapUsedMBEnd":223.6}}
+{"timestamp":"2026-02-26T16:01:20.517Z","level":"info","message":"chat_latency","context":{"traceId":"be382f80-d1e4-47b2-9c33-684290636cfa","retrievalMs":5707,"generationMs":3570,"totalMs":9293,"intent":"GENERAL","ttftMs":6777}}
+[enqueue] job=3ad0d388-5fee-4000-b78d-5c57eef4e1a8 scope=null connector=null
+[JobRunner] Enqueued job 3ad0d388-5fee-4000-b78d-5c57eef4e1a8 (score_reply)
+{"timestamp":"2026-02-26T16:01:20.571Z","level":"info","message":"chat_stream_done","context":{"traceId":"be382f80-d1e4-47b2-9c33-684290636cfa","totalMs":9293,"ttftMs":6777}}
+{"timestamp":"2026-02-26T16:01:20.571Z","level":"info","message":"perf_chat_request","context":{"traceId":"be382f80-d1e4-47b2-9c33-684290636cfa","chatId":"62217d06-d7d4-4c84-873a-cfc761be6f19","intent":"GENERAL","mode":"stream","retrievalMs":5707,"rerankMs":0,"generationMs":3570,"totalMs":9293,"chunkCandidates":16,"finalTopK":16,"uniqueSources":2,"heapUsedMBStart":94.3,"heapUsedMBEnd":92.1}}
+11:01:20 AM [express] POST /api/chat/stream 200 in 9370ms
+[JobRunner] Job 8e40372a-263a-4e3f-a649-59b896b31608 completed successfully in 5804ms
+[JobRunner] poll: pendingJobs=57, claimed=4f5be96c-0ad6-4644-8b34-d0ae3ec4b9cd
+[JobRunner] Processing job 4f5be96c-0ad6-4644-8b34-d0ae3ec4b9cd (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[JobRunner] Job 4f5be96c-0ad6-4644-8b34-d0ae3ec4b9cd completed successfully in 13786ms
+[JobRunner] poll: pendingJobs=56, claimed=91f30cf1-67bf-4f8e-b78b-92138d8a4e0c
+[JobRunner] Processing job 91f30cf1-67bf-4f8e-b78b-92138d8a4e0c (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[JobRunner] Job 91f30cf1-67bf-4f8e-b78b-92138d8a4e0c completed successfully in 8722ms
+[JobRunner] poll: pendingJobs=55, claimed=6ced1707-f1e8-451d-ac36-d1b099e9b98c
+[JobRunner] Processing job 6ced1707-f1e8-451d-ac36-d1b099e9b98c (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[JobRunner] Job 6ced1707-f1e8-451d-ac36-d1b099e9b98c completed successfully in 7808ms
+[JobRunner] poll: pendingJobs=54, claimed=c320b28c-2dfe-45b7-b32f-51412fe883e0
+[JobRunner] Processing job c320b28c-2dfe-45b7-b32f-51412fe883e0 (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[JobRunner] Job c320b28c-2dfe-45b7-b32f-51412fe883e0 completed successfully in 7619ms
+{"timestamp":"2026-02-26T16:02:23.976Z","level":"info","message":"chat_stream_start","context":{"traceId":"4e9ff6f4-a300-4cbb-9c9e-a45304fd7c55","userId":"814db98c-a699-4a42-8f87-a0f1592b6f31"}}
+[Retrieval] Searching corpus: workspaceId=default-workspace, userId=814db98c-a699-4a42-8f87-a0f1592b6f31, scopeId=none, demoMode=1, demoAllowlist=1, maxCandidates=200
+[Retrieval] Found 274 total sources in workspace, filtering by visibility...
+[Retrieval] Candidate stats: lexicalCandidates=40 maxCandidates=200 totalInScope=51 allowedSources=6
+[RetrievalCoverage] intent=OKRS_METRICS_BUDGET candidateTypes=[okr_doc,jira_ticket,roadmap_doc] routedTypes=[okr_doc] routedSources=1/6
+[Retrieval] Memory: heapUsed=217MB candidates=3 totalInScope=51
+[vectorstore] 2/3 chunks missing embeddings, embedding on-the-fly (storeSize=1240)
+[Retrieval] Diversifying sources: 96677b12-e487-41e8-b321-e696e442eaa2 has 3/3 chunks (max 5)
+[Retrieval] After diversification: 3 chunks from 1 sources
+[RAG] workspaceId=default-workspace scopeId=null query="What are our Q4 OKRs?" primaryRetrieved=3 topScore=0.692 usedFallback=false finalRetrieved=4 finalTopK=8 uniqueSources=1
+[JobRunner] poll: pendingJobs=53, claimed=050b5825-3e30-45c6-a2e1-e122a00ae300
+[JobRunner] Processing job 050b5825-3e30-45c6-a2e1-e122a00ae300 (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[streaming] TTFT (general): 2333ms for request 4e9ff6f4-a300-4cbb-9c9e-a45304fd7c55
+[JobRunner] Job 050b5825-3e30-45c6-a2e1-e122a00ae300 completed successfully in 4964ms
+{"timestamp":"2026-02-26T16:02:34.324Z","level":"info","message":"chat_latency","context":{"traceId":"4e9ff6f4-a300-4cbb-9c9e-a45304fd7c55","retrievalMs":1181,"generationMs":9137,"totalMs":10326,"intent":"DOC_OVERRIDE","ttftMs":2333}}
+[enqueue] job=02f7e7d8-8d37-4b66-a21a-54f8a4afd100 scope=null connector=null
+[JobRunner] Enqueued job 02f7e7d8-8d37-4b66-a21a-54f8a4afd100 (score_reply)
+{"timestamp":"2026-02-26T16:02:34.349Z","level":"info","message":"chat_stream_done","context":{"traceId":"4e9ff6f4-a300-4cbb-9c9e-a45304fd7c55","totalMs":10326,"ttftMs":2333}}
+{"timestamp":"2026-02-26T16:02:34.349Z","level":"info","message":"perf_chat_request","context":{"traceId":"4e9ff6f4-a300-4cbb-9c9e-a45304fd7c55","chatId":"6dae979b-f64f-453d-83b4-3e39d7ae2475","intent":"DOC_OVERRIDE","mode":"stream","retrievalMs":1181,"rerankMs":0,"generationMs":9137,"totalMs":10326,"chunkCandidates":4,"finalTopK":4,"uniqueSources":1,"heapUsedMBStart":93.3,"heapUsedMBEnd":92.5}}
+11:02:34 AM [express] POST /api/chat/stream 200 in 10381ms
+[JobRunner] poll: pendingJobs=53, claimed=ee83d253-9b99-4c5e-9965-d590efecfdbc
+[JobRunner] Processing job ee83d253-9b99-4c5e-9965-d590efecfdbc (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[JobRunner] Job ee83d253-9b99-4c5e-9965-d590efecfdbc completed successfully in 10668ms
+[JobRunner] poll: pendingJobs=52, claimed=2dd09c6b-3c40-46c9-83b8-07053b8c2b3e
+[JobRunner] Processing job 2dd09c6b-3c40-46c9-83b8-07053b8c2b3e (score_reply), attempt 1
+[OpenAI Debug] chatCompletion called with keys: temperature, jsonSchema
+[OpenAI Debug] Using model: gpt-4o
+[JobRunner] Job 2dd09c6b-3c40-46c9-83b8-07053b8c2b3e completed successfully in 10920ms

@@ -1,0 +1,180 @@
+event: meta
+data: {"conversationId":"91d6be82-5f25-4465-abdf-869a0cee050d","traceId":"fefa54c5-ec77-4ae7-b38e-da09037e06b8","startedAt":1772098794611}
+
+event: phase
+data: {"phase":"SEARCHING"}
+
+event: ping
+data: {}
+
+event: phase
+data: {"phase":"RETRIEVING"}
+
+event: ttft
+data: {"ttftMs":18267}
+
+event: phase
+data: {"phase":"DRAFTING"}
+
+event: delta
+data: {"text":"The AI-Powered Searc"}
+
+event: delta
+data: {"text":"h project for Q4 202"}
+
+event: delta
+data: {"text":"4 aims to launch a s"}
+
+event: delta
+data: {"text":"emantic search featu"}
+
+event: delta
+data: {"text":"re by November 15, 2"}
+
+event: delta
+data: {"text":"024, with a target o"}
+
+event: delta
+data: {"text":"f 90% user satisfact"}
+
+event: delta
+data: {"text":"ion. Key results inc"}
+
+event: delta
+data: {"text":"lude achieving a 2s "}
+
+event: delta
+data: {"text":"p95 latency for sear"}
+
+event: delta
+data: {"text":"ch queries, currentl"}
+
+event: delta
+data: {"text":"y at 5.2s, and index"}
+
+event: delta
+data: {"text":"ing 500K+ documents "}
+
+event: delta
+data: {"text":"across platforms. Th"}
+
+event: delta
+data: {"text":"e project is led by "}
+
+event: delta
+data: {"text":"Alex Kim, with a bud"}
+
+event: delta
+data: {"text":"get of $180,000 allo"}
+
+event: delta
+data: {"text":"cated for infrastruc"}
+
+event: delta
+data: {"text":"ture and LLM API cos"}
+
+event: delta
+data: {"text":"ts. Are there any sp"}
+
+event: delta
+data: {"text":"ecific areas of conc"}
+
+event: delta
+data: {"text":"ern or priorities yo"}
+
+event: delta
+data: {"text":"u would like to addr"}
+
+event: delta
+data: {"text":"ess? Nov 15 launch, "}
+
+event: delta
+data: {"text":"90% user satisfactio"}
+
+event: delta
+data: {"text":"n target, 2s p95 lat"}
+
+event: delta
+data: {"text":"ency (current 5.2s),"}
+
+event: delta
+data: {"text":" $180K budget.\n\n- La"}
+
+event: delta
+data: {"text":"unch semantic search"}
+
+event: delta
+data: {"text":" by November 15, 202"}
+
+event: delta
+data: {"text":"4 (target: 90% user "}
+
+event: delta
+data: {"text":"satisfaction score, "}
+
+event: delta
+data: {"text":"owner: Alex Kim) [1]"}
+
+event: delta
+data: {"text":"\n- Achieve 2s p95 la"}
+
+event: delta
+data: {"text":"tency for search que"}
+
+event: delta
+data: {"text":"ries (target: 2s p95"}
+
+event: delta
+data: {"text":", current: 5.2s p95,"}
+
+event: delta
+data: {"text":" owner: Jordan Marti"}
+
+event: delta
+data: {"text":"nez) [1]\n- Index 500"}
+
+event: delta
+data: {"text":"K+ documents across "}
+
+event: delta
+data: {"text":"Google Drive, Conflu"}
+
+event: delta
+data: {"text":"ence, and Slack (tar"}
+
+event: delta
+data: {"text":"get: 100% of company"}
+
+event: delta
+data: {"text":" knowledge base, own"}
+
+event: delta
+data: {"text":"er: Priya Patel) [1]"}
+
+event: delta
+data: {"text":"\n\nWant me to drill i"}
+
+event: delta
+data: {"text":"nto any specific key"}
+
+event: delta
+data: {"text":" result or pull up t"}
+
+event: delta
+data: {"text":"he latest progress m"}
+
+event: delta
+data: {"text":"etrics?"}
+
+event: phase
+data: {"phase":"VALIDATING"}
+
+event: phase
+data: {"phase":"DONE"}
+
+event: final
+data: {"answer":"The AI-Powered Search project for Q4 2024 aims to launch a semantic search feature by November 15, 2024, with a target of 90% user satisfaction. Key results include achieving a 2s p95 latency for search queries, currently at 5.2s, and indexing 500K+ documents across platforms. The project is led by Alex Kim, with a budget of $180,000 allocated for infrastructure and LLM API costs. Are there any specific areas of concern or priorities you would like to address? Nov 15 launch, 90% user satisfaction target, 2s p95 latency (current 5.2s), $180K budget.\n\n- Launch semantic search by November 15, 2024 (target: 90% user satisfaction score, owner: Alex Kim) [1]\n- Achieve 2s p95 latency for search queries (target: 2s p95, current: 5.2s p95, owner: Jordan Martinez) [1]\n- Index 500K+ documents across Google Drive, Confluence, and Slack (target: 100% of company knowledge base, owner: Priya Patel) [1]\n\nWant me to drill into any specific key result or pull up the latest progress metrics?","answer_text":"The AI-Powered Search project for Q4 2024 aims to launch a semantic search feature by November 15, 2024, with a target of 90% user satisfaction. Key results include achieving a 2s p95 latency for search queries, currently at 5.2s, and indexing 500K+ documents across platforms. The project is led by Alex Kim, with a budget of $180,000 allocated for infrastructure and LLM API costs. Are there any specific areas of concern or priorities you would like to address? Nov 15 launch, 90% user satisfaction target, 2s p95 latency (current 5.2s), $180K budget.\n\n- Launch semantic search by November 15, 2024 (target: 90% user satisfaction score, owner: Alex Kim) [1]\n- Achieve 2s p95 latency for search queries (target: 2s p95, current: 5.2s p95, owner: Jordan Martinez) [1]\n- Index 500K+ documents across Google Drive, Confluence, and Slack (target: 100% of company knowledge base, owner: Priya Patel) [1]\n\nWant me to drill into any specific key result or pull up the latest progress metrics?","bullets":[{"claim":"Ship AI-Powered Search Feature","citations":[{"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","chunkId":"9819bbdc-6440-4d43-b76e-279c2362c419","score":1,"sourceVersionId":"3e9e7a9d-3041-46b2-865a-401d3c40a4ed","charStart":0,"charEnd":1000,"url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","label":"Q4_2024_OKRs.pdf"}]},{"claim":"Launch semantic search by November 15, 2024","citations":[{"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","chunkId":"9819bbdc-6440-4d43-b76e-279c2362c419","score":1,"sourceVersionId":"3e9e7a9d-3041-46b2-865a-401d3c40a4ed","charStart":0,"charEnd":1000,"url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","label":"Q4_2024_OKRs.pdf"}]},{"claim":"Achieve 2s p95 latency for search queries","citations":[{"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","chunkId":"9819bbdc-6440-4d43-b76e-279c2362c419","score":1,"sourceVersionId":"3e9e7a9d-3041-46b2-865a-401d3c40a4ed","charStart":0,"charEnd":1000,"url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","label":"Q4_2024_OKRs.pdf"}]},{"claim":"Index 500K+ documents across Google Drive, Confluence, and Slack","citations":[{"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","chunkId":"9819bbdc-6440-4d43-b76e-279c2362c419","score":1,"sourceVersionId":"3e9e7a9d-3041-46b2-865a-401d3c40a4ed","charStart":0,"charEnd":1000,"url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","label":"Q4_2024_OKRs.pdf"}]}],"sources_used":[{"id":"96677b12-e487-41e8-b321-e696e442eaa2","sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","title":"Q4_2024_OKRs.pdf","url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"framingContext":"The AI-Powered Search project for Q4 2024 aims to launch a semantic search feature by November 15, 2024, with a target of 90% user satisfaction. Key results include achieving a 2s p95 latency for search queries, currently at 5.2s, and indexing 500K+ documents across platforms. The project is led by Alex Kim, with a budget of $180,000 allocated for infrastructure and LLM API costs. Are there any specific areas of concern or priorities you would like to address?","summary":"Nov 15 launch • 90% user satisfaction target • 2s p95 latency (current 5.2s) • $180K budget","sections":[{"title":"Ship AI-Powered Search Feature","items":[{"text":"Launch semantic search by November 15, 2024","kind":"kr","owner":"Alex Kim","target":"90% user satisfaction score","current":null,"due":null,"status":null,"citations":[{"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","chunkId":"9819bbdc-6440-4d43-b76e-279c2362c419","score":1}]},{"text":"Achieve 2s p95 latency for search queries","kind":"kr","owner":"Jordan Martinez","target":"2s p95","current":"5.2s p95","due":null,"status":null,"citations":[{"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","chunkId":"9819bbdc-6440-4d43-b76e-279c2362c419","score":1}]},{"text":"Index 500K+ documents across Google Drive, Confluence, and Slack","kind":"kr","owner":"Priya Patel","target":"100% of company knowledge base","current":null,"due":null,"status":null,"citations":[{"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","chunkId":"9819bbdc-6440-4d43-b76e-279c2362c419","score":1}]}]}],"citations":[{"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","chunkId":"9819bbdc-6440-4d43-b76e-279c2362c419","sourceVersionId":"3e9e7a9d-3041-46b2-865a-401d3c40a4ed","url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","label":"Q4_2024_OKRs.pdf","charStart":0,"charEnd":1000}],"sources":[{"id":"96677b12-e487-41e8-b321-e696e442eaa2","sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","title":"Q4_2024_OKRs.pdf","url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"okrViewModel":{"title":"The AI-Powered Search project - Q4 2024 aims to launch a semantic search feature by November 15, 2024, with a target of 90% user satisfaction. Key results include achieving a 2s p95 latency for search queries, currently at 5.2s, and indexing 500K+ documents across platforms. The project is led by Alex Kim, with a budget of $180,000 allocated for infrastructure and LLM API costs. Are there any specific areas of concern or priorities you would like to address?","timeframe":"Q4 2024","framingContext":"The AI-Powered Search project for Q4 2024 aims to launch a semantic search feature by November 15, 2024, with a target of 90% user satisfaction. Key results include achieving a 2s p95 latency for search queries, currently at 5.2s, and indexing 500K+ documents across platforms. The project is led by Alex Kim, with a budget of $180,000 allocated for infrastructure and LLM API costs. Are there any specific areas of concern or priorities you would like to address?","keyFacts":[{"text":"90% user satisfaction score target","citationIds":[1]},{"text":"2s p95 target","citationIds":[1]},{"text":"100% of company knowledge base target","citationIds":[1]}],"objectives":[{"title":"Ship AI-Powered Search Feature","keyResults":[{"text":"Launch semantic search by November 15, 2024","owner":"Alex Kim","target":"90% user satisfaction score","current":null,"status":null,"due":null,"citationIds":[1]},{"text":"Achieve 2s p95 latency for search queries","owner":"Jordan Martinez","target":"2s p95","current":"5.2s p95","status":null,"due":null,"citationIds":[1]},{"text":"Index 500K+ documents across Google Drive, Confluence, and Slack","owner":"Priya Patel","target":"100% of company knowledge base","current":null,"status":null,"due":null,"citationIds":[1]}]}],"citationIndex":[{"id":1,"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","title":"Q4_2024_OKRs.pdf","url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","connectorType":"drive","connectorLabel":"Drive","why":"targets, owners","description":"Defines 90% user satisfaction score, 2s p95 targets; owner assignments","kind":"cited"}],"sourcesUsed":[{"id":1,"sourceId":"96677b12-e487-41e8-b321-e696e442eaa2","title":"Q4_2024_OKRs.pdf","url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","connectorType":"drive","connectorLabel":"Drive","why":"targets, owners","description":"Defines 90% user satisfaction score, 2s p95 targets; owner assignments","kind":"cited"}],"sourcesRelated":[]},"citationIndexMap":{"96677b12-e487-41e8-b321-e696e442eaa2":1},"details":{"summaryRows":[{"item":"Launch semantic search by November 15, 2024","priority":"—","owner":"Alex Kim","impact":"90% user satisfaction score","citationIds":["1"]},{"item":"Achieve 2s p95 latency for search queries","priority":"—","owner":"Jordan Martinez","impact":"5.2s p95","citationIds":["1"]},{"item":"Index 500K+ documents across Google Drive, Confluence, and Slack","priority":"—","owner":"Priya Patel","impact":"100% of company knowledge base","citationIds":["1"]}],"evidenceBySource":[{"sourceKey":"96677b12-e487-41e8-b321-e696e442eaa2","title":"Q4_2024_OKRs.pdf","label":"Drive","url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","excerpts":[{"text":"Q4\t2024\tOKRs\t-\tEngineering\tTeam\nQ4\t2024\tOKRs\t-\tEngineering\tTeam\nDocument\tOwner:\tSarah\tChen\t(VP\tEngineering)\nLast\tUpdated:\tOctober\t1,\t2024\nStatus:\tAPPROVED\nObjective\t1:\tShip\tAI-Powered\tSearch\nFeature\nKey\tResults:\t1.\tLaunc"},{"text":"ted\tbuild\tsystem\tcomplete\tby\tOct\t31\t-\nOwner:\tMarcus\tJohnson\t(DevOps)\n2.\tAutomate\t80%\tof\tcode\treviews\tusing\tAI-assisted\treview\ttools\nCurrently\tat\t35%\tautomation\trate\nOwner:\tLisa\tWang\t(Developer\tTools)\n3.\tEliminate\tcritica"}]}]},"evidence":[{"id":"96677b12-e487-41e8-b321-e696e442eaa2","title":"Q4_2024_OKRs.pdf","url":"https://drive.google.com/file/d/1blwqBYR0kIAz8lgFDkzo6uRQBs0Vkkks/view?usp=drivesdk","connectorType":"drive","connectorLabel":"Drive","whyUsed":"targets, owners"}],"intentType":"okr","conversationId":"91d6be82-5f25-4465-abdf-869a0cee050d","traceId":"95e695d5-1057-4f95-8172-e513dea2b940","ttftMs":18267,"totalDurationMs":19060,"retrievalSummary":{"chunksConsidered":14,"distinctSources":4,"topSimilarityScore":0.41727577829664353,"fallbackRetrievalUsed":true},"trustSignal":{"level":"warning","label":"warning","detail":"source support limited, verify details"},"replyId":"ff6ccb69-9a96-499e-800b-c39bf4fe01e2"}
+
+event: done
+data: {}
+

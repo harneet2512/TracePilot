@@ -1,0 +1,109 @@
+Update the existing FieldCopilot codebase. Assume most core features already exist (login, chat UI, ingestion, citations, actions draft/approve/execute, policy, audit, eval). Your job is to ADD the missing parts below. If any “already exists”, verify it matches the requirements; if it doesn’t, refactor it to comply.
+
+NEW / UPDATED REQUIREMENTS
+
+A) Switch connectors to PER-USER OAUTH (not global)
+1) Implement per-user OAuth flows and token storage for:
+   - Google Drive (OAuth)
+   - Atlassian (OAuth 2.0 3LO for Jira + Confluence)
+   - Slack (OAuth v2)
+2) Store tokens per user in DB:
+   - UserConnectorAccount(userId, type, accessToken, refreshToken, expiresAt, scopesJson, externalAccountId, metadataJson)
+   - Encrypt tokens at rest if ENCRYPTION_KEY is provided.
+3) Add /connect page to show, per user:
+   - Connected/Disconnected status for each connector
+   - Last sync time and error state
+   - Buttons: Connect, Disconnect, Sync now
+
+B) Add “Scope Selection” after OAuth for each connector (this is key)
+After a user connects a connector, redirect them to a scopes page to choose WHAT to index.
+
+Google (/scopes/google) must offer:
+- Selected folders (folder picker)
+- All My Drive
+- All Shared Drives I’m a member of (list drives; allow include/exclude)
+- Everything accessible to me (warning: large)
+Also include:
+- Sync mode: Metadata-first (default ON)
+- Content indexing strategy: Smart (default) / Full / On-demand
+- Exclusions: file types to skip + folder patterns to exclude
+Save selections to UserConnectorScope.
+
+Atlassian (/scopes/atlassian) must offer:
+- Select accessible Atlassian sites (cloudIds) first
+Then:
+Jira scope options:
+  - Selected projects
+  - All accessible projects
+  - JQL-defined scope
+Confluence scope options:
+  - Selected spaces
+  - All accessible spaces
+  - Selected page trees (root page -> subtree)
+Plus:
+- Metadata-first + Smart/Full/On-demand
+- Exclusions lists
+Save selections to UserConnectorScope.
+
+Slack (/scopes/slack) must offer:
+- Selected channels
+- All channels accessible to the user token (bounded by Slack permissions)
+- Time window: last 30/90/180 days
+- Exclusions: channels and ignore bot messages
+Save selections to UserConnectorScope.
+
+C) Make indexing user-scoped and automatic
+1) Ensure Source and Chunk records are user-scoped:
+   - Source.userId required
+   - Chunk.userId required
+2) Ensure vector store queries ALWAYS filter by userId.
+   - Cross-user retrieval must be impossible.
+3) Implement sync engines that read the saved UserConnectorScope and build the index:
+   - googleSync(userId)
+   - jiraSync(userId, cloudId)
+   - confluenceSync(userId, cloudId)
+   - slackSync(userId)
+4) Implement metadata-first + smart/full/on-demand:
+   - Metadata-first: store Source records quickly (title, url, updated time, path, ids)
+   - Full: fetch full content for all items in scope and chunk+embed
+   - Smart: fetch full content for recent items + frequently retrieved items
+   - On-demand: only fetch content when retrieval needs it (lazy fetch on query)
+5) Add per-user “Sync now” button on /connect and show progress/result.
+6) Log every sync run as an AuditEvent(kind="sync") with counts and errors.
+
+D) MULTI-ANSWER OUTPUT with probabilities (new answer format)
+When responding to a user question, do NOT output a single answer. Output 2–4 candidate answers with a probability distribution that sums to 1.0, and explain briefly why the top answer is top. These are NOT random; they should represent plausible interpretations or competing conclusions given the evidence.
+
+Implement this as a strict JSON response schema (validate with Zod):
+
+{
+  "candidates": [
+    {
+      "answer": "string",
+      "probability": 0.0,
+      "bullets": [
+        { "claim": "string", "citations": [{ "sourceId":"...", "chunkId":"..." }] }
+      ],
+      "action": null | {
+        "type": "jira.create_issue" | "slack.post_message" | "confluence.upsert_page",
+        "draft": { ... },
+        "rationale": "string",
+        "citations": [{ "sourceId":"...", "chunkId":"..." }]
+      }
+    }
+  ],
+  "bestIndex": 0,
+  "needsClarification": boolean,
+  "clarifyingQuestions": string[]
+}
+
+Rules:
+- Provide 2–4 candidates unless needsClarification=true, in which case provide 0 candidates and only clarifying questions.
+- probabilities must sum to exactly 1.0 (normalize if needed).
+- bestIndex must point to highest probability.
+- Each candidate’s bullets must be grounded with citations (>=1 citation per bullet).
+- If evidence is weak, probabilities should reflect uncertainty (e.g., 0.45/0.35/0.20).
+- UI must render candidates as selectable tabs/cards, highlight the best one, and allow the user to proceed with actions only from the selected candidate.
+
+Update /api/chat:
+- retrieval

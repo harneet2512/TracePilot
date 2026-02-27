@@ -1,0 +1,22 @@
+{
+  "name": "Regression Fixture Suite",
+  "description": "Fixture that produces a visible pass->fail regression for cockpit validation.",
+  "cases": [
+    {
+      "id": "okr-citation-case",
+      "type": "QNA",
+      "prompt": "What are the Q4 OKRs and cite sources?",
+      "mustCite": true,
+      "expectedAnswerContains": ["Q4", "OKR"],
+      "expectedSourceIds": ["source-okr-1"]
+    },
+    {
+      "id": "latency-cost-case",
+      "type": "QNA",
+      "prompt": "Summarize incident response checklist for gas leak.",
+      "mustCite": true,
+      "expectedAnswerContains": ["checklist", "safety"],
+      "expectedSourceIds": ["source-sop-1"]
+    }
+  ]
+}

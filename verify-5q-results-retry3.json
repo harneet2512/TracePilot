@@ -1,0 +1,37 @@
+﻿[
+    {
+        "query":  "Hi",
+        "answer":  "Hello! How can I help you today?",
+        "traceId":  null,
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "Who is responsible for fixing the AWS blocker?",
+        "answer":  "Jordan Martinez is leading the effort to resolve the AWS EU region quota blocker, with a hard deadline of October 30. The team has already escalated to the AWS Technical Account Manager to ensure the quota is approved in time for the November 15 launch.",
+        "traceId":  "191a39f3-3602-47e9-837e-44817d9d544b",
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "Are there any blockers for the AI search launch?",
+        "answer":  "Yes, there are a couple of significant blockers for the AI search launch scheduled for November 15, 2024. The most critical one is related to the AWS EU region quota, which is currently escalated to AWS VP level. This issue needs resolution by November 11 to avoid impacting the launch. Additionally, there is a medium-priority blocker concerning OpenAI API rate limits, which affects the embedding generation during peak hours.",
+        "traceId":  "485ab8f4-d6be-4ae8-b8f1-5630586dceff",
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "What\u0027s the biggest risk to our November 15 launch?",
+        "answer":  "The biggest risk to the November 15 launch is the EU region blocker related to AWS quota approval. This issue is critical because it affects the deployment capacity in the EU, which is essential for the launch. The team has a mitigation plan to operate at reduced capacity if necessary, but ideally, AWS will approve the quota by November 11 to avoid any disruptions.",
+        "traceId":  "59504c8d-c347-47dd-b07e-9a79c9702499",
+        "status":  "ok",
+        "attempt":  1
+    },
+    {
+        "query":  "What\u0027s our 2025 product roadmap?",
+        "answer":  "The 2025 product roadmap outlines ambitious goals and key initiatives for the year. The focus is on expanding our enterprise offerings, enhancing product features, and scaling operations to meet growing demand. The roadmap includes specific revenue targets and strategic priorities to drive growth.\n\n- The revenue targets for 2025 are set at $2M for Q1, $4.5M for Q2, $8M for Q3, and $15M for Q4, with an average selling price increasing each quarter [1].\n- Key risks identified include potential competitor launches, unexpected increases in LLM costs, and regulatory changes, with specific mitigations planned for each [1].\n- The roadmap emphasizes a focus on enterprise features, with 70% of revenue expected from the enterprise tier, 25% from SMB, and 5% from freemium conversions [1].\n- Success criteria for 2025 include achieving 500K users, $15M ARR, an NPS of 60, and maintaining a 99.95% SLA uptime [1].\n\nWould you like me to go deeper on timeline, owners, or risks?",
+        "traceId":  "e06067e1-5cc0-4377-be7c-44ffc6b3b2db",
+        "status":  "ok",
+        "attempt":  1
+    }
+]

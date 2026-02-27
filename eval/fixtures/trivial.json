@@ -1,0 +1,43 @@
+{
+  "name": "trivial-fast-path",
+  "description": "Trivial prompts should skip RAG and return fast",
+  "cases": [
+    {
+      "id": "trivial-greeting-1",
+      "input": "Hi",
+      "assertions": {
+        "sectionsEmpty": true,
+        "sourcesEmpty": true,
+        "answerNotEmpty": true,
+        "maxLatencyMs": 2000
+      }
+    },
+    {
+      "id": "trivial-greeting-2",
+      "input": "Hello!",
+      "assertions": {
+        "sectionsEmpty": true,
+        "sourcesEmpty": true,
+        "answerNotEmpty": true
+      }
+    },
+    {
+      "id": "trivial-capability",
+      "input": "What can you do?",
+      "assertions": {
+        "sectionsEmpty": true,
+        "sourcesEmpty": true,
+        "answerNotEmpty": true
+      }
+    },
+    {
+      "id": "trivial-thanks",
+      "input": "Thanks!",
+      "assertions": {
+        "sectionsEmpty": true,
+        "sourcesEmpty": true,
+        "answerNotEmpty": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+﻿[
+    {
+        "query":  "Hi",
+        "answer":  "Hello! How can I help you today?",
+        "traceId":  null,
+        "markers":  0
+    },
+    {
+        "query":  "Who is responsible for fixing the AWS blocker?",
+        "answer":  "Jordan is responsible for addressing the AWS EU region quota blocker. The team has set a deadline to resolve this issue by October 30, with a high priority for escalation. There is a mitigation plan in place to operate at reduced capacity if necessary.",
+        "traceId":  "fb9be273-adec-4b45-8169-8af01fff5860",
+        "markers":  0
+    },
+    {
+        "query":  "Are there any blockers for the AI search launch?",
+        "answer":  "Yes, there are a couple of significant blockers for the AI search launch planned for November 15, 2024. The most critical one is the AWS EU region quota issue. The team has escalated this to AWS, and a decision is expected by November 11. If not resolved, it poses a risk to the launch as it limits capacity in the EU region.",
+        "traceId":  "bb7f4ad1-962d-4c7b-85f5-c4ee83b184ea",
+        "markers":  0
+    },
+    {
+        "query":  "What\u0027s the biggest risk to our November 15 launch?",
+        "answer":  "The biggest risk to the November 15 launch is the EU region quota blocker with AWS. This issue poses a significant challenge as there is a tight deadline for quota approval by November 11. Without this approval, the fallback involves deploying at a reduced capacity, which is not ideal.",
+        "traceId":  "23508915-d49d-405b-90e7-e7c1d8b278a7",
+        "markers":  0
+    },
+    {
+        "query":  "What\u0027s our 2025 product roadmap?",
+        "answer":  "The biggest risk to the November 15 launch is the EU region quota blocker with AWS. This issue poses a significant challenge as there is a tight deadline for quota approval by November 11. Without this approval, the fallback involves deploying at a reduced capacity, which is not ideal.",
+        "traceId":  "23508915-d49d-405b-90e7-e7c1d8b278a7",
+        "markers":  0
+    }
+]

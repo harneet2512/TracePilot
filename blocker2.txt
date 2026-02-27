@@ -1,0 +1,210 @@
+event: meta
+data: {"conversationId":"d8361159-fd73-4bf3-b709-39d291e83df6","traceId":"9a1c2ed0-d57e-43f6-b61b-1a833a1622e5","startedAt":1772099667213}
+
+event: phase
+data: {"phase":"SEARCHING"}
+
+event: ping
+data: {}
+
+event: ping
+data: {}
+
+event: phase
+data: {"phase":"RETRIEVING"}
+
+event: ttft
+data: {"ttftMs":22412}
+
+event: phase
+data: {"phase":"DRAFTING"}
+
+event: delta
+data: {"text":"The AI Search projec"}
+
+event: delta
+data: {"text":"t, part of Project P"}
+
+event: delta
+data: {"text":"hoenix, faces a crit"}
+
+event: delta
+data: {"text":"ical blocker due to "}
+
+event: delta
+data: {"text":"AWS EU region quota "}
+
+event: delta
+data: {"text":"delays. This issue, "}
+
+event: delta
+data: {"text":"reported by Jordan M"}
+
+event: delta
+data: {"text":"artinez, is currentl"}
+
+event: delta
+data: {"text":"y in progress and th"}
+
+event: delta
+data: {"text":"reatens the November"}
+
+event: delta
+data: {"text":" 15 launch, with a f"}
+
+event: delta
+data: {"text":"allback plan to depl"}
+
+event: delta
+data: {"text":"oy at reduced capaci"}
+
+event: delta
+data: {"text":"ty if not resolved b"}
+
+event: delta
+data: {"text":"y November 11. Sarah"}
+
+event: delta
+data: {"text":" Chen is prepared to"}
+
+event: delta
+data: {"text":" escalate the issue "}
+
+event: delta
+data: {"text":"to AWS VP level if n"}
+
+event: delta
+data: {"text":"ecessary. How can we"}
+
+event: delta
+data: {"text":" ensure the AWS quot"}
+
+event: delta
+data: {"text":"a is approved in tim"}
+
+event: delta
+data: {"text":"e to avoid impacting"}
+
+event: delta
+data: {"text":" EU enterprise custo"}
+
+event: delta
+data: {"text":"mers? AWS EU quota d"}
+
+event: delta
+data: {"text":"elay (critical, Nov "}
+
+event: delta
+data: {"text":"11), OpenAI API rate"}
+
+event: delta
+data: {"text":" limits (medium), Gi"}
+
+event: delta
+data: {"text":"tHub Copilot budget "}
+
+event: delta
+data: {"text":"(low, Q1 2025).\n\n- A"}
+
+event: delta
+data: {"text":"WS EU Region Quota B"}
+
+event: delta
+data: {"text":"locker (current: Imp"}
+
+event: delta
+data: {"text":"act: Cannot serve EU"}
+
+event: delta
+data: {"text":" enterprise customer"}
+
+event: delta
+data: {"text":"s at scale, GDPR com"}
+
+event: delta
+data: {"text":"pliance risk, revenu"}
+
+event: delta
+data: {"text":"e at risk ($500K ARR"}
+
+event: delta
+data: {"text":"), reputational risk"}
+
+event: delta
+data: {"text":" · Deadline: Novembe"}
+
+event: delta
+data: {"text":"r 11, 2024, Critical"}
+
+event: delta
+data: {"text":", due November 11, 2"}
+
+event: delta
+data: {"text":"024, owner: Jordan M"}
+
+event: delta
+data: {"text":"artinez) [1]\n- OpenA"}
+
+event: delta
+data: {"text":"I API Rate Limits (c"}
+
+event: delta
+data: {"text":"urrent: Impact: Embe"}
+
+event: delta
+data: {"text":"ddings generation th"}
+
+event: delta
+data: {"text":"rottled during peak "}
+
+event: delta
+data: {"text":"hours, Medium, owner"}
+
+event: delta
+data: {"text":": Priya Patel) [2]\n-"}
+
+event: delta
+data: {"text":" GitHub Copilot Budg"}
+
+event: delta
+data: {"text":"et Approval (current"}
+
+event: delta
+data: {"text":": Impact: Cannot hit"}
+
+event: delta
+data: {"text":" 80% code review aut"}
+
+event: delta
+data: {"text":"omation target, Low,"}
+
+event: delta
+data: {"text":" owner: Sarah Chen) "}
+
+event: delta
+data: {"text":"[2]\n\nWant me to pull"}
+
+event: delta
+data: {"text":" up the escalation t"}
+
+event: delta
+data: {"text":"imeline or break dow"}
+
+event: delta
+data: {"text":"n the mitigation ste"}
+
+event: delta
+data: {"text":"ps?"}
+
+event: phase
+data: {"phase":"VALIDATING"}
+
+event: phase
+data: {"phase":"DONE"}
+
+event: final
+data: {"answer":"The AI Search project, part of Project Phoenix, faces a critical blocker due to AWS EU region quota delays. This issue, reported by Jordan Martinez, is currently in progress and threatens the November 15 launch, with a fallback plan to deploy at reduced capacity if not resolved by November 11. Sarah Chen is prepared to escalate the issue to AWS VP level if necessary. How can we ensure the AWS quota is approved in time to avoid impacting EU enterprise customers? AWS EU quota delay (critical, Nov 11), OpenAI API rate limits (medium), GitHub Copilot budget (low, Q1 2025).\n\n- AWS EU Region Quota Blocker (current: Impact: Cannot serve EU enterprise customers at scale, GDPR compliance risk, revenue at risk ($500K ARR), reputational risk · Deadline: November 11, 2024, Critical, due November 11, 2024, owner: Jordan Martinez) [1]\n- OpenAI API Rate Limits (current: Impact: Embeddings generation throttled during peak hours, Medium, owner: Priya Patel) [2]\n- GitHub Copilot Budget Approval (current: Impact: Cannot hit 80% code review automation target, Low, owner: Sarah Chen) [2]\n\nWant me to pull up the escalation timeline or break down the mitigation steps?","answer_text":"The AI Search project, part of Project Phoenix, faces a critical blocker due to AWS EU region quota delays. This issue, reported by Jordan Martinez, is currently in progress and threatens the November 15 launch, with a fallback plan to deploy at reduced capacity if not resolved by November 11. Sarah Chen is prepared to escalate the issue to AWS VP level if necessary. How can we ensure the AWS quota is approved in time to avoid impacting EU enterprise customers? AWS EU quota delay (critical, Nov 11), OpenAI API rate limits (medium), GitHub Copilot budget (low, Q1 2025).\n\n- AWS EU Region Quota Blocker (current: Impact: Cannot serve EU enterprise customers at scale, GDPR compliance risk, revenue at risk ($500K ARR), reputational risk · Deadline: November 11, 2024, Critical, due November 11, 2024, owner: Jordan Martinez) [1]\n- OpenAI API Rate Limits (current: Impact: Embeddings generation throttled during peak hours, Medium, owner: Priya Patel) [2]\n- GitHub Copilot Budget Approval (current: Impact: Cannot hit 80% code review automation target, Low, owner: Sarah Chen) [2]\n\nWant me to pull up the escalation timeline or break down the mitigation steps?","bullets":[{"claim":"AWS EU Region Quota Blocker","citations":[{"sourceId":"f7ada39b-e572-498c-8197-736a9a21f56f","chunkId":"d14053c0-ef41-4212-943e-d9662ed034b5","score":1,"sourceVersionId":"937b31ef-7461-42ba-bcbf-b0b36eb7f825","charStart":0,"charEnd":858,"url":"https://drive.google.com/file/d/1pcwDpaqMVClET6mfadGy_oCYn4FgigJ-/view?usp=drivesdk","label":"JIRA_INFRA-1247_AWS_EU_Blocker.pdf"},{"sourceId":"f7ada39b-e572-498c-8197-736a9a21f56f","chunkId":"72b633f7-577f-426f-a05d-57a019e5a9b6","score":1,"sourceVersionId":"937b31ef-7461-42ba-bcbf-b0b36eb7f825","charStart":708,"charEnd":1708,"url":"https://drive.google.com/file/d/1pcwDpaqMVClET6mfadGy_oCYn4FgigJ-/view?usp=drivesdk","label":"JIRA_INFRA-1247_AWS_EU_Blocker.pdf"}]},{"claim":"OpenAI API Rate Limits","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"c689b21c-5a11-47c1-8297-34af3c879e59","score":1,"sourceVersionId":"50e10024-f71d-4d49-ab5e-076e1e541a0c","charStart":4170,"charEnd":5170,"url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","label":"Engineering_AllHands_Oct28_2024.pdf"}]},{"claim":"GitHub Copilot Budget Approval","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"c689b21c-5a11-47c1-8297-34af3c879e59","score":1,"sourceVersionId":"50e10024-f71d-4d49-ab5e-076e1e541a0c","charStart":4170,"charEnd":5170,"url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","label":"Engineering_AllHands_Oct28_2024.pdf"}]}],"sources_used":[{"id":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"},{"id":"f7ada39b-e572-498c-8197-736a9a21f56f","sourceId":"f7ada39b-e572-498c-8197-736a9a21f56f","title":"JIRA_INFRA-1247_AWS_EU_Blocker.pdf","url":"https://drive.google.com/file/d/1pcwDpaqMVClET6mfadGy_oCYn4FgigJ-/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"framingContext":"The AI Search project, part of Project Phoenix, faces a critical blocker due to AWS EU region quota delays. This issue, reported by Jordan Martinez, is currently in progress and threatens the November 15 launch, with a fallback plan to deploy at reduced capacity if not resolved by November 11. Sarah Chen is prepared to escalate the issue to AWS VP level if necessary. How can we ensure the AWS quota is approved in time to avoid impacting EU enterprise customers?","summary":"AWS EU quota delay (critical, Nov 11) • OpenAI API rate limits (medium) • GitHub Copilot budget (low, Q1 2025)","sections":[{"title":"Blockers & Risks","items":[{"text":"AWS EU Region Quota Blocker","kind":"bullet","owner":"Jordan Martinez","status":"Critical","due":"November 11, 2024","current":"Impact: Cannot serve EU enterprise customers at scale, GDPR compliance risk, revenue at risk ($500K ARR), reputational risk · Deadline: November 11, 2024","citations":[{"sourceId":"f7ada39b-e572-498c-8197-736a9a21f56f","chunkId":"d14053c0-ef41-4212-943e-d9662ed034b5","score":1},{"sourceId":"f7ada39b-e572-498c-8197-736a9a21f56f","chunkId":"72b633f7-577f-426f-a05d-57a019e5a9b6","score":1}]},{"text":"OpenAI API Rate Limits","kind":"bullet","owner":"Priya Patel","status":"Medium","current":"Impact: Embeddings generation throttled during peak hours","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"c689b21c-5a11-47c1-8297-34af3c879e59","score":1}]},{"text":"GitHub Copilot Budget Approval","kind":"bullet","owner":"Sarah Chen","status":"Low","current":"Impact: Cannot hit 80% code review automation target","citations":[{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"c689b21c-5a11-47c1-8297-34af3c879e59","score":1}]}]}],"citations":[{"sourceId":"f7ada39b-e572-498c-8197-736a9a21f56f","chunkId":"d14053c0-ef41-4212-943e-d9662ed034b5","sourceVersionId":"937b31ef-7461-42ba-bcbf-b0b36eb7f825","url":"https://drive.google.com/file/d/1pcwDpaqMVClET6mfadGy_oCYn4FgigJ-/view?usp=drivesdk","label":"JIRA_INFRA-1247_AWS_EU_Blocker.pdf","charStart":0,"charEnd":858},{"sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","chunkId":"c689b21c-5a11-47c1-8297-34af3c879e59","sourceVersionId":"50e10024-f71d-4d49-ab5e-076e1e541a0c","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","label":"Engineering_AllHands_Oct28_2024.pdf","charStart":4170,"charEnd":5170}],"sources":[{"id":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","sourceId":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"},{"id":"f7ada39b-e572-498c-8197-736a9a21f56f","sourceId":"f7ada39b-e572-498c-8197-736a9a21f56f","title":"JIRA_INFRA-1247_AWS_EU_Blocker.pdf","url":"https://drive.google.com/file/d/1pcwDpaqMVClET6mfadGy_oCYn4FgigJ-/view?usp=drivesdk","sourceType":"drive","sourceTypeLabel":"Drive"}],"citationIndexMap":{"f7ada39b-e572-498c-8197-736a9a21f56f":1,"d4da6b5b-9916-46cd-ac80-3ae9bc780f71":2},"details":{"summaryRows":[{"item":"AWS EU Region Quota Blocker","priority":"HIGH","owner":"Jordan Martinez","impact":"Impact: Cannot serve EU enterprise customers at scale, GDPR compliance risk, revenue at risk ($500K ARR), reputational risk · Deadline: November 11, 2024","citationIds":["1"]},{"item":"OpenAI API Rate Limits","priority":"MEDIUM","owner":"Priya Patel","impact":"Impact: Embeddings generation throttled during peak hours","citationIds":["2"]},{"item":"GitHub Copilot Budget Approval","priority":"LOW","owner":"Sarah Chen","impact":"Impact: Cannot hit 80% code review automation target","citationIds":["2"]}],"evidenceBySource":[{"sourceKey":"f7ada39b-e572-498c-8197-736a9a21f56f","title":"JIRA_INFRA-1247_AWS_EU_Blocker.pdf","label":"Drive","url":"https://drive.google.com/file/d/1pcwDpaqMVClET6mfadGy_oCYn4FgigJ-/view?usp=drivesdk","excerpts":[{"text":"JIRA\tINFRA-1247:\tAWS\tEU\tRegion\nQuota\tBlocker\nJIRA\tIssue:\tINFRA-1247\nAWS\tEU\tRegion\tQuota\tBlocker\nType:\tBug\t/\tBlocker\nPriority:\t\u0001\tCritical\nStatus:\tIn\tProgress\nCreated:\tOctober\t15,\t2024\nUpdated:\tOctober\t28,\t2024\nReporter:\tJ"},{"text":"rch\nfeature.\tOur\tarchitecture\trequires\tdeploying\tPinecone\tvector\ndatabase\twith\tsufficient\tcapacity\tto\tserve\t200K\tdaily\tactive\tusers\tin\nthe\tEU\tregion.\nCurrent\tSituation\nRequested:\t100\tp1.x4\tEC2\tinstances\tin\teu-west-1\nCurr"}]},{"sourceKey":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","label":"Drive","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","excerpts":[{"text":"n:\t-\tDeploy\tto\teu-west-1\twith\treduced\tcapacity\t(50K\tDAU\nlimit)\t-\tAdd\twaiting\tlist\tfor\tEU\tenterprise\tcustomers\t-\tCommunicate\ndelays\tproactively\tto\tsales\tteam\nBLOCKER\t#2:\tOpenAI\tAPI\tRate\tLimits\t⚠\t\tMEDIUM\nPRIORITY\nOwner:\tPr"},{"text":"ur\ttests,\tClaude\tcited\tsources\t95%\tof\tthe\ttime\nvs.\tGPT-4o’s\t78%.\tFor\ta\tsearch\tproduct,\tcitations\tare\tcritical.\nQ:\tWhat\thappens\tif\tPinecone\tgoes\tdown?\nA\t(Jordan):\tWe\thave\ta\tfallback\tto\tkeyword\tsearch.\tPinecone\thas\n99.9%\tS"}]}]},"evidence":[{"id":"f7ada39b-e572-498c-8197-736a9a21f56f","title":"JIRA_INFRA-1247_AWS_EU_Blocker.pdf","url":"https://drive.google.com/file/d/1pcwDpaqMVClET6mfadGy_oCYn4FgigJ-/view?usp=drivesdk","connectorType":"drive","connectorLabel":"Drive","whyUsed":"owners, status, dates"},{"id":"d4da6b5b-9916-46cd-ac80-3ae9bc780f71","title":"Engineering_AllHands_Oct28_2024.pdf","url":"https://drive.google.com/file/d/1cWDQ4mEaj5ym2QFicMP-AEp4v9yg2qMK/view?usp=drivesdk","connectorType":"drive","connectorLabel":"Drive","whyUsed":"owners, status"}],"intentType":"blocker","conversationId":"d8361159-fd73-4bf3-b709-39d291e83df6","traceId":"cb4cd06a-3b01-43dd-bdc6-ad8e7b1accf1","ttftMs":22412,"totalDurationMs":23345,"retrievalSummary":{"chunksConsidered":16,"distinctSources":4,"topSimilarityScore":0.5116477642674332,"fallbackRetrievalUsed":true},"trustSignal":{"level":"warning","label":"warning","detail":"source support limited, verify details"},"replyId":"23ef519e-4548-4ad1-a362-addc4e1d63e2"}
+
+event: done
+data: {}
+

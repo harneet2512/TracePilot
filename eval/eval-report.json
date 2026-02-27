@@ -1,0 +1,265 @@
+{
+  "timestamp": "2026-01-26T13:55:10.356Z",
+  "totalCases": 7,
+  "passed": 7,
+  "failed": 0,
+  "passRate": 100,
+  "results": [
+    {
+      "caseId": "okr-query",
+      "input": "What are our Q4 OKRs?",
+      "passed": true,
+      "failures": [],
+      "latencyMs": 1,
+      "response": {
+        "answer": "Based on the documents I found, here's information about: What are our Q4 OKRs?. [This is a simulated response for offline testing]",
+        "sections": [
+          {
+            "title": "Summary",
+            "content": "Simulated content"
+          }
+        ],
+        "sources": [
+          {
+            "id": "src-1",
+            "title": "Document 1",
+            "sourceType": "drive",
+            "sourceTypeLabel": "Drive"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "project-query",
+      "input": "Find the project roadmap",
+      "passed": true,
+      "failures": [],
+      "latencyMs": 0,
+      "response": {
+        "answer": "Based on the documents I found, here's information about: Find the project roadmap. [This is a simulated response for offline testing]",
+        "sections": [
+          {
+            "title": "Summary",
+            "content": "Simulated content"
+          }
+        ],
+        "sources": [
+          {
+            "id": "src-1",
+            "title": "Document 1",
+            "sourceType": "drive",
+            "sourceTypeLabel": "Drive"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "meeting-query",
+      "input": "Show me recent meeting notes",
+      "passed": true,
+      "failures": [],
+      "latencyMs": 0,
+      "response": {
+        "answer": "Based on the documents I found, here's information about: Show me recent meeting notes. [This is a simulated response for offline testing]",
+        "sections": [
+          {
+            "title": "Summary",
+            "content": "Simulated content"
+          }
+        ],
+        "sources": [
+          {
+            "id": "src-1",
+            "title": "Document 1",
+            "sourceType": "drive",
+            "sourceTypeLabel": "Drive"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "trivial-greeting-1",
+      "input": "Hi",
+      "passed": true,
+      "failures": [],
+      "latencyMs": 0,
+      "response": {
+        "answer": "Hello! I'm your enterprise assistant. How can I help you today?",
+        "sections": [],
+        "sources": []
+      }
+    },
+    {
+      "caseId": "trivial-greeting-2",
+      "input": "Hello!",
+      "passed": true,
+      "failures": [],
+      "latencyMs": 0,
+      "response": {
+        "answer": "Hello! I'm your enterprise assistant. How can I help you today?",
+        "sections": [],
+        "sources": []
+      }
+    },
+    {
+      "caseId": "trivial-capability",
+      "input": "What can you do?",
+      "passed": true,
+      "failures": [],
+      "latencyMs": 0,
+      "response": {
+        "answer": "Hello! I'm your enterprise assistant. How can I help you today?",
+        "sections": [],
+        "sources": []
+      }
+    },
+    {
+      "caseId": "trivial-thanks",
+      "input": "Thanks!",
+      "passed": true,
+      "failures": [],
+      "latencyMs": 0,
+      "response": {
+        "answer": "Hello! I'm your enterprise assistant. How can I help you today?",
+        "sections": [],
+        "sources": []
+      }
+    }
+  ],
+  "fixtureResults": {
+    "doc-intent": {
+      "name": "doc-intent",
+      "passed": 3,
+      "failed": 0,
+      "cases": [
+        {
+          "caseId": "okr-query",
+          "input": "What are our Q4 OKRs?",
+          "passed": true,
+          "failures": [],
+          "latencyMs": 1,
+          "response": {
+            "answer": "Based on the documents I found, here's information about: What are our Q4 OKRs?. [This is a simulated response for offline testing]",
+            "sections": [
+              {
+                "title": "Summary",
+                "content": "Simulated content"
+              }
+            ],
+            "sources": [
+              {
+                "id": "src-1",
+                "title": "Document 1",
+                "sourceType": "drive",
+                "sourceTypeLabel": "Drive"
+              }
+            ]
+          }
+        },
+        {
+          "caseId": "project-query",
+          "input": "Find the project roadmap",
+          "passed": true,
+          "failures": [],
+          "latencyMs": 0,
+          "response": {
+            "answer": "Based on the documents I found, here's information about: Find the project roadmap. [This is a simulated response for offline testing]",
+            "sections": [
+              {
+                "title": "Summary",
+                "content": "Simulated content"
+              }
+            ],
+            "sources": [
+              {
+                "id": "src-1",
+                "title": "Document 1",
+                "sourceType": "drive",
+                "sourceTypeLabel": "Drive"
+              }
+            ]
+          }
+        },
+        {
+          "caseId": "meeting-query",
+          "input": "Show me recent meeting notes",
+          "passed": true,
+          "failures": [],
+          "latencyMs": 0,
+          "response": {
+            "answer": "Based on the documents I found, here's information about: Show me recent meeting notes. [This is a simulated response for offline testing]",
+            "sections": [
+              {
+                "title": "Summary",
+                "content": "Simulated content"
+              }
+            ],
+            "sources": [
+              {
+                "id": "src-1",
+                "title": "Document 1",
+                "sourceType": "drive",
+                "sourceTypeLabel": "Drive"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "trivial-fast-path": {
+      "name": "trivial-fast-path",
+      "passed": 4,
+      "failed": 0,
+      "cases": [
+        {
+          "caseId": "trivial-greeting-1",
+          "input": "Hi",
+          "passed": true,
+          "failures": [],
+          "latencyMs": 0,
+          "response": {
+            "answer": "Hello! I'm your enterprise assistant. How can I help you today?",
+            "sections": [],
+            "sources": []
+          }
+        },
+        {
+          "caseId": "trivial-greeting-2",
+          "input": "Hello!",
+          "passed": true,
+          "failures": [],
+          "latencyMs": 0,
+          "response": {
+            "answer": "Hello! I'm your enterprise assistant. How can I help you today?",
+            "sections": [],
+            "sources": []
+          }
+        },
+        {
+          "caseId": "trivial-capability",
+          "input": "What can you do?",
+          "passed": true,
+          "failures": [],
+          "latencyMs": 0,
+          "response": {
+            "answer": "Hello! I'm your enterprise assistant. How can I help you today?",
+            "sections": [],
+            "sources": []
+          }
+        },
+        {
+          "caseId": "trivial-thanks",
+          "input": "Thanks!",
+          "passed": true,
+          "failures": [],
+          "latencyMs": 0,
+          "response": {
+            "answer": "Hello! I'm your enterprise assistant. How can I help you today?",
+            "sections": [],
+            "sources": []
+          }
+        }
+      ]
+    }
+  }
+}
