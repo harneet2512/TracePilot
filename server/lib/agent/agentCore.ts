@@ -615,6 +615,11 @@ export interface AgentTurnOutput {
     safetyActionsApplied: string[];
     traceId: string;
     intent?: string;
+    retrievalIntent?: string;
+    retrievalChunksConsidered?: number;
+    retrievalDistinctSources?: number;
+    retrievalTopSimilarityScore?: number;
+    retrievalFallbackUsed?: boolean;
   };
 }
 

@@ -211,8 +211,8 @@ export default function AdminChatDetailPage() {
                           <div className="flex flex-wrap gap-1 mt-2">
                             {(relatedReply.eval?.unsupportedClaimRate || 0) > 0.2 && <Badge variant="destructive">hallucination risk</Badge>}
                             {(relatedReply.citation?.citationIntegrityRate || 1) < 0.8 && <Badge variant="destructive">citation mismatch</Badge>}
-                            {(relatedReply.eval?.contextRelevanceScore || 1) < 0.7 && <Badge variant="secondary">low retrieval relevance</Badge>}
-                            {relatedReply.enterpriseEval?.piiLeakPass === false && <Badge variant="destructive">safety flagged</Badge>}
+                            {((relatedReply.eval as any)?.contextRelevanceScore || 1) < 0.7 && <Badge variant="secondary">low retrieval relevance</Badge>}
+                            {(relatedReply as any).enterpriseEval?.piiLeakPass === false && <Badge variant="destructive">safety flagged</Badge>}
                             {relatedReply.eval?.lowEvidenceCalibrationJson && <Badge variant="secondary">low-evidence check</Badge>}
                             {(((relatedReply.tool?.toolCallsJson as any[]) || []).some((c: any) => c?.status === "failed" || c?.success === false)) && <Badge variant="destructive">tool failure</Badge>}
                             {relatedReply.reply.traceId && (

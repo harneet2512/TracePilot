@@ -797,7 +797,7 @@ function MessageBubble({
                           response.bullets.some((b: { claim: string }) => b.claim) && 
                           !hasStructuredSections;
   const showEvidencePanel = hasSources && hasLegacyBullets;
-  const assistantStatus = message.status === "complete" || !message.status ? "done" : message.status === "streaming" ? "streaming" : "pending";
+  const assistantStatus = message.status === "complete" || !message.status ? "done" : (message.status as string) === "streaming" ? "streaming" : "pending";
 
   return (
     <div className="mb-6 space-y-4 group" data-testid="assistant-message" data-status={assistantStatus}>
