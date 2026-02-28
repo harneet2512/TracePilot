@@ -33,6 +33,8 @@ import {
   Ticket,
   ChevronDown,
   ExternalLink,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { SiJira, SiSlack, SiConfluence } from "react-icons/si";
 import { Copy, Check } from "lucide-react";
@@ -464,6 +466,55 @@ function ThinkingBubble({ tasks, statusLabel }: { tasks?: TaskItem[]; statusLabe
   );
 }
 
+function FeedbackButtons({ requestId, replyId }: { requestId?: string; replyId?: string }) {
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const send = async (value: "up" | "down") => {
+    if (sending || feedback === value) return;
+    setSending(true);
+    try {
+      await fetch("/api/chat/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...csrfHeaders() },
+        credentials: "include",
+        body: JSON.stringify({ requestId, replyId, feedback: value }),
+      });
+      setFeedback(value);
+    } catch (err) {
+      console.error("Feedback send failed:", err);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn("h-6 w-6", feedback === "up" && "text-green-600")}
+        onClick={() => send("up")}
+        disabled={sending}
+        title="Helpful"
+        data-testid="feedback-thumbs-up"
+      >
+        <ThumbsUp className="h-3.5 w-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn("h-6 w-6", feedback === "down" && "text-destructive")}
+        onClick={() => send("down")}
+        disabled={sending}
+        title="Not helpful"
+        data-testid="feedback-thumbs-down"
+      >
+        <ThumbsDown className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
 
 function CitationBadge({ citation, index }: { citation: Citation; index: number }) {
   // Try to open external URL if available, otherwise fallback to internal viewer
@@ -851,58 +902,48 @@ function MessageBubble({
             {(() => {
               const trust = (response as any)?.trustSignal as { level?: string; label?: string; detail?: string } | undefined;
               const replyId = (response as any)?.replyId as string | undefined;
-              if (!trust?.label) return null;
-              const level = (trust.level ?? "review").toLowerCase();
-              const isGrounded = level === "grounded";
-              const isWarning = level === "warning";
-              const badge = (
-                <span
-                  className={cn(
-                    "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-                    isGrounded && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-                    level === "review" && "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-                    isWarning && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                  )}
-                >
-                  {trust.label}
-                </span>
-              );
-              const wrap = (el: React.ReactNode) =>
-                replyId && conversationId ? (
-                  <a href={`/admin/chats/${conversationId}/replies/${replyId}`} className="inline-flex focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-full">
-                    {el}
-                  </a>
-                ) : (
-                  el
-                );
+              const requestId = (response as any)?.requestId as string | undefined;
               return (
-                <div className="mt-2 flex items-center">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>{wrap(badge)}</TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        {trust.detail ?? trust.label}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="mt-2 flex items-center gap-3">
+                  {trust?.label && (() => {
+                    const level = (trust.level ?? "review").toLowerCase();
+                    const isGrounded = level === "grounded";
+                    const isWarning = level === "warning";
+                    const badge = (
+                      <span
+                        className={cn(
+                          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
+                          isGrounded && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+                          level === "review" && "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+                          isWarning && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                        )}
+                      >
+                        {trust.label}
+                      </span>
+                    );
+                    const wrap = (el: React.ReactNode) =>
+                      replyId && conversationId ? (
+                        <a href={`/admin/chats/${conversationId}/replies/${replyId}`} className="inline-flex focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-full">
+                          {el}
+                        </a>
+                      ) : (
+                        el
+                      );
+                    return (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>{wrap(badge)}</TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            {trust.detail ?? trust.label}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })()}
+                  <FeedbackButtons requestId={requestId} replyId={replyId} />
                 </div>
               );
             })()}
-            {(response as any)?.quickReplies?.length > 0 && onSendQuickReply && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {(response as any).quickReplies.map((qr: { label: string; text: string }, idx: number) => (
-                  <Button
-                    key={idx}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => onSendQuickReply(qr.text)}
-                  >
-                    {qr.label}
-                  </Button>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
@@ -1596,6 +1637,23 @@ export default function ChatPage() {
                     onSendQuickReply={handleSendQuickReply}
                   />
                 ));
+              })()}
+              {/* Quick replies from last assistant message — rendered outside the bubble */}
+              {(() => {
+                const lastAssistant = [...(messages || [])].reverse().find(m => m.role === "assistant");
+                const lastResponse = lastAssistant ? ((lastAssistant.metadataJson as any)?.response || (lastAssistant as any).response) : undefined;
+                const qrs = (lastResponse as any)?.quickReplies as Array<{ label: string; text: string }> | undefined;
+                if (!qrs?.length) return null;
+                return (
+                  <div className="flex flex-wrap gap-2 mt-3 px--2 pb-2" data-testid="quick-replies-panel">
+                    {qrs.map((qr, idx) => (
+                      <Button key={idx} variant="outline" size="sm" className="text-xs"
+                        onClick={() => handleSendQuickReply(qr.text)}>
+                        {qr.label}
+                      </Button>
+                    ))}
+                  </div>
+                );
               })()}
               {dynamicSuggestions.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3 px-2 pb-2">
