@@ -691,7 +691,7 @@ function MessageBubble({
   // Error State
   if (message.status === "error") {
     return (
-      <div className="mb-6 space-y-4 group" data-testid="assistant-message" data-status="pending">
+      <div className="mb-6 space-y-4 group" data-testid="assistant-message" data-status="error">
         <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
           Something went wrong. Please try again.
         </div>
@@ -1036,8 +1036,6 @@ export default function ChatPage() {
 
   const chatMutation = useMutation({
     mutationFn: async ({ text, requestId: _requestId }: { text: string; requestId: string }) => {
-      if (isSendingRef.current) throw new Error("Send already in progress");
-      isSendingRef.current = true;
       const currentConvId = conversationId;
       const queryKey = conversationKeys.messages(conversationId || "");
 
@@ -1122,6 +1120,7 @@ export default function ChatPage() {
             if (done) break;
 
             lastEventAt = Date.now();
+            clearTimeout(streamTimeoutId); // Disarm initial-response timer once stream is flowing
             resetIdleTimer();
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split("\n");

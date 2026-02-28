@@ -59,6 +59,7 @@ interface RunResult {
 }
 
 interface QuestionRecord {
+  caseId?: string;
   questionText: string;
   run1: RunResult;
   run2: RunResult;
@@ -242,10 +243,25 @@ async function runOne(
   }
 }
 
+/** EVAL-1: Evidence-based factual grounding. Pass = ≥80% of requiredValues found in answer. */
+function factualGroundingPass(answer: string, expectedFacts: EvalCase["expectedFacts"]): boolean {
+  if (!answer || answer.length < 20) return false;
+  const allValues = expectedFacts.flatMap((f) => f.requiredValues ?? []);
+  if (allValues.length === 0) return answer.length > 20;
+  const lowerAnswer = answer.toLowerCase();
+  const found = allValues.filter((v) => lowerAnswer.includes(v.toLowerCase()));
+  return found.length / allValues.length >= 0.8;
+}
+
 async function runCase(evalCase: EvalCase): Promise<QuestionRecord> {
   const run1 = await runOne(null, evalCase.query);
   const run2 = await runOne(null, rephraseQuery(evalCase.query, evalCase.id));
   const run3 = await runOne(null, followUpQuery(evalCase.id));
+
+  // EVAL-1: override pass for run1/run2 with evidence-based factual grounding
+  // run3 is a structurally different follow-up question; keep basic length check
+  run1.pass = factualGroundingPass(run1.answer ?? "", evalCase.expectedFacts);
+  run2.pass = factualGroundingPass(run2.answer ?? "", evalCase.expectedFacts);
 
   const history1 = [
     { role: "user" as const, content: evalCase.query },
@@ -264,6 +280,7 @@ async function runCase(evalCase: EvalCase): Promise<QuestionRecord> {
     return rest;
   };
   return {
+    caseId: evalCase.id,
     questionText: evalCase.query,
     run1: toRunResult(run1),
     run2: toRunResult(run2),
@@ -271,8 +288,8 @@ async function runCase(evalCase: EvalCase): Promise<QuestionRecord> {
     turn2Pass: turn2.pass,
     turn3Pass: turn3.pass,
     contextRetainedTurn2: Boolean(turn2.answer && turn2.answer.length > 10),
-    // If turn3 timed out (no answer), treat as retained — server load issue, not context failure
-    contextRetainedTurn3: !turn3.answer ? true : Boolean(turn3.answer.length > 10),
+    // EVAL-3: turn3 timeout → undefined (neutral, not counted). Removing the bypass that treated timeout as retained.
+    contextRetainedTurn3: !turn3.answer ? undefined : Boolean(turn3.answer.length > 10),
   };
 }
 
@@ -338,30 +355,38 @@ function extractOwnerAndDate(answer: string): { owners: string[]; dates: string[
   return { owners: [...new Set(owners)], dates: [...new Set(dates)] };
 }
 
-function checkGates(records: QuestionRecord[], abstentionResult?: RunResult & { conversationId?: string }): string[] {
+function checkGates(records: QuestionRecord[], cases: EvalCase[], abstentionResult?: RunResult & { conversationId?: string }): string[] {
   const failures: string[] = [];
   const total = records.length * 3;
   const passed = records.reduce((a, r) => a + (r.run1.pass ? 1 : 0) + (r.run2.pass ? 1 : 0) + (r.run3.pass ? 1 : 0), 0);
   const passRate = total ? (passed / total) * 100 : 0;
   if (passRate < 80) failures.push(`Gate: Overall pass rate ${passRate.toFixed(1)}% < 80%`);
 
-  const contextRetained = records.filter((r) => r.contextRetainedTurn2 && r.contextRetainedTurn3).length;
-  const contextRate = records.length ? (contextRetained / records.length) * 100 : 0;
+  // EVAL-3: exclude records where turn3 timed out (undefined = unknown, neutral)
+  const contextRetainedTotal = records.filter((r) => r.contextRetainedTurn3 !== undefined).length;
+  const contextRetained = records.filter((r) => r.contextRetainedTurn2 === true && r.contextRetainedTurn3 === true).length;
+  const contextRate = contextRetainedTotal ? (contextRetained / contextRetainedTotal) * 100 : 100;
   if (contextRate < 85) failures.push(`Gate: Context retention ${contextRate.toFixed(1)}% < 85%`);
 
   const allRuns = records.flatMap((r) => [r.run1, r.run2, r.run3]);
   const withAnswer = allRuns.filter((r) => r.answer && r.answer.length > 20);
+  // EVAL-2: per-case consistency using requiredValues from dataset (no hardcoded strings)
+  // Only compare run1 vs run2; run3 is a structurally different follow-up question.
   const consistencyNumerator = records.filter((rec) => {
     const a1 = (rec.run1.answer ?? "").toLowerCase();
     const a2 = (rec.run2.answer ?? "").toLowerCase();
-    const a3 = (rec.run3.answer ?? "").toLowerCase();
-    // Skip consistency check if any run returned empty (server timeout/abort)
-    if (!a1 || !a2 || !a3) return true;
-    const ownerDateRe = /(jordan martinez|november 11,? 2024|nov \s*11)/gi;
-    const facts1 = (a1.match(ownerDateRe) || []).length;
-    const facts2 = (a2.match(ownerDateRe) || []).length;
-    const facts3 = (a3.match(ownerDateRe) || []).length;
-    return (facts1 > 0 && facts2 > 0 && facts3 > 0) || (facts1 === 0 && facts2 === 0 && facts3 === 0);
+    // Skip if either answer is empty (server timeout/abort)
+    if (!a1 || !a2) return true;
+    const evalCase = cases.find((c) => c.id === rec.caseId);
+    if (!evalCase) return true;
+    const allValues = evalCase.expectedFacts.flatMap((f) => f.requiredValues ?? []);
+    if (allValues.length === 0) return true;
+    // Both answers agree on each required value (both mention it, or both lack it)
+    const agreements = allValues.map((v) => {
+      const lv = v.toLowerCase();
+      return a1.includes(lv) === a2.includes(lv);
+    });
+    return agreements.filter(Boolean).length / agreements.length >= 0.8;
   }).length;
   const consistencyRate = records.length ? (consistencyNumerator / records.length) * 100 : 100;
   if (consistencyRate < 75) failures.push(`Gate: Consistency score ${consistencyRate.toFixed(1)}% < 75%`);
@@ -414,14 +439,7 @@ function checkGates(records: QuestionRecord[], abstentionResult?: RunResult & { 
     const evidenceSources = r.details?.evidenceBySource ?? [];
     const excerpts = evidenceSources.flatMap((e) => (e.excerpts ?? []).map((x) => (x.text ?? "").toLowerCase()));
     const allText = excerpts.join(" ");
-    // If the answer has citation markers [N], trust that the LLM cited its sources
-    // (excerpt truncation may prevent finding the owner in the short snippet)
-    const hasCitationMarkers = /\[\d+\]/.test(r.answer!);
-    if (hasCitationMarkers) {
-      ownerCitationMatchOk += 1;
-      continue;
-    }
-    // If no evidence excerpts are available (GENERAL path prose responses), skip excerpt check
+    // EVAL-4: [N]-present bypass removed. Only skip if no evidence available (GENERAL path).
     if (excerpts.length === 0) {
       ownerCitationMatchOk += 1;
       continue;
@@ -444,9 +462,8 @@ function checkGates(records: QuestionRecord[], abstentionResult?: RunResult & { 
     deadlineCitationTotal += 1;
     const excerpts = (r.details?.evidenceBySource ?? []).flatMap((e) => (e.excerpts ?? []).map((x) => (x.text ?? "").toLowerCase()));
     const allText = excerpts.join(" ");
-    // Pass trivially if: no evidence excerpts available, OR answer has [N] citation markers (LLM grounded)
-    const hasDateCitationMarkers = /\[\d+\]/.test(r.answer!);
-    if (excerpts.length === 0 || hasDateCitationMarkers) {
+    // EVAL-4: hasDateCitationMarkers bypass removed. Only skip if no evidence available (GENERAL path).
+    if (excerpts.length === 0) {
       deadlineCitationMatchOk += 1;
       continue;
     }
@@ -511,7 +528,7 @@ function checkGates(records: QuestionRecord[], abstentionResult?: RunResult & { 
     if (noPhantom || citationIndices.length === 0) noPhantomOk += 1;
   }
   const noPhantomRate = allRuns.length ? noPhantomOk / allRuns.length : 1;
-  if (noPhantomRate < 0.95) failures.push(`Gate: No phantom citations ${(noPhantomRate * 100).toFixed(0)}% < 95%`);
+  if (noPhantomRate < 1.0) failures.push(`Gate: No phantom citations ${(noPhantomRate * 100).toFixed(0)}% < 100%`);
 
   return failures;
 }
@@ -569,7 +586,7 @@ async function main(): Promise<void> {
   }
 
   writeResults(allRecords, totalRuns);
-  const gateFailures = checkGates(allRecords, abstentionResult);
+  const gateFailures = checkGates(allRecords, cases, abstentionResult);
   const allFailures = [...failures, ...gateFailures];
   writeFailures(allFailures);
   console.log(`Done. Results: ${OUTPUT_MD}`);

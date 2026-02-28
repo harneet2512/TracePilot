@@ -2225,7 +2225,7 @@ export async function registerRoutes(
               item: sItem.text,
               priority: normalizePriority(sItem.status),
               owner: normalizeOwner(sItem.owner),
-              impact: sItem.current || sItem.target || "\u2014",
+              impact: sItem.current || sItem.target || (sItem as any).impact || "\u2014",
               citationIds: cIds,
             });
           }
@@ -2746,7 +2746,7 @@ export async function registerRoutes(
       const { streamChatCompletion } = await import("./lib/openai");
 
       const streamIntent = routedIntent;
-      const DOC_INTENT_TYPES = ["OKR", "ROADMAP", "BLOCKER", "OWNER", "DEADLINE", "BUDGET"];
+      const DOC_INTENT_TYPES = ["OKR", "ROADMAP", "BLOCKER", "OWNER", "DEADLINE", "BUDGET", "ARCHITECTURE"];
       const isDocIntent = DOC_INTENT_TYPES.includes(streamIntent);
 
       let result: any;
@@ -3103,7 +3103,7 @@ export async function registerRoutes(
               item: sItem.text,
               priority: normalizePriority(sItem.status),
               owner: normalizeOwner(sItem.owner),
-              impact: sItem.current || sItem.target || "\u2014",
+              impact: sItem.current || sItem.target || (sItem as any).impact || "\u2014",
               citationIds: cIds,
             });
           }

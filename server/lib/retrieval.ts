@@ -118,7 +118,7 @@ export function inferRetrievalIntent(query: string): RetrievalIntent {
   const q = (query || "").trim().toLowerCase();
   if (!q) return "SMALLTALK";
   if (/^(hi|hello|hey|thanks|thank you|good morning|good afternoon|good evening)\b/.test(q)) return "SMALLTALK";
-  if (/(owner|responsible|assignee|deadline|due|eta|when|status|priority)/.test(q)) return "OWNER_DEADLINE_STATUS";
+  if (/(owner|responsible|assignee|deadline|due|eta|when|status|priority|contact)/.test(q)) return "OWNER_DEADLINE_STATUS";
   if (/(blocker|risk|mitigation|issue|incident|impediment|escalation)/.test(q)) return "BLOCKERS_RISK_MITIGATION";
   if (/(roadmap|timeline|milestone|release|schedule|phase)/.test(q)) return "ROADMAP_TIMELINE";
   if (/(okr|objective|key result|kpi|metric|budget|spend|burn|cost)/.test(q)) return "OKRS_METRICS_BUDGET";

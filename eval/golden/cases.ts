@@ -112,6 +112,7 @@ export const GOLDEN_EVAL_CASES: EvalCase[] = [
       { text: "Escalation action", requiredValues: ["AWS VP", "November 1"] },
       { text: "Fallback plan", requiredValues: ["50 instances"] },
       { text: "Expected resolution", requiredValues: ["November 11"] },
+      { text: "Owner", requiredValues: ["Jordan Martinez"] },
     ],
     minSources: 2,
     expectedSourcePrefixes: ["JIRA_INFRA", "Engineering_AllHands"],

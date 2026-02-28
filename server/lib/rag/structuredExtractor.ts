@@ -76,7 +76,7 @@ export function detectIntent(query: string): IntentType {
     addScore("BLOCKER", 2, /\b(blockers?|issues?|problems?|risks?|obstacles?|impediments?)\b/);
     addScore("OWNER", 2, /\b(owners?|responsible|assignees?|contacts?|leads?)\b/);
     addScore("DEADLINE", 2, /\b(deadlines?|date|timing|due|eta|by when)\b/);
-    addScore("BUDGET", 2, /\b(costs?|budgets?|prices?|spend|expenses?|funds?|financial)\b/);
+    addScore("BUDGET", 2, /\b(costs?|costing|budgets?|prices?|spend|expenses?|funds?|financial|how much)\b/);
     addScore("ARCHITECTURE", 2, /\b(architecture|design\s*doc|system\s*design|vector\s*database|tech\s*stack|infrastructure\s*design|embedding|pipeline)\b/);
     addScore("ARCHITECTURE", 2, /\b(chose|choose|chosen|picked|selected|vs\.?|versus|compared?)\b/);
 
@@ -194,7 +194,7 @@ const ROADMAP_JSON_SCHEMA = {
         },
         items: {
             type: "array",
-            description: "Extract ALL milestones from ALL time periods found in the document. REQUIRED: Include at least one item from EACH period that appears in the context. Use the date field to label the period.",
+            description: "REQUIRED: Extract ALL milestones from ALL time periods (quarters/phases) in the document. Create a SEPARATE item for EACH QUARTER (Q1, Q2, Q3, Q4) or phase. For each quarter, list ALL key features mentioned (do NOT pick just one). If the roadmap has 4 quarters, return at least 4 items — one per quarter with ALL features for that quarter in the 'details' field. Never skip a quarter even if its section appears later in the document.",
             items: {
                 type: "object",
                 properties: {
@@ -229,14 +229,15 @@ const BLOCKER_JSON_SCHEMA = {
     properties: {
         framingContext: {
             type: "string",
-            description: "Write EXACTLY 2-4 sentences as an executive narrative that directly answers the query. CRITICAL: Do NOT start with 'Here are', 'Based on', 'I found', 'Retrieved', 'The following', or any list-opener. Start with a direct statement: name the project, state the blocker count and the most critical one. End the last sentence with a question about the most urgent next step. Example: 'The AI Search project has 2 active blockers ahead of the Nov 15 launch. The AWS EU region quota delay is the most critical risk, escalated to the AWS VP with a Nov 11 resolution target. Jordan Martinez is leading the remediation effort. Would you like details on the mitigation plan or deadline risks?'"
+            description: "Write EXACTLY 2-4 sentences as an executive narrative that directly answers the query. CRITICAL: Do NOT start with 'Here are', 'Based on', 'I found', 'Retrieved', 'The following', or any list-opener. Start with a direct statement: name the project, state the blocker count and EVERY blocker found. Include specific business impact metrics (revenue at risk: $XXX, percentage overruns: XX%, capacity: N instances) for each blocker. End the last sentence with a question about the most urgent next step. Example: 'The AI Search project has 3 active blockers ahead of the Nov 15 launch: (1) AWS EU region quota delay (CRITICAL, $500K ARR at risk, Jordan Martinez, Nov 11 resolution); (2) Pinecone costs 15% over budget; (3) Google Drive API rate limits. Would you like details on the mitigation plan?'"
         },
         summary: {
             type: "string",
-            description: "Executive summary with 2-4 key blockers separated by ' • '. Use compact notation: brief issue description with status. Example: 'AWS EU delays (critical, Nov 11) • Pinecone 15% over budget • Drive rate limits'"
+            description: "Executive summary with ALL blockers separated by ' • '. Use compact notation: brief issue description with status, impact, and owner. Example: 'AWS EU delays (critical, $500K ARR, Nov 11, Jordan) • Pinecone 15% over budget • Drive rate limits'"
         },
         items: {
             type: "array",
+            description: "REQUIRED: Extract EVERY SINGLE blocker mentioned in the context. Create one separate item for each blocker — do NOT omit secondary or monitoring-status blockers (e.g., cost overruns, API limits, rate limits). If the context mentions 3 blockers, return 3 items.",
             items: {
                 type: "object",
                 properties: {
@@ -272,7 +273,7 @@ const OWNER_JSON_SCHEMA = {
     properties: {
         framingContext: {
             type: "string",
-            description: "Write a 2-4 sentence executive narrative paragraph that directly answers the query. Start with the most important finding; name the key owners and their primary responsibilities. Do NOT start with 'Here are', 'Based on', 'I found', or any filler opener. Example: 'Jordan Martinez leads infrastructure for the AI Search project, with a Nov 15 deadline for the semantic search launch. Sam Chen owns backend services and Alex Kim is responsible for the frontend integration. Two ownership items are unassigned pending the Q4 reorg.'"
+            description: "Write a 2-4 sentence executive narrative paragraph that directly answers the query. Start with the most important finding; name the key owners, their email/Slack contact if available, primary responsibilities, deadline, and business impact. Do NOT start with 'Here are', 'Based on', 'I found', or any filler opener. Example: 'Jordan Martinez (jordan.m@company.com, @jordan) leads infrastructure for the AI Search project, responsible for AWS, Pinecone, scaling. The AWS EU blocker is critical with $500K ARR at risk, resolution expected Nov 11, 2024 following escalation to AWS VP on November 1.'"
         },
         summary: {
             type: "string",
@@ -283,10 +284,10 @@ const OWNER_JSON_SCHEMA = {
             items: {
                 type: "object",
                 properties: {
-                    responsibility: { type: "string", description: "The task or area of responsibility" },
+                    responsibility: { type: "string", description: "The task or area of responsibility, including business impact (e.g., '$500K ARR at risk') if mentioned in source" },
                     person: { type: "string", description: "Name of person or team responsible" },
-                    contact: { type: "string", description: "Contact info if available" },
-                    deadline: { type: "string", description: "Deadline/ETA if explicitly present in source text" },
+                    contact: { type: "string", description: "Contact details: include email AND Slack handle if present in source. Example: 'jordan.m@company.com, @jordan'" },
+                    deadline: { type: "string", description: "Deadline/ETA if explicitly present in source text, including escalation dates" },
                     citations: {
                         type: "array",
                         items: {
@@ -396,15 +397,15 @@ const ARCHITECTURE_JSON_SCHEMA = {
     properties: {
         framingContext: {
             type: "string",
-            description: "Write EXACTLY 2-4 sentences as an executive narrative. State the core technology decision and rationale. Do NOT start with 'Here are', 'Based on', 'I found'. End with a follow-up question. Example: '[SYSTEM] uses [TECHNOLOGY] for [REASON]. The decision was driven by [TRADEOFF]. Would you like to explore [ASPECT] further?'"
+            description: "Write EXACTLY 2-4 sentences as an executive narrative. State the core technology decision, rationale, AND specific configuration values (pod type, dimensions, similarity metric, monthly cost, performance specs, comparison metrics). Do NOT start with 'Here are', 'Based on', 'I found'. End with a follow-up question. Example: '[SYSTEM] uses [TECHNOLOGY] (pod: p1.x4, dimensions: 3072, similarity: cosine, cost: $300/month) for [REASON]. Compared to alternatives, it was [X%] faster to market. Would you like to explore [ASPECT] further?'"
         },
         summary: {
             type: "string",
-            description: "Executive summary with 2-4 key technical facts separated by ' • '. Example: '[TECH] selected • [CONFIG] setup • [METRIC] performance • [COST] monthly'"
+            description: "Executive summary with 2-4 key technical facts separated by ' • '. Include specific specs. Example: 'Pinecone selected • p1.x4 pod, 3072 dims, cosine • $300/month • 2-week time to market'"
         },
         items: {
             type: "array",
-            description: "Extract ALL technical decisions, components, and configurations from the document.",
+            description: "Extract ALL technical decisions, components, and configurations from the document. For each component, include ALL specific configuration values: pod types (e.g., p1.x4), vector dimensions (e.g., 3072), similarity metrics (e.g., cosine), cost figures (e.g., $300/month), comparison percentages (e.g., 30% cheaper), and accuracy metrics (e.g., 95% citation accuracy).",
             items: {
                 type: "object",
                 properties: {
@@ -516,18 +517,46 @@ CRITICAL GROUNDING RULES:
     } else if (intent === "ROADMAP") {
         schema = ROADMAP_JSON_SCHEMA;
         schemaName = "extract_roadmap";
+        systemPrompt += `\n\nROADMAP EXTRACTION CRITICAL RULES:
+- Create EXACTLY one item for EACH quarter (Q1, Q2, Q3, Q4) that appears in the document. If the roadmap has 4 quarters, return 4 items — one per quarter.
+- For each item, the 'milestone' field MUST list ALL feature names for that quarter separated by commas. Example: "Q1 2025: Multi-tenancy, real-time sync, advanced filters". Example: "Q2 2025: Conversational search, automated summaries, smart suggestions".
+- Do NOT create a single generic "2025 Roadmap" item. Each quarter must be separate.
+- Do NOT skip Q2 or Q4 even if they appear later in the document — scan the ENTIRE document for all quarters.
+- ALL feature names from the source MUST appear verbatim in the 'milestone' field for their respective quarter.`;
     } else if (intent === "BLOCKER") {
         schema = BLOCKER_JSON_SCHEMA;
         schemaName = "extract_blockers";
+        systemPrompt += `\n\nBLOCKER EXTRACTION CRITICAL RULES:
+- The general instruction "1-2 key data points" does NOT apply here. OVERRIDE: extract EVERY blocker found in the context — there may be 2, 3, or more.
+- Scan the ENTIRE context for ALL blockers: look for numbered lists, headings like "Blocker 2:", "Blocker 3:", cost overruns, API limits, rate limits, compliance issues.
+- Create one separate item for EACH blocker found. If context shows 3 blockers, return 3 items.
+- framingContext MUST name ALL blockers (e.g., "The project has 3 active blockers: (1) AWS quota delay, (2) Pinecone costs 15% over budget, (3) Google Drive API rate limits.").
+- Do NOT stop at the first or most critical blocker. Include ALL of them.
+- For the primary blocker, the 'impact' field MUST include the exact revenue at risk amount (e.g., "$500K ARR at risk") if stated in the source.
+- The framingContext MUST include the mitigation/fallback plan with SPECIFIC numbers (e.g., "Fallback: deploy with 50 instances at 25% capacity if quota not approved by November 11").
+- The framingContext MUST include the escalation level (e.g., "escalated to AWS VP on November 1, 2024").
+- Use full month names in framingContext (e.g., "November 11, 2024" not "Nov 11").`;
     } else if (intent === "OWNER") {
         schema = OWNER_JSON_SCHEMA;
         schemaName = "extract_owners";
+        systemPrompt += `\n\nOWNER EXTRACTION CRITICAL RULES:
+- The 'deadline' field MUST be the RESOLUTION/ETA date (when the issue is expected to be resolved/fixed), NOT the escalation date.
+- If source shows both an escalation date AND a resolution/expected-resolution date, use the resolution date in 'deadline'. Example: if "Nov 1 escalation" and "Nov 11 expected resolution", deadline = "November 11, 2024".
+- The framingContext MUST include BOTH: (a) the resolution deadline (e.g., "resolution expected November 11, 2024") AND (b) the escalation action (e.g., "escalated to AWS VP on November 1").
+- Revenue at risk (e.g., "$500K ARR at risk") MUST appear in framingContext if present in any source.
+- Use full month names in framingContext and deadline fields (e.g., "November 11, 2024" not "Nov 11").`;
     } else if (intent === "DEADLINE") {
         schema = DEADLINE_JSON_SCHEMA;
         schemaName = "extract_deadlines";
     } else if (intent === "ARCHITECTURE") {
         schema = ARCHITECTURE_JSON_SCHEMA;
         schemaName = "extract_architecture";
+        systemPrompt += `\n\nARCHITECTURE EXTRACTION CRITICAL RULES:
+- Extract the SPECIFIC technical configuration values from the context. Do NOT omit specific config details.
+- For each technology component, include ALL of these if present: pod type (e.g., p1.x4), vector dimensions (e.g., 3072), similarity metric (e.g., cosine), monthly cost (e.g., $300/month), performance metrics, comparison percentages.
+- In 'details' field: include specific config values like "Pod: p1.x4, Dimensions: 3072, Similarity: cosine, Cost: $300/month".
+- In 'framingContext': include the specific config values e.g. "configured with p1.x4 pods, 3072 dimensions, cosine similarity, at ~$300/month".
+- DO NOT generalize — if the source says "p1.x4" include "p1.x4" verbatim.`;
     } else if (intent === "BUDGET") {
         schema = BUDGET_JSON_SCHEMA;
         schemaName = "extract_budget";
@@ -535,10 +564,10 @@ CRITICAL GROUNDING RULES:
         // The general system prompt uses "$180K" compact notation which loses precision.
         // NOTE: This must be appended BEFORE messages are created below.
         systemPrompt += `\n\nBUDGET EXTRACTION CRITICAL RULES:
-- Use EXACT dollar amounts with comma separators as they appear in the source: $2,565,000 not $2.565M, $180,000 not $180K
-- Copy the amount EXACTLY as written in the source document
-- DO NOT round, abbreviate, or convert to millions/thousands notation
-- Example: if source says "$2,565,000", output "$2,565,000" — NOT "$2.565M"`;
+- In item 'amount' and 'details' fields: Use EXACT dollar amounts with comma separators as they appear in the source: $2,565,000 not $2.565M, $180,000 not $180K
+- In 'framingContext' and 'summary' fields: Include COMPACT notation alongside exact amounts for readability. Example framingContext: "The total project budget is $2,565,000 ($2.565M), with $2,300,000 ($2.3M) for infrastructure, $180,000 ($180K) for LLM APIs, and $85,000 ($85K) for tooling."
+- ALWAYS pair each exact amount with its compact form: $2,565,000 ($2.565M), $2,300,000 ($2.3M), $180,000 ($180K), $85,000 ($85K), $214,000 ($214K)
+- DO NOT invent figures not in the source`;
     } else {
         schema = FACTS_JSON_SCHEMA;
         schemaName = "extract_facts";

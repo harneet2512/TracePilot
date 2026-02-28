@@ -205,7 +205,8 @@
         "AWS",
         "500",
         "November 11",
-        "fallback"
+        "fallback",
+        "Jordan Martinez"
       ],
       "must_include_variants": {
         "500": ["500", "$500K", "500K ARR", "$500,000"],
