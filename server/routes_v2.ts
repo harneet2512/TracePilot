@@ -2595,7 +2595,7 @@ export async function registerRoutes(
     };
 
     const traceId = req.requestId;
-    logger.info("chat_stream_start", { traceId, userId: req.user?.id, conversationId: req.body?.conversationId });
+    logger.info("chat_stream_start", { traceId, userId: req.user?.id as string | undefined, conversationId: req.body?.conversationId } as any);
 
     try {
       const { message, conversationHistory = [], scopeId, conversationId } = req.body;

@@ -396,7 +396,7 @@ export function DetailsDrawer({
   sourcesUsed,
 }: DetailsDrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const debugCitations = import.meta.env.VITE_DEBUG_CITATIONS === "1";
+  const debugCitations = (import.meta as any).env?.VITE_DEBUG_CITATIONS === "1";
 
   const sourceIndex = useMemo(() => {
     if (!citationIndexMap) return buildSourceIndex(sections, citations);
@@ -472,7 +472,7 @@ export function DetailsDrawer({
 
   const devDebugEnabled =
     process.env.NODE_ENV === "development" &&
-    import.meta.env.VITE_DEV_DEBUG_UI === "1";
+    (import.meta as any).env?.VITE_DEV_DEBUG_UI === "1";
 
   const hasDebug =
     devDebugEnabled &&

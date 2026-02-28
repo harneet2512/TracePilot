@@ -332,7 +332,7 @@ function ConnectorCard({
 export default function ConnectorsPage() {
   const { toast } = useToast();
   const [triggeredScopeIds, setTriggeredScopeIds] = useState<Set<string>>(new Set());
-  const oauthSimulatorEnabled = import.meta.env.VITE_OAUTH_SIMULATOR === "true";
+  const oauthSimulatorEnabled = (import.meta as any).env?.VITE_OAUTH_SIMULATOR === "true";
   const activeJobProgressRef = useRef<{ phase: string; processed: number; total: number | null; status?: string; error?: string } | null>(null);
   const lastActiveScopeIdRef = useRef<string | null>(null);
 

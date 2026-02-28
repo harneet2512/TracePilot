@@ -547,7 +547,7 @@ export class DatabaseStorage implements IStorage {
     const rows = await db.select({ type: userConnectorScopes.type })
       .from(userConnectorScopes)
       .where(eq(userConnectorScopes.workspaceId, workspaceId));
-    const types = [...new Set(rows.map((r) => r.type).filter(Boolean))];
+    const types: string[] = Array.from(new Set((rows as Array<{ type: string | null }>).map((r) => r.type).filter((t): t is string => t != null)));
     return types;
   }
 
