@@ -3,16 +3,25 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Conversation, Message } from "@shared/schema";
 import { conversationKeys } from "@/lib/query-keys";
 import { perfEnd, perfStart } from "@/lib/perf";
+import { shouldFallbackToDemo, demoConversation, logDemoMode } from "@/lib/demoMode";
 
 export function useConversations() {
     return useQuery<Conversation[]>({
         queryKey: conversationKeys.lists(),
         queryFn: async () => {
             const started = perfStart("render:chat_list_load");
-            const res = await apiRequest("GET", "/api/conversations");
-            const json = await res.json();
-            perfEnd("render", "render:chat_list_load", started, { count: Array.isArray(json) ? json.length : 0 });
-            return json;
+            try {
+                const res = await apiRequest("GET", "/api/conversations");
+                const json = await res.json();
+                perfEnd("render", "render:chat_list_load", started, { count: Array.isArray(json) ? json.length : 0 });
+                return json;
+            } catch (error) {
+                if (shouldFallbackToDemo(null, error)) {
+                    logDemoMode("CONVERSATIONS_FALLBACK", { error: String(error) });
+                    return [demoConversation];
+                }
+                throw error;
+            }
         },
     });
 }
@@ -22,8 +31,16 @@ export function useConversation(id: string | null) {
         queryKey: conversationKeys.detail(id || ""),
         queryFn: async () => {
             if (!id) throw new Error("Conversation ID is required");
-            const res = await apiRequest("GET", `/api/conversations/${id}`);
-            return res.json();
+            try {
+                const res = await apiRequest("GET", `/api/conversations/${id}`);
+                return res.json();
+            } catch (error) {
+                if (shouldFallbackToDemo(null, error)) {
+                    logDemoMode("CONVERSATION_DETAIL_FALLBACK", { id, error: String(error) });
+                    return demoConversation;
+                }
+                throw error;
+            }
         },
         enabled: !!id,
     });
@@ -38,10 +55,18 @@ export function useMessages(conversationId: string | null) {
         queryFn: async () => {
             if (!hasValidId) return [];
             const started = perfStart("render:chat_detail_load");
-            const res = await apiRequest("GET", `/api/conversations/${conversationId}/messages`);
-            const json = await res.json();
-            perfEnd("render", "render:chat_detail_load", started, { count: Array.isArray(json) ? json.length : 0 });
-            return json;
+            try {
+                const res = await apiRequest("GET", `/api/conversations/${conversationId}/messages`);
+                const json = await res.json();
+                perfEnd("render", "render:chat_detail_load", started, { count: Array.isArray(json) ? json.length : 0 });
+                return json;
+            } catch (error) {
+                if (shouldFallbackToDemo(null, error)) {
+                    logDemoMode("MESSAGES_FALLBACK", { conversationId, error: String(error) });
+                    return [];
+                }
+                throw error;
+            }
         },
         enabled: hasValidId,
         // Keep data fresh but don't refetch aggressively
@@ -55,8 +80,16 @@ export function useCreateConversation() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (title?: string) => {
-            const res = await apiRequest("POST", "/api/conversations", { title });
-            return res.json() as Promise<Conversation>;
+            try {
+                const res = await apiRequest("POST", "/api/conversations", { title });
+                return res.json() as Promise<Conversation>;
+            } catch (error) {
+                if (shouldFallbackToDemo(null, error)) {
+                    logDemoMode("CREATE_CONVERSATION_FALLBACK", { error: String(error) });
+                    return { ...demoConversation, id: `demo-conv-${Date.now()}`, title: title || "New Chat" };
+                }
+                throw error;
+            }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: conversationKeys.lists() });
