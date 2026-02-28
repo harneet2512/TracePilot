@@ -1,5 +1,6 @@
 import { ApprovalModal } from "@/components/ApprovalModal";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { shouldFallbackToDemo, getDemoResponse, logDemoMode } from "@/lib/demoMode";
 import { useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation, Redirect } from "wouter";
 import { Layout } from "@/components/layout";
@@ -1269,6 +1270,11 @@ export default function ChatPage() {
       if (isTrivialPrompt) {
         const fastFallback = await tryNonStream();
         if (fastFallback.ok) return fastFallback.data;
+        // Demo mode fallback for trivial prompts
+        if (shouldFallbackToDemo(null, fastFallback.error)) {
+          logDemoMode("CHAT_FALLBACK", { query: text, error: String(fastFallback.error) });
+          return getDemoResponse(text);
+        }
         throw fastFallback.error;
       }
 
@@ -1282,6 +1288,12 @@ export default function ChatPage() {
 
       const fallback = await tryNonStream();
       if (fallback.ok) return fallback.data;
+
+      // Demo mode fallback — backend unreachable after all retries
+      if (shouldFallbackToDemo(null, fallback.error)) {
+        logDemoMode("CHAT_FALLBACK", { query: text, error: String(fallback.error) });
+        return getDemoResponse(text);
+      }
       throw fallback.error;
     },
     onMutate: async (variables) => {

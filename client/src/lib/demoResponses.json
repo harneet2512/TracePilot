@@ -1,0 +1,301 @@
+{
+  "okr": {
+    "answer": "Here are the Q4 2024 OKRs from the Product Roadmap [1] and Q4 OKR document [2]:\n\n**Objective 1: Ship AI Search to GA**\n- KR1: Achieve <2s p95 latency [1]\n- KR2: 95% answer accuracy on golden eval set [2]\n- KR3: Launch to 100% of enterprise customers by Nov 15 [1]\n\n**Objective 2: Reduce Infrastructure Costs**\n- KR1: Cut AWS spend by 20% via reserved instances [2]\n- KR2: Migrate 3 services to ARM-based compute [1]",
+    "answer_text": "Here are the Q4 2024 OKRs from the Product Roadmap and Q4 OKR document. Objective 1: Ship AI Search to GA. KR1: Achieve <2s p95 latency. KR2: 95% answer accuracy on golden eval set. KR3: Launch to 100% of enterprise customers by Nov 15. Objective 2: Reduce Infrastructure Costs. KR1: Cut AWS spend by 20% via reserved instances. KR2: Migrate 3 services to ARM-based compute.",
+    "bullets": [],
+    "action": null,
+    "needsClarification": false,
+    "clarifyingQuestions": [],
+    "conversationId": "demo-conv-00000000-0000-0000-0000-000000000001",
+    "sources": [
+      {
+        "sourceId": "src-okr-001",
+        "chunkId": "chunk-okr-001",
+        "title": "Product_Roadmap_2025.md",
+        "snippet": "Objective 1: Ship AI Search to GA — KR1: <2s p95 latency, KR3: Launch Nov 15",
+        "score": 0.94,
+        "sourceType": "drive",
+        "url": "#"
+      },
+      {
+        "sourceId": "src-okr-002",
+        "chunkId": "chunk-okr-002",
+        "title": "Q4_2024_OKRs.pdf",
+        "snippet": "KR2: 95% answer accuracy on golden eval set. Objective 2: Cut AWS spend by 20%",
+        "score": 0.91,
+        "sourceType": "confluence",
+        "url": "#"
+      }
+    ],
+    "sources_used": [
+      {
+        "sourceId": "src-okr-001",
+        "chunkId": "chunk-okr-001",
+        "title": "Product_Roadmap_2025.md",
+        "snippet": "Objective 1: Ship AI Search to GA — KR1: <2s p95 latency, KR3: Launch Nov 15",
+        "score": 0.94,
+        "sourceType": "drive",
+        "url": "#"
+      }
+    ],
+    "citations": [
+      {
+        "sourceId": "src-okr-001",
+        "chunkId": "chunk-okr-001",
+        "title": "Product_Roadmap_2025.md",
+        "snippet": "Objective 1: Ship AI Search to GA — KR1: <2s p95 latency, KR3: Launch Nov 15",
+        "score": 0.94,
+        "sourceType": "drive",
+        "url": "#"
+      },
+      {
+        "sourceId": "src-okr-002",
+        "chunkId": "chunk-okr-002",
+        "title": "Q4_2024_OKRs.pdf",
+        "snippet": "KR2: 95% answer accuracy on golden eval set. Objective 2: Cut AWS spend by 20%",
+        "score": 0.91,
+        "sourceType": "confluence",
+        "url": "#"
+      }
+    ],
+    "sections": [
+      {
+        "title": "Objective 1: Ship AI Search to GA",
+        "items": [
+          {
+            "text": "Achieve <2s p95 latency across all enterprise tenants",
+            "kind": "kr",
+            "owner": "Platform Team",
+            "target": "<2s p95",
+            "current": "3.1s p95",
+            "due": "Nov 15, 2024",
+            "status": "On Track",
+            "citations": [{ "sourceId": "src-okr-001", "chunkId": "chunk-okr-001" }]
+          },
+          {
+            "text": "95% answer accuracy on golden eval set",
+            "kind": "kr",
+            "owner": "AI Team",
+            "target": "95%",
+            "current": "89%",
+            "due": "Oct 30, 2024",
+            "status": "At Risk",
+            "citations": [{ "sourceId": "src-okr-002", "chunkId": "chunk-okr-002" }]
+          },
+          {
+            "text": "Launch to 100% of enterprise customers",
+            "kind": "kr",
+            "owner": "Product",
+            "target": "100%",
+            "current": "40%",
+            "due": "Nov 15, 2024",
+            "status": "On Track",
+            "citations": [{ "sourceId": "src-okr-001", "chunkId": "chunk-okr-001" }]
+          }
+        ]
+      },
+      {
+        "title": "Objective 2: Reduce Infrastructure Costs",
+        "items": [
+          {
+            "text": "Cut AWS spend by 20% via reserved instances",
+            "kind": "kr",
+            "owner": "Infrastructure",
+            "target": "20% reduction",
+            "current": "8% reduced",
+            "due": "Dec 31, 2024",
+            "status": "Behind",
+            "citations": [{ "sourceId": "src-okr-002", "chunkId": "chunk-okr-002" }]
+          },
+          {
+            "text": "Migrate 3 services to ARM-based compute",
+            "kind": "kr",
+            "owner": "Platform Team",
+            "target": "3 services",
+            "current": "1 migrated",
+            "due": "Dec 15, 2024",
+            "status": "On Track",
+            "citations": [{ "sourceId": "src-okr-001", "chunkId": "chunk-okr-001" }]
+          }
+        ]
+      }
+    ],
+    "details": {
+      "summaryRows": [
+        { "item": "Ship AI Search to GA", "priority": "P0", "owner": "Platform Team", "impact": "Revenue unlock for enterprise tier", "citationIds": ["src-okr-001"] },
+        { "item": "Reduce Infrastructure Costs", "priority": "P1", "owner": "Infrastructure", "impact": "$240K annual savings", "citationIds": ["src-okr-002"] }
+      ],
+      "evidenceBySource": [
+        {
+          "sourceKey": "src-okr-001",
+          "title": "Product_Roadmap_2025.md",
+          "label": "Drive",
+          "url": "#",
+          "excerpts": [{ "text": "Ship AI Search to GA by Nov 15 with <2s p95 latency target across all enterprise tenants." }]
+        },
+        {
+          "sourceKey": "src-okr-002",
+          "title": "Q4_2024_OKRs.pdf",
+          "label": "Confluence",
+          "url": "#",
+          "excerpts": [{ "text": "KR2: Achieve 95% answer accuracy on golden eval set. Current baseline: 89%." }]
+        }
+      ]
+    },
+    "trustSignal": { "level": "grounded", "label": "Grounded", "detail": "All claims cite source documents" },
+    "retrievalSummary": { "chunksConsidered": 12, "distinctSources": 2, "topSimilarityScore": 0.94, "fallbackRetrievalUsed": false },
+    "quickReplies": [
+      { "label": "Show blockers", "text": "What are the current blockers?" },
+      { "label": "Who owns KR1?", "text": "Who is the owner of KR1 for AI Search?" },
+      { "label": "Timeline risks", "text": "Which OKRs are at risk of missing their deadline?" }
+    ],
+    "replyId": "demo-reply-okr-001",
+    "traceId": null,
+    "framingContext": "From Product_Roadmap_2025.md and Q4_2024_OKRs.pdf",
+    "summary": "Q4 2024 has 2 objectives with 5 key results. AI Search launch is on track for Nov 15; infra cost reduction is behind target.",
+    "citationIndexMap": { "src-okr-001": 1, "src-okr-002": 2 }
+  },
+  "blocker": {
+    "answer": "There is an active P0 blocker for the AWS EU region deployment [1]:\n\n**INFRA-1247: AWS EU-West-1 Capacity Exhaustion**\n- Status: Open / Escalated\n- Owner: @infrastructure-oncall\n- Impact: Blocks EU customer onboarding (3 enterprise deals worth $1.2M ARR)\n- Deadline: Must resolve by Oct 28, 2024 [1]\n- Root cause: Reserved instance pool depleted; spot instance fallback hitting rate limits [2]",
+    "answer_text": "There is an active P0 blocker for the AWS EU region deployment. INFRA-1247: AWS EU-West-1 Capacity Exhaustion. Status: Open / Escalated. Owner: @infrastructure-oncall. Impact: Blocks EU customer onboarding (3 enterprise deals worth $1.2M ARR). Deadline: Must resolve by Oct 28, 2024. Root cause: Reserved instance pool depleted; spot instance fallback hitting rate limits.",
+    "bullets": [],
+    "action": null,
+    "needsClarification": false,
+    "clarifyingQuestions": [],
+    "conversationId": "demo-conv-00000000-0000-0000-0000-000000000001",
+    "sources": [
+      {
+        "sourceId": "src-blocker-001",
+        "chunkId": "chunk-blocker-001",
+        "title": "JIRA_INFRA-1247_AWS_EU_Blocker.md",
+        "snippet": "P0 Blocker: AWS EU-West-1 capacity exhaustion blocking 3 enterprise deals. Deadline: Oct 28.",
+        "score": 0.97,
+        "sourceType": "jira",
+        "url": "#"
+      },
+      {
+        "sourceId": "src-blocker-002",
+        "chunkId": "chunk-blocker-002",
+        "title": "Engineering_AllHands_Oct28_2024.md",
+        "snippet": "Root cause analysis: RI pool depleted in eu-west-1. Spot fallback hitting API rate limits.",
+        "score": 0.88,
+        "sourceType": "confluence",
+        "url": "#"
+      }
+    ],
+    "sources_used": [
+      {
+        "sourceId": "src-blocker-001",
+        "chunkId": "chunk-blocker-001",
+        "title": "JIRA_INFRA-1247_AWS_EU_Blocker.md",
+        "snippet": "P0 Blocker: AWS EU-West-1 capacity exhaustion blocking 3 enterprise deals. Deadline: Oct 28.",
+        "score": 0.97,
+        "sourceType": "jira",
+        "url": "#"
+      }
+    ],
+    "citations": [
+      {
+        "sourceId": "src-blocker-001",
+        "chunkId": "chunk-blocker-001",
+        "title": "JIRA_INFRA-1247_AWS_EU_Blocker.md",
+        "snippet": "P0 Blocker: AWS EU-West-1 capacity exhaustion blocking 3 enterprise deals. Deadline: Oct 28.",
+        "score": 0.97,
+        "sourceType": "jira",
+        "url": "#"
+      },
+      {
+        "sourceId": "src-blocker-002",
+        "chunkId": "chunk-blocker-002",
+        "title": "Engineering_AllHands_Oct28_2024.md",
+        "snippet": "Root cause analysis: RI pool depleted in eu-west-1. Spot fallback hitting API rate limits.",
+        "score": 0.88,
+        "sourceType": "confluence",
+        "url": "#"
+      }
+    ],
+    "details": {
+      "summaryRows": [
+        { "item": "AWS EU-West-1 Capacity", "priority": "P0", "owner": "@infrastructure-oncall", "impact": "Blocks $1.2M ARR in EU deals", "citationIds": ["src-blocker-001"] }
+      ],
+      "evidenceBySource": [
+        {
+          "sourceKey": "src-blocker-001",
+          "title": "JIRA_INFRA-1247_AWS_EU_Blocker.md",
+          "label": "Jira",
+          "url": "#",
+          "excerpts": [{ "text": "P0 Blocker: AWS EU-West-1 reserved instance pool exhausted. 3 enterprise onboardings blocked." }]
+        },
+        {
+          "sourceKey": "src-blocker-002",
+          "title": "Engineering_AllHands_Oct28_2024.md",
+          "label": "Confluence",
+          "url": "#",
+          "excerpts": [{ "text": "Spot instance fallback hitting ec2:RunInstances rate limits at 50 req/s." }]
+        }
+      ]
+    },
+    "trustSignal": { "level": "warning", "label": "Review Needed", "detail": "Deadline information may be outdated" },
+    "retrievalSummary": { "chunksConsidered": 8, "distinctSources": 2, "topSimilarityScore": 0.97, "fallbackRetrievalUsed": false },
+    "quickReplies": [
+      { "label": "Show OKRs", "text": "What are the Q4 OKRs?" },
+      { "label": "Escalation path", "text": "What is the escalation path for this blocker?" }
+    ],
+    "replyId": "demo-reply-blocker-001",
+    "traceId": null,
+    "trustSignalLevel": "warning",
+    "citationIndexMap": { "src-blocker-001": 1, "src-blocker-002": 2 }
+  },
+  "default": {
+    "answer": "Based on the available documents, here's what I found [1]:\n\nThe team is currently focused on three main initiatives for Q4 2024:\n1. AI Search GA launch targeting November 15 [1]\n2. Infrastructure cost optimization program [1]\n3. Enterprise onboarding automation [1]\n\nFor more specific information, try asking about OKRs, blockers, or the product roadmap.",
+    "answer_text": "Based on the available documents, the team is currently focused on three main initiatives for Q4 2024: AI Search GA launch targeting November 15, infrastructure cost optimization program, and enterprise onboarding automation. For more specific information, try asking about OKRs, blockers, or the product roadmap.",
+    "bullets": [],
+    "action": null,
+    "needsClarification": false,
+    "clarifyingQuestions": [],
+    "conversationId": "demo-conv-00000000-0000-0000-0000-000000000001",
+    "sources": [
+      {
+        "sourceId": "src-default-001",
+        "chunkId": "chunk-default-001",
+        "title": "Team_Quick_Reference_Guide.md",
+        "snippet": "Q4 2024 priorities: AI Search GA, infra cost optimization, enterprise onboarding automation.",
+        "score": 0.82,
+        "sourceType": "drive",
+        "url": "#"
+      }
+    ],
+    "sources_used": [
+      {
+        "sourceId": "src-default-001",
+        "chunkId": "chunk-default-001",
+        "title": "Team_Quick_Reference_Guide.md",
+        "snippet": "Q4 2024 priorities: AI Search GA, infra cost optimization, enterprise onboarding automation.",
+        "score": 0.82,
+        "sourceType": "drive",
+        "url": "#"
+      }
+    ],
+    "citations": [
+      {
+        "sourceId": "src-default-001",
+        "chunkId": "chunk-default-001",
+        "title": "Team_Quick_Reference_Guide.md",
+        "snippet": "Q4 2024 priorities: AI Search GA, infra cost optimization, enterprise onboarding automation.",
+        "score": 0.82,
+        "sourceType": "drive",
+        "url": "#"
+      }
+    ],
+    "trustSignal": { "level": "review", "label": "Review", "detail": "Single source — cross-check recommended" },
+    "retrievalSummary": { "chunksConsidered": 5, "distinctSources": 1, "topSimilarityScore": 0.82, "fallbackRetrievalUsed": false },
+    "quickReplies": [
+      { "label": "Show Q4 OKRs", "text": "What are the Q4 OKRs?" },
+      { "label": "Any blockers?", "text": "What are the current blockers?" },
+      { "label": "Product roadmap", "text": "Show me the product roadmap" }
+    ],
+    "replyId": "demo-reply-default-001",
+    "traceId": null,
+    "citationIndexMap": { "src-default-001": 1 }
+  }
+}

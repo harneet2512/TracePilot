@@ -22,10 +22,10 @@ export async function setupVite(server: Server, app: Express) {
 
   console.log("[Vite] Resolving Vite config...");
   // Resolve vite config if it's a function
-  let viteConfig;
+  let viteConfig: any;
   try {
     viteConfig = typeof viteConfigRaw === 'function'
-      ? await viteConfigRaw({ command: "serve", mode: "development" })
+      ? await (viteConfigRaw as any)({ command: "serve", mode: "development" })
       : viteConfigRaw;
     console.log("[Vite] Vite config resolved successfully");
   } catch (err) {

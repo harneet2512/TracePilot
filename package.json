@@ -9,6 +9,7 @@
     "seed:golden": "cross-env NODE_ENV=production tsx -r dotenv/config scripts/seedGolden.ts",
     "eval:golden": "cross-env NODE_ENV=production tsx -r dotenv/config eval/golden/runner.ts",
     "eval:golden-five": "cross-env NODE_ENV=production tsx -r dotenv/config scripts/golden-eval-five-dimension.ts",
+    "build:dev": "vite build",
     "dev": "cross-env NODE_ENV=development tsx server/index.ts",
     "dev:dotenv": "cross-env NODE_ENV=development tsx -r dotenv/config server/index.ts",
     "build": "tsx script/build.ts",
@@ -50,7 +51,7 @@
     "ready": "tsx script/check_ready.ts",
     "test:rag": "npx playwright test \"tests/invariants-*.spec.ts\" \"tests/no-refusal-on-broad-queries.spec.ts\" --workers=1 --timeout=60000",
     "quality:rag": "node scripts/rag_quality_gate.cjs",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -142,8 +143,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "@replit/vite-plugin-cartographer": "^0.4.4",
-    "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
     "@types/better-sqlite3": "^7.6.13",
