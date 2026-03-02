@@ -9,8 +9,8 @@ async function main() {
         // It does NOT have getAllUsers exposed in IStorage explicitly, but DatabaseStorage implementation might have it or I can add it/use direct DB if needed.
         // Actually, I can just try to fetch a known user or check the count.
 
-        // Let's try to find a user by a common email 'demo@fieldcopilot.com' or 'admin@example.com'
-        const email = "demo@fieldcopilot.com";
+        // Let's try to find a user by a common email 'demo@tracepilot.com' or 'admin@example.com'
+        const email = "demo@tracepilot.com";
         const user = await storage.getUserByEmail(email);
 
         if (user) {

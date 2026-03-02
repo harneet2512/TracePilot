@@ -27,8 +27,8 @@
 
 ### 4. MCP Server (`server/mcp/mcpServer.ts`)
 ✅ **COMPLETE** - MCP stdio server:
-- Tools: `fieldcopilot.chat`, `fieldcopilot.playbook`, `fieldcopilot.action_draft`, `fieldcopilot.action_execute`
-- Resources: `fieldcopilot://status`, `fieldcopilot://evals`
+- Tools: `tracepilot.chat`, `tracepilot.playbook`, `tracepilot.action_draft`, `tracepilot.action_execute`
+- Resources: `tracepilot://status`, `tracepilot://evals`
 - All tools use agent core with `channel: "mcp"`
 - Policy enforcement and approval gates maintained
 

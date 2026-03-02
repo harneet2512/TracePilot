@@ -56,7 +56,7 @@ The mock returns **generic responses** without actual document content extractio
 
 **For full semantic validation**, re-run without mock flags (requires OPENAI_API_KEY):
 ```bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/fieldcopilot_test" npx tsx scripts/verify_rag_system.ts
+DATABASE_URL="postgresql://postgres:postgres@localhost:5433/tracepilot_test" npx tsx scripts/verify_rag_system.ts
 ```
 
 ## Summary

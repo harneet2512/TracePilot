@@ -75,7 +75,7 @@ test("demo flow: hi -> admin chats -> reply detail -> evals", async ({ page, req
 
   // Login via existing auth endpoint (sets session cookie for this browser context).
   const loginResponse = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResponse.status(), "admin login should succeed").toBe(200);
 

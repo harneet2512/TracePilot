@@ -47,7 +47,7 @@ test("owner/deadline invariant: person/date grounded and no duplicate fallback",
   let citedTextHasDate = false;
   if (citationChunkIds.length > 0) {
     const client = new Client({
-      connectionString: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/fieldcopilot_test",
+      connectionString: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/tracepilot_test",
     });
     await client.connect();
     const placeholders = citationChunkIds.map((_: unknown, idx: number) => `$${idx + 1}`).join(",");

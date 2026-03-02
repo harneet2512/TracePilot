@@ -89,7 +89,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnOutp
 
 **Tools:**
 
-**a) `fieldcopilot.chat`** (Line 133-160):
+**a) `tracepilot.chat`** (Line 133-160):
 ```136:144:server/mcp/mcpServer.ts
           // Call agent core
           const result = await runAgentTurn({
@@ -102,7 +102,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnOutp
           });
 ```
 
-**b) `fieldcopilot.playbook`** (Line 161-188):
+**b) `tracepilot.playbook`** (Line 161-188):
 ```165:171:server/mcp/mcpServer.ts
           // Use agent core to generate playbook (for now, use chat with special prompt)
           const result = await runAgentTurn({
@@ -114,7 +114,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnOutp
           });
 ```
 
-**c) `fieldcopilot.action_draft`** (Line 190-277):
+**c) `tracepilot.action_draft`** (Line 190-277):
 ```194:200:server/mcp/mcpServer.ts
           // Call agent core to draft action
           const result = await runAgentTurn({
@@ -126,7 +126,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnOutp
           });
 ```
 
-**d) `fieldcopilot.action_execute`** (Line 279-342) - **Does NOT call `runAgentTurn()`** - Executes directly
+**d) `tracepilot.action_execute`** (Line 279-342) - **Does NOT call `runAgentTurn()`** - Executes directly
 
 **Status:** ✅ VERIFIED - All chat/playbook/action_draft call `runAgentTurn()` with `channel: "mcp"`
 
@@ -138,7 +138,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnOutp
 
 ### Evidence Per Tool
 
-#### ✅ `fieldcopilot.chat` - PASS
+#### ✅ `tracepilot.chat` - PASS
 
 **File:** `server/mcp/mcpServer.ts:133-160`  
 **Path:** Calls `runAgentTurn()` → agent core applies policy check
@@ -148,7 +148,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnOutp
 - **Agent Core Policy Check:** `server/lib/agent/agentCore.ts:289-323` - Policy check applied in agent core
 - **Status:** ✅ PASS - Policy enforced via agent core
 
-#### ✅ `fieldcopilot.playbook` - PASS
+#### ✅ `tracepilot.playbook` - PASS
 
 **File:** `server/mcp/mcpServer.ts:161-188`  
 **Path:** Calls `runAgentTurn()` → agent core applies policy check
@@ -157,7 +157,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnOutp
 - **Line 165:** Calls `runAgentTurn()` with `channel: "mcp"`
 - **Status:** ✅ PASS - Policy enforced via agent core
 
-#### ✅ `fieldcopilot.action_draft` - PASS
+#### ✅ `tracepilot.action_draft` - PASS
 
 **File:** `server/mcp/mcpServer.ts:190-277`  
 **Path:** 
@@ -209,7 +209,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnOutp
 
 **Status:** ✅ PASS - Policy enforced twice (agent core + explicit), approval created when required
 
-#### ❌ `fieldcopilot.action_execute` - FAIL (Two Issues)
+#### ❌ `tracepilot.action_execute` - FAIL (Two Issues)
 
 **File:** `server/mcp/mcpServer.ts:279-342`
 
@@ -217,7 +217,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnOutp
 
 **Evidence:**
 ```279:342:server/mcp/mcpServer.ts
-        case "fieldcopilot.action_execute": {
+        case "tracepilot.action_execute": {
           const { approvalId, idempotencyKey } = args as { approvalId: string; idempotencyKey: string };
           
           // Check if approval exists and is approved
@@ -884,7 +884,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: fieldcopilot
+          POSTGRES_DB: tracepilot
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -906,17 +906,17 @@ jobs:
       
       - name: Setup database
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
         run: npm run db:push
       
       - name: Seed evals
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
         run: npm run seed:evals
       
       - name: Start server
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PORT: 5000
         run: npm run dev &
@@ -926,7 +926,7 @@ jobs:
       
       - name: Run voice smoke test
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           WS_URL: ws://localhost:5000/ws/voice
         run: npm run test:voice-smoke
@@ -934,7 +934,7 @@ jobs:
       
       - name: Run MCP smoke test
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm run test:mcp-smoke
         continue-on-error: false
@@ -948,13 +948,13 @@ jobs:
 
 ### Evidence
 
-#### `fieldcopilot://status`
+#### `tracepilot://status`
 
 **File:** `server/mcp/mcpServer.ts:397-424`
 
 **Evidence:**
 ```397:424:server/mcp/mcpServer.ts
-      if (uri === "fieldcopilot://status") {
+      if (uri === "tracepilot://status") {
         const connectors = await storage.getConnectors();
         const activePolicy = await storage.getActivePolicy();
         
@@ -997,13 +997,13 @@ jobs:
 
 **Status:** ✅ PASS - No secrets or PII leaked
 
-#### `fieldcopilot://evals`
+#### `tracepilot://evals`
 
 **File:** `server/mcp/mcpServer.ts:426-456`
 
 **Evidence:**
 ```426:456:server/mcp/mcpServer.ts
-      if (uri === "fieldcopilot://evals") {
+      if (uri === "tracepilot://evals") {
         const suites = await storage.getEvalSuites();
         const runs = await storage.getEvalRuns();
         
@@ -1133,7 +1133,7 @@ ${chunkText}
 **System Prompt:**
 ```155:158:server/lib/agent/agentCore.ts
     // 5. Build system prompt
-    const systemPrompt = `You are FieldCopilot, an AI assistant for field operations teams. You help users find information from their knowledge base and can propose actions using integrated tools.
+    const systemPrompt = `You are TracePilot, an AI assistant for field operations teams. You help users find information from their knowledge base and can propose actions using integrated tools.
 
 ${getUntrustedContextInstruction()}
 ```

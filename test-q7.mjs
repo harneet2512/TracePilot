@@ -28,11 +28,11 @@ async function sendQuery(cookie, csrf, msg) {
   return { answer: answer?.slice(0, 200), trustSignal, retrievalSummary, latency, status: res.status };
 }
 
-// Login as admin@fieldcopilot.com
+// Login as admin@tracepilot.com
 const loginRes = await fetch(BASE_URL + '/api/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'admin@fieldcopilot.com', password: 'admin123' })
+  body: JSON.stringify({ email: 'admin@tracepilot.com', password: 'admin123' })
 });
 const loginBody = await loginRes.json();
 const csrf = loginBody.csrfToken;

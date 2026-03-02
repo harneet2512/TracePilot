@@ -13,7 +13,7 @@ async function verify() {
     console.log("=== SOURCES & CITATIONS VERIFICATION ===");
     try {
         await client.post('/api/auth/login', {
-            email: 'admin@fieldcopilot.com',
+            email: 'admin@tracepilot.com',
             password: 'admin123'
         });
 

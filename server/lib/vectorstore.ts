@@ -75,18 +75,20 @@ export async function indexChunks(chunksToIndex: Chunk[]): Promise<void> {
 
       if (toEmbed.length > 0) {
         if (processed === 0) {
-          console.log(`[vectorstore] Generating embeddings for ${toEmbed.length} chunks in this batch... (This may take a while for the first run)`);
+          console.log(`[vectorstore] Generating embeddings for ${toEmbed.length} chunks in this batch...`);
         }
         try {
           const texts = toEmbed.map(c => c.text);
           const embeddings = await createEmbeddings(texts);
 
+          const updates: Promise<any>[] = [];
           for (let j = 0; j < toEmbed.length; j++) {
-            const chunk = toEmbed[j];
-            const embedding = embeddings[j];
-            vectorStore.set(chunk.id, embedding);
-            await storage.updateChunk(chunk.id, { vectorRef: JSON.stringify(embedding) });
+            vectorStore.set(toEmbed[j].id, embeddings[j]);
+            updates.push(
+              storage.updateChunk(toEmbed[j].id, { vectorRef: JSON.stringify(embeddings[j]) })
+            );
           }
+          await Promise.all(updates);
         } catch (e) {
           console.error(`[vectorstore] Failed to embed batch ${i}:`, e);
         }
@@ -101,7 +103,7 @@ export async function indexChunks(chunksToIndex: Chunk[]): Promise<void> {
         console.log(`[vectorstore] Memory: heapUsed=${Math.round(mem.heapUsed / 1024 / 1024)}MB`);
       }
 
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 10));
     }
     console.log(`[vectorstore] Indexing complete. vectorStore.size=${vectorStore.size}`);
     const sampleKeys = Array.from(vectorStore.keys()).slice(0, 3);

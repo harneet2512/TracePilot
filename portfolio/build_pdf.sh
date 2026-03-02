@@ -26,9 +26,9 @@ function Ensure-Diagrams {
   $missing = $required | Where-Object { -not (Test-Path $_) }
   if ($missing.Count -eq 0) { return }
 
-  $tmpArch = Join-Path $env:TEMP "fieldcopilot_architecture.mmd"
-  $tmpSeq  = Join-Path $env:TEMP "fieldcopilot_request_sequence.mmd"
-  $tmpPipe = Join-Path $env:TEMP "fieldcopilot_data_pipeline.mmd"
+  $tmpArch = Join-Path $env:TEMP "tracepilot_architecture.mmd"
+  $tmpSeq  = Join-Path $env:TEMP "tracepilot_request_sequence.mmd"
+  $tmpPipe = Join-Path $env:TEMP "tracepilot_data_pipeline.mmd"
 
   @"
 flowchart LR

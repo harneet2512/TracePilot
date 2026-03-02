@@ -67,7 +67,7 @@ async function checkReady() {
     console.error("   - Or set environment variables in your shell");
     if (mode === "test") {
       console.error("   - For tests, start test DB: powershell script/db_test_up.ps1");
-      console.error("   - Use: DATABASE_URL=postgresql://postgres:postgres@localhost:5433/fieldcopilot_test");
+      console.error("   - Use: DATABASE_URL=postgresql://postgres:postgres@localhost:5433/tracepilot_test");
     }
     process.exit(1);
   }

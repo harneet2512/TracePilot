@@ -12,12 +12,12 @@ async function fixAdmin() {
     const newHash = await bcrypt.hash("admin123", 10);
     console.log("New Hash Generated:", newHash);
 
-    const existing = await storage.getUserByEmail("admin@fieldcopilot.com");
+    const existing = await storage.getUserByEmail("admin@tracepilot.com");
     if (!existing) {
         console.log("Admin not found, creating...");
         await storage.createUser({
             workspaceId: "default-workspace",
-            email: "admin@fieldcopilot.com",
+            email: "admin@tracepilot.com",
             passwordHash: "admin123", // validatePassword will hash this? No, createUser hashes it.
             role: "admin"
         });
@@ -26,11 +26,11 @@ async function fixAdmin() {
         // We update directly to avoid any middleware confusion, specifically setting the hash we just made
         await (db as any).update(users)
             .set({ passwordHash: newHash })
-            .where(eq(users.email, "admin@fieldcopilot.com"));
+            .where(eq(users.email, "admin@tracepilot.com"));
     }
 
     console.log("Verifying...");
-    const valid = await storage.validatePassword("admin@fieldcopilot.com", "admin123");
+    const valid = await storage.validatePassword("admin@tracepilot.com", "admin123");
     if (valid) {
         console.log("✅ SUCCESS: Password updated and verified.");
     } else {

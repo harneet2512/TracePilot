@@ -1,11 +1,11 @@
-# FieldCopilot Workshop Materials
+# TracePilot Workshop Materials
 
-60-90 minute hands-on workshop for Digital Native teams to learn FieldCopilot.
+60-90 minute hands-on workshop for Digital Native teams to learn TracePilot.
 
 ## Agenda
 
 1. **Introduction** (10 min)
-   - What is FieldCopilot?
+   - What is TracePilot?
    - Use cases and benefits
    - Architecture overview
 
@@ -35,9 +35,9 @@
 
 ## 1. Introduction
 
-### What is FieldCopilot?
+### What is TracePilot?
 
-FieldCopilot is an AI assistant for field operations teams that:
+TracePilot is an AI assistant for field operations teams that:
 - Answers questions from your knowledge base (RAG)
 - Generates incident response playbooks
 - Executes tool actions (Jira, Slack, Confluence)
@@ -71,21 +71,21 @@ User Query → RAG Retrieval → LLM Generation → Response with Citations
    ```
    User: "How do I handle a chemical spill?"
    
-   FieldCopilot: [Answer with citations to safety procedures]
+   TracePilot: [Answer with citations to safety procedures]
    ```
 
 2. **Generate Playbook**
    ```
    User: "Create a playbook for chemical spill in lab B"
    
-   FieldCopilot: [Generates structured playbook with SOP steps, PPE checklist, action drafts]
+   TracePilot: [Generates structured playbook with SOP steps, PPE checklist, action drafts]
    ```
 
 3. **Execute Action**
    ```
    User: "Create a Jira ticket for this incident"
    
-   FieldCopilot: [Proposes Jira ticket, checks policy, creates ticket]
+   TracePilot: [Proposes Jira ticket, checks policy, creates ticket]
    ```
 
 #### B. Voice Mode (WebSocket Transcript)
@@ -120,10 +120,10 @@ const result = await runAgentTurn({
 
 **Demo Steps:**
 1. Show Claude Desktop MCP configuration
-2. Call `fieldcopilot.chat` tool:
+2. Call `tracepilot.chat` tool:
    ```json
    {
-     "name": "fieldcopilot.chat",
+     "name": "tracepilot.chat",
      "arguments": {
        "query": "What are the safety procedures for chemical spills?",
        "topK": 5
@@ -131,7 +131,7 @@ const result = await runAgentTurn({
    }
    ```
 3. Show response with citations and meta (channel="mcp")
-4. Access `fieldcopilot://status` resource to show build info
+4. Access `tracepilot://status` resource to show build info
 
 **Code Snippet:**
 ```typescript

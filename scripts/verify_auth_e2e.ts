@@ -10,7 +10,7 @@ async function testAuth() {
     try {
         console.log("Attempting login...");
         const loginRes = await client.post('/api/auth/login', {
-            email: 'admin@fieldcopilot.com',
+            email: 'admin@tracepilot.com',
             password: 'admin123'
         });
         console.log("Login Status:", loginRes.status);
@@ -21,7 +21,7 @@ async function testAuth() {
         console.log("Me Status:", meRes.status);
         console.log("Me Data:", meRes.data);
 
-        if (meRes.status === 200 && meRes.data.email === 'admin@fieldcopilot.com') {
+        if (meRes.status === 200 && meRes.data.email === 'admin@tracepilot.com') {
             console.log("PASS: Auth verification successful.");
         } else {
             console.log("FAIL: Auth mismatch.");

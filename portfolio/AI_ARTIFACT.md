@@ -1,4 +1,4 @@
-### FieldCopilot – AI Assistant System Artifact
+### TracePilot – AI Assistant System Artifact
 
 **TL;DR**
 - **What it is**: A production-grade AI assistant that ingests enterprise content (uploads + connectors), builds a retrieval corpus, and answers questions with grounded, cited responses. *(Evidence: `README.md`, `shared/schema.ts`, `server/lib/retrieval.ts`, `server/lib/vectorstore.ts`)*  
@@ -211,7 +211,7 @@ flowchart TD
 
 - **Voice & MCP Extensions**
   - **Purpose**: Reuse the same core RAG and observability stack for voice and MCP (tool) channels.
-  - **What it does**: Provides a WebSocket `/ws/voice` real-time voice runtime with EOU detection, barge-in, and spans, plus an MCP server exposing FieldCopilot tools (chat, playbook, actions) via stdio with the same DB and OpenAI backend.  
+  - **What it does**: Provides a WebSocket `/ws/voice` real-time voice runtime with EOU detection, barge-in, and spans, plus an MCP server exposing TracePilot tools (chat, playbook, actions) via stdio with the same DB and OpenAI backend.  
   - **Evidence**: `README.md` “Voice Agent” + “Voice E2E Tests” + “MCP Mode (stdio) Quickstart`, `VOICE_AGENT_PROOF.md`, `VOICE_IMPLEMENTATION_COMPLETE.md`, `server/mcp/mcpServer.ts` (in tree), `shared/schema.ts` `voiceCalls`, `voiceTurns`, `evalRuns` channel `voice` / `mcp`.*
 
 ---
@@ -322,7 +322,7 @@ flowchart TD
 
 | Claim | Evidence file paths |
 | ----- | ------------------- |
-| FieldCopilot is a React + TypeScript frontend with a Node/Express backend and Postgres/Drizzle DB | `README.md`, `client/src/main.tsx`, `client/src/App.tsx`, `server/index.ts`, `shared/schema.ts`, `package.json` |
+| TracePilot is a React + TypeScript frontend with a Node/Express backend and Postgres/Drizzle DB | `README.md`, `client/src/main.tsx`, `client/src/App.tsx`, `server/index.ts`, `shared/schema.ts`, `package.json` |
 | The system ingests uploads via `/api/ingest` and processes them asynchronously as jobs | `README.md` (Manual Upload Ingestion, `/api/ingest`), `server/routes.ts` / `server/routes_v2.ts` (ingest routes), `shared/schema.ts` `jobs`, `jobRuns`, `sources`, `sourceVersions`, `chunks` |
 | Connectors support Google, Atlassian (Jira/Confluence), and Slack with OAuth accounts/scopes | `README.md` (Google/Atlassian/Slack sections), `server/lib/jobs/handlers/syncHandler.ts`, `server/lib/sync/googleSync.ts`, `server/lib/sync/jiraSync.ts`, `server/lib/sync/confluenceSync.ts`, `server/lib/sync/slackSync.ts`, `shared/schema.ts` `userConnectorAccounts`, `userConnectorScopes` |
 | Retrieval enforces workspace boundaries, visibility, and Slack private-channel rules | `server/lib/retrieval.ts` (`searchRetrievalCorpus`, visibility + Slack private-channel checks), `shared/schema.ts` `sources`, `sourceVersions`, `chunks` |
@@ -334,5 +334,5 @@ flowchart TD
 | Evaluation uses offline and golden runners with groundedness and regression metrics | `eval/runner.ts`, `eval/golden/runner.ts`, `eval/golden/scorer.ts`, `shared/schema.ts` `evalSuites`, `evalCases`, `evalRuns`, `evalResults`, `evalMetricsSchema`, `regressionDiffSchema`, `EVAL_RUBRIC.md`, `TEST_MATRIX.md` |
 | CI fails when evaluation metrics regress beyond thresholds (TSR drop, unsupported claims, cost per success) | `README.md` “CI Regression Gate” thresholds, `EVAL_RUBRIC.md`, `eval/golden/runner.ts` metrics, `eval-report.json` / `eval-report.md` outputs |
 | Voice agent supports low-latency WebSocket `/ws/voice` with EOU, barge-in, and observability | `README.md` “Voice Agent” + “Voice E2E Tests”, `VOICE_AGENT_PROOF.md`, `VOICE_IMPLEMENTATION_COMPLETE.md`, `shared/schema.ts` `voiceCalls`, `voiceTurns`, `evalRuns` channel `voice`, `server/routes_v2.ts` (voice WebSocket route referenced in README) |
-| MCP server exposes FieldCopilot tools over stdio with the same backend | `README.md` “MCP Mode (stdio) Quickstart”, `server/mcp/mcpServer.ts`, `EVAL_RUBRIC.md` (MCP references) |
+| MCP server exposes TracePilot tools over stdio with the same backend | `README.md` “MCP Mode (stdio) Quickstart”, `server/mcp/mcpServer.ts`, `EVAL_RUBRIC.md` (MCP references) |
 

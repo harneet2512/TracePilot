@@ -161,7 +161,7 @@ async function main() {
   // T1: Name check
   console.log('\n--- T1: Name ---');
   log('T1', 'TracePilot in page', allText.includes('TracePilot'));
-  log('T1', 'No FieldCopilot', !allText.toLowerCase().includes('fieldcopilot'));
+  log('T1', 'No TracePilot', !allText.toLowerCase().includes('tracepilot'));
 
   // Health
   const nonAuth = errors.filter(e => !e.includes('401') && !e.includes('favicon') && !e.includes('Failed to load resource'));

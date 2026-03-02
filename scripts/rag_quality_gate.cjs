@@ -29,7 +29,7 @@ try {
 }
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
-const EMAIL = process.env.EMAIL || "admin@fieldcopilot.com";
+const EMAIL = process.env.EMAIL || "admin@tracepilot.com";
 const PASSWORD = process.env.PASSWORD || "admin123";
 const RUNS = Math.max(1, Number(process.env.DIAG_RUNS || process.env.RUNS || "1"));
 const DEMO_MODE = process.env.DEMO_MODE || "";

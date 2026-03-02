@@ -1,6 +1,6 @@
-# FieldCopilot Onboarding Playbook for Digital Native Teams
+# TracePilot Onboarding Playbook for Digital Native Teams
 
-This playbook guides you through onboarding FieldCopilot for your field operations team, from initial discovery to production rollout.
+This playbook guides you through onboarding TracePilot for your field operations team, from initial discovery to production rollout.
 
 ## Phase 1: Discovery (Week 0)
 
@@ -133,8 +133,8 @@ Use this checklist to gather requirements before implementation:
 
 **Components**:
 - MCP stdio server
-- Tools: `fieldcopilot.chat`, `fieldcopilot.playbook`, `fieldcopilot.action_draft`, `fieldcopilot.action_execute`
-- Resources: `fieldcopilot://status`, `fieldcopilot://evals`
+- Tools: `tracepilot.chat`, `tracepilot.playbook`, `tracepilot.action_draft`, `tracepilot.action_execute`
+- Resources: `tracepilot://status`, `tracepilot://evals`
 
 **Setup**:
 1. Install: `npm install @modelcontextprotocol/sdk`
@@ -170,7 +170,7 @@ Use this checklist to gather requirements before implementation:
 ### Week 1: Setup & Initial Testing
 
 #### Day 1-2: Infrastructure Setup
-- [ ] Deploy FieldCopilot (local or cloud)
+- [ ] Deploy TracePilot (local or cloud)
 - [ ] Set up PostgreSQL database
 - [ ] Configure environment variables (OpenAI API key, OAuth credentials)
 - [ ] Run database migrations (`npm run db:push`)

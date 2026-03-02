@@ -90,6 +90,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   validatePassword(email: string, password: string): Promise<User | null>;
+  /** Ensure a workspace exists by id; create with name if missing. Used by seed. */
+  ensureWorkspace(workspaceId: string, name: string): Promise<void>;
 
   // Sessions
   createSession(userId: string): Promise<Session>;
@@ -167,6 +169,7 @@ export interface IStorage {
   deleteConversation(id: string): Promise<void>;
 
   getMessages(conversationId: string): Promise<Message[]>;
+  getMessage(id: string): Promise<Message | undefined>;
   createMessage(message: InsertMessage): Promise<Message>;
   updateMessageMetadata(id: string, metadataJson: object): Promise<void>;
   createChatReply(reply: InsertChatReply): Promise<ChatReply>;
@@ -337,6 +340,12 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
+  }
+
+  async ensureWorkspace(workspaceId: string, name: string): Promise<void> {
+    const [existing] = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId));
+    if (existing) return;
+    await db.insert(workspaces).values({ id: workspaceId, name });
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -940,7 +949,7 @@ export class DatabaseStorage implements IStorage {
 
   async getPendingJobCount(): Promise<number> {
     const now = new Date();
-    const result = await db.select({ count: sql<number>`count(*)::int` }).from(jobs)
+    const result = await db.select({ count: sql<number>`cast(count(*) as integer)` }).from(jobs)
       .where(and(
         eq(jobs.status, "pending"),
         lte(jobs.nextRunAt, now),
@@ -1038,11 +1047,11 @@ export class DatabaseStorage implements IStorage {
 
   async getCountsByScope(scopeId: string): Promise<{ sources: number; chunks: number }> {
     // Count sources linked to this scope via metadata
-    const sourcesResult = await db.select({ count: sql<number>`count(*)::int` }).from(sources)
+    const sourcesResult = await db.select({ count: sql<number>`cast(count(*) as integer)` }).from(sources)
       .where(sql`metadata_json->>'scopeId' = ${scopeId}`);
 
     // Count chunks from those sources using raw SQL
-    const chunksResult = await db.select({ count: sql<number>`count(*)::int` }).from(chunks)
+    const chunksResult = await db.select({ count: sql<number>`cast(count(*) as integer)` }).from(chunks)
       .where(sql`source_id IN (SELECT id FROM sources WHERE metadata_json->>'scopeId' = ${scopeId})`);
 
     return {
@@ -1059,9 +1068,9 @@ export class DatabaseStorage implements IStorage {
   }> {
     const sourcesWhere = workspaceId ? eq(sources.workspaceId, workspaceId) : undefined;
     const chunksWhere = workspaceId ? eq(chunks.workspaceId, workspaceId) : undefined;
-    const [sourcesRow] = await db.select({ count: sql<number>`count(*)::int` }).from(sources)
+    const [sourcesRow] = await db.select({ count: sql<number>`cast(count(*) as integer)` }).from(sources)
       .where(sourcesWhere ?? sql`1=1`);
-    const [chunksRow] = await db.select({ count: sql<number>`count(*)::int` }).from(chunks)
+    const [chunksRow] = await db.select({ count: sql<number>`cast(count(*) as integer)` }).from(chunks)
       .where(chunksWhere ?? sql`1=1`);
     const lastSync = await db.select({ completedAt: jobs.completedAt }).from(jobs)
       .where(and(eq(jobs.type, "sync"), eq(jobs.status, "completed")))
@@ -1619,6 +1628,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(messages)
       .where(eq(messages.conversationId, conversationId))
       .orderBy(messages.createdAt);
+  }
+
+  async getMessage(id: string): Promise<Message | undefined> {
+    const [row] = await db.select().from(messages).where(eq(messages.id, id));
+    return row;
   }
 
   async createMessage(message: InsertMessage): Promise<Message> {

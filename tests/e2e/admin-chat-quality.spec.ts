@@ -9,7 +9,7 @@ test("admin chat quality shows metrics or empty state guidance", async ({ page, 
 
   await request.post("/api/seed");
   const loginResponse = await page.request.post("/api/auth/login", {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResponse.status()).toBe(200);
 

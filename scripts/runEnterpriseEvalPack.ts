@@ -14,7 +14,7 @@ async function main() {
   const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "admin@fieldcopilot.com", password: "admin123" }),
+    body: JSON.stringify({ email: "admin@tracepilot.com", password: "admin123" }),
   });
   if (!loginResponse.ok) {
     throw new Error(`Login failed: ${loginResponse.status} ${await loginResponse.text()}`);

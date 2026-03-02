@@ -15,7 +15,7 @@ test("capture before screenshots for chat/admin issues", async ({ page, request 
   expect([200, 201]).toContain(seedResponse.status());
 
   const loginResponse = await page.request.post("/api/auth/login", {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResponse.status()).toBe(200);
 

@@ -46,10 +46,10 @@
       "Bash(pip install:*)",
       "Bash(powershell.exe -Command \"Stop-Process -Name ''Docker Desktop'' -Force -ErrorAction SilentlyContinue; Stop-Process -Name ''com.docker.backend'' -Force -ErrorAction SilentlyContinue; Start-Sleep 3; echo ''Docker stopped''\")",
       "Bash(cmd.exe //c \"start \"\" \"\"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\"\"\")",
-      "Bash(PROOF_MODE=1 DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/fieldcopilot_test\" npx tsx:*)",
-      "Bash(DEV_CONNECTOR_FIXTURES=1 DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/fieldcopilot_test\" npx tsx:*)",
+      "Bash(PROOF_MODE=1 DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/tracepilot_test\" npx tsx:*)",
+      "Bash(DEV_CONNECTOR_FIXTURES=1 DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/tracepilot_test\" npx tsx:*)",
       "Bash(npx playwright:*)",
-      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/fieldcopilot_test\" DEV_CONNECTOR_FIXTURES=1 npx tsx:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5433/tracepilot_test\" DEV_CONNECTOR_FIXTURES=1 npx tsx:*)",
       "Bash(curl:*)",
       "Bash(powershell -c \"Get-NetTCPConnection -LocalPort 5432,5433 -ErrorAction SilentlyContinue\")",
       "Bash(PROOF_MODE=1 npx tsx:*)",
@@ -60,7 +60,11 @@
       "Bash(git stash pop:*)",
       "Bash(ENCRYPTION_KEY=test-key-1234 node:*)",
       "Bash(ENCRYPTION_KEY=test-secret-key npx tsx:*)",
-      "Bash(ENCRYPTION_KEY=test-secret-key node:*)"
+      "Bash(ENCRYPTION_KEY=test-secret-key node:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "Bash(rm:*)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch:*)"
     ]
   }
 }

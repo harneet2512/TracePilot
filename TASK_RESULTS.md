@@ -43,17 +43,17 @@ Confirmed from routes_v2.ts lines 3285-3286:
 **Status:** COMPLETE — Code verified + API tested
 
 **Changes made:**
-- `server/mcp/mcpServer.ts`: Server name `"fieldcopilot"` → `"tracepilot"`, all tool names `fieldcopilot.*` → `tracepilot.*`, all resource URIs `fieldcopilot://` → `tracepilot://`
-- `client/src/lib/conversations.ts`: localStorage keys `fieldcopilot.*` → `tracepilot.*`
-- `client/src/components/theme-provider.tsx`: localStorage key `fieldcopilot-theme` → `tracepilot-theme`
-- Left `admin@fieldcopilot.com` unchanged (functional auth credential — DB has this user)
+- `server/mcp/mcpServer.ts`: Server name `"tracepilot"` → `"tracepilot"`, all tool names `tracepilot.*` → `tracepilot.*`, all resource URIs `tracepilot://` → `tracepilot://`
+- `client/src/lib/conversations.ts`: localStorage keys `tracepilot.*` → `tracepilot.*`
+- `client/src/components/theme-provider.tsx`: localStorage key `tracepilot-theme` → `tracepilot-theme`
+- Left `admin@tracepilot.com` unchanged (functional auth credential — DB has this user)
 
 **Evidence:**
 - `client/index.html` title already: "TracePilot" ✓
 - System prompt (agentCore.ts line 250): "You are TracePilot" ✓
 - config/: No old names found ✓
 - POST /api/chat "hi" response: "Hello! I'm TracePilot..." ✓
-- No `FieldCopilot` or `Field Copilot` found in server/, client/, config/ ✓
+- No `TracePilot` or `Field Copilot` found in server/, client/, config/ ✓
 
 **Verdict: PASS**
 

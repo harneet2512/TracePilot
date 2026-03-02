@@ -11,7 +11,7 @@ test("processing UI: compact header always visible, steps collapsed by default",
   expect([200, 201]).toContain(seedResp.status());
 
   const loginResp = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResp.status()).toBe(200);
 
@@ -102,7 +102,7 @@ test("processing UI: trivial greetings do not show step toggle", async ({
   expect([200, 201]).toContain(seedResp.status());
 
   await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
 
   await page.goto("/chat");

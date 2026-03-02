@@ -424,7 +424,7 @@ async function attemptLogin(page: Page): Promise<boolean> {
     
     if (hasEmail && hasPassword) {
       await emailInput.clear();
-      await emailInput.fill('admin@fieldcopilot.com');
+      await emailInput.fill('admin@tracepilot.com');
       await passwordInput.clear();
       await passwordInput.fill('admin123');
       

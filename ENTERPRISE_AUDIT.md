@@ -1,4 +1,4 @@
-# FieldCopilot Enterprise Readiness Audit
+# TracePilot Enterprise Readiness Audit
 
 **Date:** 2025-01-27  
 **Auditor:** Senior Staff Engineer  
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The FieldCopilot repository demonstrates **strong enterprise-grade implementation** across most critical requirements. Core P0 features (job-based ingestion, source versioning, concurrency control) are **fully implemented and wired into runtime paths**. P1 observability and evaluation features are **substantially complete** with minor UI gaps. P2 playbooks are **end-to-end functional** with citation navigation needing polish.
+The TracePilot repository demonstrates **strong enterprise-grade implementation** across most critical requirements. Core P0 features (job-based ingestion, source versioning, concurrency control) are **fully implemented and wired into runtime paths**. P1 observability and evaluation features are **substantially complete** with minor UI gaps. P2 playbooks are **end-to-end functional** with citation navigation needing polish.
 
 **Key Strengths:**
 - ✅ Atomic job claiming with `FOR UPDATE SKIP LOCKED`
@@ -1166,7 +1166,7 @@ All P0 requirements are fully implemented.
 
 **Overall Score: 8.5/10**
 
-The FieldCopilot repository demonstrates **strong enterprise-grade implementation**. All P0 requirements are **fully implemented and production-ready**. P1 requirements are **substantially complete** with minor UI gaps. P2 playbooks are **end-to-end functional** with citation navigation needing polish.
+The TracePilot repository demonstrates **strong enterprise-grade implementation**. All P0 requirements are **fully implemented and production-ready**. P1 requirements are **substantially complete** with minor UI gaps. P2 playbooks are **end-to-end functional** with citation navigation needing polish.
 
 **Key Strengths:**
 - ✅ Atomic job claiming with proper locking

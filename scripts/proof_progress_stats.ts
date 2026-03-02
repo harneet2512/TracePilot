@@ -12,7 +12,7 @@ import { Pool } from "pg";
 import { desc, eq } from "drizzle-orm";
 import { jobs, jobRuns } from "../shared/schema";
 
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/fieldcopilot_test";
+const DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/tracepilot_test";
 const API_BASE = process.env.API_BASE || "http://localhost:5000";
 
 async function main() {
@@ -27,7 +27,7 @@ async function main() {
     const loginRes = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "admin@fieldcopilot.com", password: "admin123" })
+        body: JSON.stringify({ email: "admin@tracepilot.com", password: "admin123" })
     });
 
     if (!loginRes.ok) {

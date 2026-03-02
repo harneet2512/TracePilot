@@ -6,7 +6,7 @@ async function loginAsAdmin(page: import("@playwright/test").Page, request: impo
   expect([200, 201]).toContain(seedResponse.status());
 
   const loginResponse = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResponse.status()).toBe(200);
 }
@@ -28,7 +28,7 @@ test.describe("@manual OAuth simulator connectors", () => {
 
       const card = page.getByTestId(`connector-${provider}`);
       await expect(card.getByText("Connected")).toBeVisible();
-      await expect(card.getByText(new RegExp(`sim-${provider}@test\\.fieldcopilot\\.dev`, "i"))).toBeVisible();
+      await expect(card.getByText(new RegExp(`sim-${provider}@test\\.tracepilot\\.dev`, "i"))).toBeVisible();
 
       const chunkButton = page.getByTestId(`button-chunk-index-${provider}`);
       await expect(chunkButton).toBeVisible();

@@ -1,7 +1,7 @@
 
-# FieldCopilot Enterprise - Increments 4, 5, 6
+# TracePilot Enterprise - Increments 4, 5, 6
 
-This document details the enterprise-grade implementation of FieldCopilot, including database verification, observability, and approval workflows.
+This document details the enterprise-grade implementation of TracePilot, including database verification, observability, and approval workflows.
 
 ## 1. Setup & Database
 

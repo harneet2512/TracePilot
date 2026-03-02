@@ -10,7 +10,7 @@ export async function loginAndGetCsrf(
   baseURL: string,
 ): Promise<string> {
   const loginResp = await request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResp.status()).toBe(200);
   const loginBody = await loginResp.json();
@@ -40,7 +40,7 @@ export async function loginAndWaitForSession(
   }
 
   const loginResp = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResp.status()).toBe(200);
 

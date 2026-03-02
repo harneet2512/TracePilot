@@ -55,7 +55,7 @@ async function main() {
   log('T1', 'Page title = TracePilot', title === 'TracePilot', 'got: "' + title + '"');
   const body = await page.textContent('body');
   log('T1', 'Body has TracePilot', body.includes('TracePilot'));
-  log('T1', 'No FieldCopilot in body', !body.toLowerCase().includes('fieldcopilot'));
+  log('T1', 'No TracePilot in body', !body.toLowerCase().includes('tracepilot'));
 
   // TASK 2
   console.log('\n--- TASK 2: Dynamic Suggestions ---');

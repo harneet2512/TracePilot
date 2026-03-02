@@ -7,7 +7,7 @@ async function run() {
     const q = "Are there any blockers for the AI search launch?";
 
     let user = await storage.getUserByEmail("test@example.com");
-    if (!user) user = await storage.getUserByEmail("alice@fieldcopilot.com"); // Fallback
+    if (!user) user = await storage.getUserByEmail("alice@tracepilot.com"); // Fallback
 
     // Or just mock
     const userId = user?.id || "test-user-id";

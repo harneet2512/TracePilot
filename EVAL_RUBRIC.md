@@ -1,6 +1,6 @@
 # Evaluation Rubric
 
-This document defines the explicit criteria for evaluating FieldCopilot's performance across different task types.
+This document defines the explicit criteria for evaluating TracePilot's performance across different task types.
 
 ## Overview
 

@@ -17,7 +17,7 @@ test("streams OKR query — no em-dashes, sources render", async ({ page, reques
 
   // Login via API
   const loginResponse = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResponse.status()).toBe(200);
 
@@ -89,7 +89,7 @@ test("streams GENERAL query — TTFT < 5000 ms (smoke)", async ({ page, request 
   const baseURL = String(testInfo.project.use.baseURL || "http://127.0.0.1:5000");
 
   const loginResponse = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResponse.status()).toBe(200);
 

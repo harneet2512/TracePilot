@@ -20,7 +20,7 @@ const API_BASE = "http://localhost:5000";
 async function main() {
     if (!process.env.DATABASE_URL) {
         console.error(`ERROR: DATABASE_URL not set.
-Set it with: $env:DATABASE_URL="postgres://postgres:postgres@localhost:5433/fieldcopilot_test"`);
+Set it with: $env:DATABASE_URL="postgres://postgres:postgres@localhost:5433/tracepilot_test"`);
         process.exit(1);
     }
 

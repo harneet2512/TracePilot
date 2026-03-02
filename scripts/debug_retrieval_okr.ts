@@ -6,7 +6,7 @@ import { storage } from "../server/storage";
 
 async function run() {
     const q = "What are our Q4 OKRs for the AI search project?";
-    const userId = (await storage.getUserByEmail("admin@fieldcopilot.com"))?.id;
+    const userId = (await storage.getUserByEmail("admin@tracepilot.com"))?.id;
     if (!userId) {
         console.log("User not found");
         return;

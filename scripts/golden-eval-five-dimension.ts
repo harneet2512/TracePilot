@@ -20,7 +20,7 @@ const BASE_URL = process.env.BASE_URL ?? "http://localhost:5000";
 const OUTPUT_MD = join(process.cwd(), "GOLDEN_EVAL_RESULTS.md");
 const OUTPUT_FAILURES = join(process.cwd(), "GOLDEN_FAILURES.md");
 
-const EVAL_EMAIL = process.env.EMAIL ?? "admin@fieldcopilot.com";
+const EVAL_EMAIL = process.env.EMAIL ?? "admin@tracepilot.com";
 const EVAL_PASSWORD = process.env.PASSWORD ?? "admin123";
 
 let authCookie: string | undefined;

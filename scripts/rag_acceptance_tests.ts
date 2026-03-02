@@ -5,7 +5,7 @@
  * Tests run in PROOF_MODE (no OpenAI key required).
  *
  * Usage:
- *   $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5433/fieldcopilot_test"
+ *   $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5433/tracepilot_test"
  *   $env:DEV_CONNECTOR_FIXTURES="1"
  *   $env:PROOF_MODE="1"
  *   npx tsx --test scripts/rag_acceptance_tests.ts

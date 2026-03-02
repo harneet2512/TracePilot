@@ -9,7 +9,7 @@
  *   - Answer rendered properly
  *
  * Usage:
- *   DATABASE_URL="postgresql://postgres:postgres@localhost:5433/fieldcopilot_test" \
+ *   DATABASE_URL="postgresql://postgres:postgres@localhost:5433/tracepilot_test" \
  *   DEV_CONNECTOR_FIXTURES=1 \
  *   npx tsx scripts/browser_validation.ts
  *
@@ -35,7 +35,7 @@ const QUERY_TIMEOUT = 90_000;
 
 // ---------- Credentials (try in order) ----------
 const CREDENTIALS = [
-  { email: "admin@fieldcopilot.com", password: "admin123" },
+  { email: "admin@tracepilot.com", password: "admin123" },
   { email: "golden-eval@example.com", password: "password123" },
   { email: "demo-eval@example.com", password: "password" },
   { email: "test@example.com", password: "password" },
@@ -301,7 +301,7 @@ async function main() {
         env: {
           ...process.env,
           PORT: "5001",
-          DATABASE_URL: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/fieldcopilot_test",
+          DATABASE_URL: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/tracepilot_test",
           DEV_CONNECTOR_FIXTURES: process.env.DEV_CONNECTOR_FIXTURES || "1",
         },
         stdio: ["ignore", "pipe", "pipe"],

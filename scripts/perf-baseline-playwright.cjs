@@ -30,7 +30,7 @@ async function main() {
   try {
     await step("1_login", async () => {
       const loginResp = await context.request.post(`${BASE_URL}/api/auth/login`, {
-        data: { email: "admin@fieldcopilot.com", password: "admin123" },
+        data: { email: "admin@tracepilot.com", password: "admin123" },
       });
       if (loginResp.status() !== 200) {
         throw new Error(`Login failed: ${loginResp.status()}`);

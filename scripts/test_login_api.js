@@ -7,7 +7,7 @@ async function testLogin() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                email: 'demo@fieldcopilot.com',
+                email: 'demo@tracepilot.com',
                 password: 'password' // Standard seed password usually
             })
         });

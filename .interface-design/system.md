@@ -1,4 +1,4 @@
-# TracePilot / FieldCopilot Design System
+# TracePilot / TracePilot Design System
 
 ## Direction
 Dark-first chat application with enterprise data features (OKR tables, evidence panels, citation markers).

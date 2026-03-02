@@ -1002,9 +1002,8 @@ Respond in JSON format:
       return res.status(500).json({ error: "Google OAuth not configured" });
     }
 
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : `http://localhost:${process.env.PORT || 5000}`;
+    const baseUrl = process.env.PUBLIC_BASE_URL
+      || `http://localhost:${process.env.PORT || 5000}`;
     const redirectUri = `${baseUrl}/api/oauth/google/callback`;
     const state = Buffer.from(JSON.stringify({
       userId: req.user!.id,
@@ -1028,9 +1027,8 @@ Respond in JSON format:
 
       const clientId = process.env.GOOGLE_CLIENT_ID!;
       const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : `http://localhost:${process.env.PORT || 5000}`;
+      const baseUrl = process.env.PUBLIC_BASE_URL
+        || `http://localhost:${process.env.PORT || 5000}`;
       const redirectUri = `${baseUrl}/api/oauth/google/callback`;
 
       const tokens = await exchangeCodeForTokens(
@@ -1089,9 +1087,8 @@ Respond in JSON format:
       return res.status(500).json({ error: "Atlassian OAuth not configured" });
     }
 
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : `http://localhost:${process.env.PORT || 5000}`;
+    const baseUrl = process.env.PUBLIC_BASE_URL
+      || `http://localhost:${process.env.PORT || 5000}`;
     const redirectUri = `${baseUrl}/api/oauth/atlassian/callback`;
     const state = Buffer.from(JSON.stringify({
       userId: req.user!.id,
@@ -1115,9 +1112,8 @@ Respond in JSON format:
 
       const clientId = process.env.ATLASSIAN_CLIENT_ID!;
       const clientSecret = process.env.ATLASSIAN_CLIENT_SECRET!;
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : `http://localhost:${process.env.PORT || 5000}`;
+      const baseUrl = process.env.PUBLIC_BASE_URL
+        || `http://localhost:${process.env.PORT || 5000}`;
       const redirectUri = `${baseUrl}/api/oauth/atlassian/callback`;
 
       const tokens = await exchangeCodeForTokens(
@@ -1175,9 +1171,8 @@ Respond in JSON format:
       return res.status(500).json({ error: "Slack OAuth not configured" });
     }
 
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : `http://localhost:${process.env.PORT || 5000}`;
+    const baseUrl = process.env.PUBLIC_BASE_URL
+      || `http://localhost:${process.env.PORT || 5000}`;
     const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
     const state = Buffer.from(JSON.stringify({
       userId: req.user!.id,
@@ -1201,9 +1196,8 @@ Respond in JSON format:
 
       const clientId = process.env.SLACK_CLIENT_ID!;
       const clientSecret = process.env.SLACK_CLIENT_SECRET!;
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : `http://localhost:${process.env.PORT || 5000}`;
+      const baseUrl = process.env.PUBLIC_BASE_URL
+        || `http://localhost:${process.env.PORT || 5000}`;
       const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
 
       const tokens = await exchangeCodeForTokens(
@@ -2726,7 +2720,7 @@ Generate a playbook in JSON format matching the playbookResponseSchema.`;
   app.post("/api/seed", async (req, res) => {
     try {
       // Check if admin already exists
-      const existingAdmin = await storage.getUserByEmail("admin@fieldcopilot.com");
+      const existingAdmin = await storage.getUserByEmail("admin@tracepilot.com");
       if (existingAdmin) {
         return res.json({ message: "Admin already exists", email: existingAdmin.email });
       }
@@ -2734,7 +2728,7 @@ Generate a playbook in JSON format matching the playbookResponseSchema.`;
       // Create admin user
       const admin = await storage.createUser({
         workspaceId: "default-workspace",
-        email: "admin@fieldcopilot.com",
+        email: "admin@tracepilot.com",
         passwordHash: "admin123",
         role: "admin",
       });

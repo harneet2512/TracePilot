@@ -22,7 +22,7 @@ ERROR: DATABASE_URL not set.
 
 To fix, run in PowerShell:
 
-  $env:DATABASE_URL="postgres://postgres:postgres@localhost:5433/fieldcopilot_test"
+  $env:DATABASE_URL="postgres://postgres:postgres@localhost:5433/tracepilot_test"
   $env:DEV_CONNECTOR_FIXTURES="1"
   npx tsx scripts/proof_end_to_end_fixtures.ts
 `);

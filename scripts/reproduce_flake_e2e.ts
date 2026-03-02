@@ -17,7 +17,7 @@ async function reproduceFlake() {
 
     try {
         console.log("1. Setup: Login...");
-        await client.post('/api/auth/login', { email: 'admin@fieldcopilot.com', password: 'admin123' });
+        await client.post('/api/auth/login', { email: 'admin@tracepilot.com', password: 'admin123' });
 
         const uniqueSecret = `Secret-${randomUUID()}`;
         console.log(`2. Inserting NEW chunk with unique text: "${uniqueSecret}"...`);

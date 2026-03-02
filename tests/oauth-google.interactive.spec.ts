@@ -22,7 +22,7 @@ test("@manual interactive real Google OAuth verification", async ({ page, reques
   expect([200, 201]).toContain(seedResponse.status());
 
   const loginResponse = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResponse.status()).toBe(200);
 

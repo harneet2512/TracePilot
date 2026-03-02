@@ -12,7 +12,7 @@ test("evidence multi-source: Q2 has >=2 unique sources and no duplicates", async
   expect([200, 201]).toContain(seedResp.status());
 
   const loginResp = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResp.status()).toBe(200);
 

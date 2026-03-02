@@ -18,7 +18,7 @@ async function repro() {
     try {
         console.log("Login...");
         await client.post('/api/auth/login', {
-            email: 'admin@fieldcopilot.com',
+            email: 'admin@tracepilot.com',
             password: 'admin123'
         });
 

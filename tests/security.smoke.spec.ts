@@ -83,7 +83,7 @@ test("security: upload endpoint rejects files over 50 MB", async ({ request }, t
   expect([200, 201]).toContain(seedRes.status());
 
   const loginRes = await request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginRes.status(), "Admin login should succeed").toBe(200);
 

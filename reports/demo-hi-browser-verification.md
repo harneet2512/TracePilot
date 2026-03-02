@@ -24,7 +24,7 @@ Failure reason: `replyDetailApiJson.retrievalArtifact` is `undefined` in `/api/a
 ## Auth approach used
 
 Used existing login route (no production auth bypass added):
-- `POST /api/auth/login` with `admin@fieldcopilot.com` / `admin123`
+- `POST /api/auth/login` with `admin@tracepilot.com` / `admin123`
 
 To guarantee local proof DB state for e2e, test helper setup was used:
 - `tests/e2e/setup-proof-db.ts`

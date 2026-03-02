@@ -25,7 +25,7 @@ async function verifySync() {
         // Login first to get user
         console.log("   Logging in...");
         const loginRes = await client.post('/api/auth/login', {
-            email: 'admin@fieldcopilot.com',
+            email: 'admin@tracepilot.com',
             password: 'admin123'
         });
         const user = loginRes.data;

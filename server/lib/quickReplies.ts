@@ -65,6 +65,26 @@ function ruleMatches(rule: QuickReplyRule, message: string): boolean {
   return false;
 }
 
+export function matchQuickReplyRule(message: string): {
+  matched: boolean;
+  triggerType?: string;
+  response?: string;
+  quickReplies?: QuickReplyItem[];
+} {
+  const config = loadConfig();
+  for (const rule of config.rules) {
+    if (ruleMatches(rule, message)) {
+      return {
+        matched: true,
+        triggerType: rule.triggerType,
+        response: rule.response,
+        quickReplies: rule.quickReplies.slice(0, 4),
+      };
+    }
+  }
+  return { matched: false };
+}
+
 /** Build greeting message with dynamic connector list; used when response is __DYNAMIC_GREETING__. */
 export function buildGreetingResponse(
   connectorTypes: string[],
@@ -84,14 +104,13 @@ export function getQuickReplyResponse(message: string): {
   triggerType?: string;
 } {
   const config = loadConfig();
-  for (const rule of config.rules) {
-    if (ruleMatches(rule, message)) {
-      return {
-        response: rule.response,
-        quickReplies: rule.quickReplies.slice(0, 4),
-        triggerType: rule.triggerType,
-      };
-    }
+  const match = matchQuickReplyRule(message);
+  if (match.matched && match.response && match.quickReplies) {
+    return {
+      response: match.response,
+      quickReplies: match.quickReplies,
+      triggerType: match.triggerType,
+    };
   }
   return {
     response: "Hello! How can I help you today?",

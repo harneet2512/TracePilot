@@ -2,7 +2,7 @@
 import os, hashlib, json, math, sys
 import psycopg2
 
-DB_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost:5433/fieldcopilot_test")
+DB_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost:5433/tracepilot_test")
 DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "fixtures", "golden_docs")
 WS = "golden-eval-workspace"
 UID = "golden-eval-user"

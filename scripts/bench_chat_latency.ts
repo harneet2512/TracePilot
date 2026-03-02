@@ -9,14 +9,14 @@
  *
  * Env vars:
  *   BASE_URL       — default http://127.0.0.1:5000
- *   BENCH_EMAIL    — default admin@fieldcopilot.com
+ *   BENCH_EMAIL    — default admin@tracepilot.com
  *   BENCH_PASSWORD — default admin123
  *   BENCH_N        — number of requests per endpoint (default 10)
  *   BENCH_QUERY    — query text (default: "What are the current OKRs?")
  */
 
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:5000";
-const EMAIL = process.env.BENCH_EMAIL || "admin@fieldcopilot.com";
+const EMAIL = process.env.BENCH_EMAIL || "admin@tracepilot.com";
 const PASSWORD = process.env.BENCH_PASSWORD || "admin123";
 const N = parseInt(process.env.BENCH_N || "10", 10);
 const QUERY = process.env.BENCH_QUERY || "What are the current OKRs?";

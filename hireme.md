@@ -1,4 +1,4 @@
-# 🚀 TracePilot/FieldCopilot - 4-Minute Demo Script
+# 🚀 TracePilot/TracePilot - 4-Minute Demo Script
 
 **Target Audience**: Engineering Hiring Managers & Technical Leaders  
 **Duration**: 4 minutes  

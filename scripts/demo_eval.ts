@@ -15,7 +15,7 @@ import { strict as assert } from "assert";
 
 // Configuration
 const BASE_URL = "http://localhost:5000";
-const EMAIL = "admin@fieldcopilot.com";
+const EMAIL = "admin@tracepilot.com";
 const PASSWORD = "admin123";
 const LOGIN_ENDPOINT = "/api/auth/login";
 

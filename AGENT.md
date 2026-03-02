@@ -5,7 +5,7 @@
 | # | Goal | Status |
 |---|------|--------|
 | 1 | Fix double-send bug | ✅ Implemented |
-| 2 | Replace "FieldCopilot" branding with "TracePilot" | ⚠️ Partially Implemented (functional test emails remain) |
+| 2 | Replace "TracePilot" branding with "TracePilot" | ⚠️ Partially Implemented (functional test emails remain) |
 | 3 | Enterprise system prompt | ✅ Implemented |
 | 4 | Zero-chunk guard | ✅ Implemented |
 | 5 | Rolling context | ✅ Implemented |

@@ -14,7 +14,7 @@ async function runProof() {
     const loginRes = await fetch(`${API_Base}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "admin@fieldcopilot.com", password: "admin123" }),
+        body: JSON.stringify({ email: "admin@tracepilot.com", password: "admin123" }),
     });
 
     if (!loginRes.ok) process.exit(1);

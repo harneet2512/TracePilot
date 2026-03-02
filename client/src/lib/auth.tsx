@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { User } from "@shared/schema";
 import { getCsrfToken } from "./csrf";
-import { isDemoMode, demoUser, logDemoMode, shouldFallbackToDemo } from "./demoMode";
 
 interface AuthContextType {
   user: User | null;
@@ -18,33 +17,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAuth = useCallback(async () => {
-    let status: number | null = null;
-    let authenticated = false;
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });
-      status = res.status;
       if (res.ok) {
         const data = await res.json();
         setUser(data);
-        authenticated = true;
         if (!getCsrfToken()) {
           await fetch("/api/auth/csrf", { credentials: "include" });
         }
       } else {
         setUser(null);
       }
-    } catch (error) {
+    } catch {
       setUser(null);
-      if (shouldFallbackToDemo(status, error)) {
-        logDemoMode("AUTH_FALLBACK", { status, error: String(error) });
-        setUser(demoUser);
-        authenticated = true;
-      }
     } finally {
-      if (!authenticated && shouldFallbackToDemo(status)) {
-        logDemoMode("AUTH_FALLBACK", { status });
-        setUser(demoUser);
-      }
       setIsLoading(false);
     }
   }, []);
@@ -68,11 +54,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       setUser(data);
     } catch (error) {
-      if (shouldFallbackToDemo(null, error)) {
-        logDemoMode("LOGIN_FALLBACK", { error: String(error) });
-        setUser(demoUser);
-        return;
-      }
       throw error;
     }
   };

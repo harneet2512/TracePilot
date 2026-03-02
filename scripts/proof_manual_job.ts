@@ -13,7 +13,7 @@ import { eq, desc } from "drizzle-orm";
 import { jobs, jobRuns } from "../shared/schema";
 import { randomUUID } from "crypto";
 
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/fieldcopilot_test";
+const DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/tracepilot_test";
 
 async function main() {
     console.log("[ManualJobTest] Connecting to:", DATABASE_URL.split("@")[1] || DATABASE_URL);

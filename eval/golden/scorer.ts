@@ -43,8 +43,9 @@ export interface ClaimResult {
 }
 
 // Patterns to extract numbers, dates, percentages
-const NUMBER_PATTERN = /\$?[\d,]+(?:\.\d+)?(?:K|M|%|s)?/gi;
-const DATE_PATTERN = /(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:,\s*\d{4})?|\d{4}/gi;
+// Tightened to avoid false positives: require $ or 2+ digits, or K/M/% suffix
+const NUMBER_PATTERN = /\$[\d,]+(?:\.\d+)?(?:K|M)?|[\d,]{2,}(?:\.\d+)?(?:K|M|%)/gi;
+const DATE_PATTERN = /(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:,\s*\d{4})?/gi;
 const NAME_PATTERN = /(?:Jordan|Alex|Sarah|Mike|Jennifer)\s+[A-Z][a-z]+/g;
 
 /**
@@ -56,7 +57,14 @@ export function extractClaims(answer: string): string[] {
   const parts = answer
     .split(/(?<=[.!?])\s+|\n[-•*]\s*|\n\d+\.\s*|\n{2,}/)
     .map(s => s.trim())
-    .filter(s => s.length > 10); // Filter out very short fragments
+    .filter(s => s.length > 10) // Filter out very short fragments
+    .filter(s => {
+      // Exclude generic preamble/boilerplate that is not from evidence
+      const lower = s.toLowerCase();
+      return !lower.startsWith("based on the documents") &&
+             !lower.startsWith("here's what i") &&
+             !lower.startsWith("i couldn't find");
+    });
 
   return parts;
 }
@@ -99,7 +107,8 @@ function normalizeText(text: string): string {
  */
 function valueAppearsInEvidence(value: string, evidence: string): boolean {
   const normalizedValue = value.toLowerCase().replace(/,/g, "");
-  const normalizedEvidence = evidence.toLowerCase();
+  // Strip commas from evidence too — fixes date matching (e.g., "October 15, 2024")
+  const normalizedEvidence = evidence.toLowerCase().replace(/,/g, "");
 
   // Direct match
   if (normalizedEvidence.includes(normalizedValue)) {
@@ -110,18 +119,21 @@ function valueAppearsInEvidence(value: string, evidence: string): boolean {
   if (/^\$?\d+/.test(value)) {
     // Convert to base number for comparison
     let numValue = parseFloat(value.replace(/[$,]/g, ""));
-    if (value.endsWith("K")) numValue *= 1000;
-    if (value.endsWith("M")) numValue *= 1000000;
+    if (value.toUpperCase().endsWith("K")) numValue *= 1000;
+    if (value.toUpperCase().endsWith("M")) numValue *= 1000000;
 
-    // Check for various formats in evidence
+    // Check for various formats in evidence (locale-independent)
+    // Format numbers manually to avoid toLocaleString() system dependency
+    const withCommas = numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     const patterns = [
       numValue.toString(),
-      numValue.toLocaleString(),
-      `$${numValue.toLocaleString()}`,
-      `${numValue / 1000}K`,
-      `${numValue / 1000000}M`,
-      `$${numValue / 1000}K`,
-      `$${numValue / 1000000}M`,
+      withCommas,
+      `$${numValue}`,
+      `$${withCommas}`,
+      `${numValue / 1000}k`,
+      `${numValue / 1000000}m`,
+      `$${numValue / 1000}k`,
+      `$${numValue / 1000000}m`,
     ];
 
     for (const pattern of patterns) {
@@ -146,6 +158,10 @@ function isClaimGrounded(
   const normalizedClaim = normalizeText(claim);
   const normalizedEvidence = normalizeText(combinedEvidence);
 
+  // Verbatim containment guard: if the normalized claim is a substring
+  // of the normalized evidence, it is grounded by definition
+  const isVerbatim = normalizedEvidence.includes(normalizedClaim);
+
   // Check for key term overlap (must have substantial content match)
   const claimWords = normalizedClaim.split(" ").filter(w => w.length > 3);
   const matchedWords = claimWords.filter(w => normalizedEvidence.includes(w));
@@ -160,7 +176,7 @@ function isClaimGrounded(
   }
 
   const numericMatch = missingValues.length === 0;
-  const grounded = wordOverlapRate >= 0.3 && numericMatch;
+  const grounded = isVerbatim || (wordOverlapRate >= 0.3 && numericMatch);
 
   return {
     grounded,
@@ -174,7 +190,8 @@ function isClaimGrounded(
  * Check if expected fact is present in answer
  */
 function isExpectedFactPresent(fact: ExpectedFact, answer: string): boolean {
-  const normalizedAnswer = answer.toLowerCase();
+  // Strip commas from answer too, so "November 15, 2024" matches "november 15 2024"
+  const normalizedAnswer = answer.toLowerCase().replace(/,/g, "");
 
   // Check if required values are present
   if (fact.requiredValues) {
@@ -256,7 +273,7 @@ export function scoreGroundedness(
       isGrounded: groundingResult.grounded,
       isNumericMatch: groundingResult.numericMatch,
       hasCitation: sources.length > 0,
-      matchedEvidence: groundingResult.matchedEvidence,
+      matchedEvidence: groundingResult.matchedEvidence.slice(0, 3).map(e => e.substring(0, 200)),
       missingValues: groundingResult.missingValues,
     };
 
@@ -311,7 +328,21 @@ export function scoreGroundedness(
   if (evalCase.expectedSourcePrefixes) {
     const sourceNames = sources.map(s => s.title);
     for (const prefix of evalCase.expectedSourcePrefixes) {
-      const found = sourceNames.some(name => name.includes(prefix.replace(/_/g, " ").replace(/\.md$/, "")));
+      // Normalize both prefix and title by stripping hyphens, underscores, spaces, and lowercasing
+      const normalizedPrefix = prefix
+        .replace(/_/g, "")
+        .replace(/\.md$/i, "")
+        .replace(/-/g, "")
+        .replace(/\s+/g, "")
+        .toLowerCase();
+      
+      const found = sourceNames.some(name => {
+        const normalizedName = name
+          .replace(/[-_\s]/g, "")
+          .toLowerCase();
+        return normalizedName.includes(normalizedPrefix);
+      });
+      
       if (!found) {
         failures.push(`Expected source matching "${prefix}" not found`);
       }

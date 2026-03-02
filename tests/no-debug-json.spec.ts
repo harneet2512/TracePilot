@@ -12,7 +12,7 @@ test("debug panel is not visible and answer has no raw JSON", async ({ page }, t
   const baseURL = String((testInfo.project.use as any).baseURL || "http://127.0.0.1:5000");
 
   const loginResp = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResp.status()).toBe(200);
   const loginBody = await loginResp.json();

@@ -233,7 +233,7 @@ function ensureAdminUser(passwordHash: string) {
   // Use golden-eval-workspace so the admin user can access the seeded golden docs
   const ADMIN_WORKSPACE = "golden-eval-workspace";
 
-  const existing = db.prepare(`SELECT id FROM users WHERE email = ?`).get("admin@fieldcopilot.com") as { id: string } | undefined;
+  const existing = db.prepare(`SELECT id FROM users WHERE email = ?`).get("admin@tracepilot.com") as { id: string } | undefined;
   if (existing) {
     db.prepare(`UPDATE users SET workspace_id = ?, role = ?, password_hash = ? WHERE id = ?`)
       .run(ADMIN_WORKSPACE, "admin", passwordHash, existing.id);
@@ -244,7 +244,7 @@ function ensureAdminUser(passwordHash: string) {
   db.prepare(`
     INSERT INTO users (id, workspace_id, email, password_hash, role, created_at)
     VALUES (?, ?, ?, ?, ?, datetime('now'));
-  `).run(userId, ADMIN_WORKSPACE, "admin@fieldcopilot.com", passwordHash, "admin");
+  `).run(userId, ADMIN_WORKSPACE, "admin@tracepilot.com", passwordHash, "admin");
   return userId;
 }
 

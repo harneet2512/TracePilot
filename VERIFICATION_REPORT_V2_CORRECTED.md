@@ -88,9 +88,9 @@ const result = await runAgentTurn({
 **File:** `server/mcp/mcpServer.ts`  
 **Anchor:** Function `startMCPServer`, tool handler in `CallToolRequestSchema` handler
 
-**Evidence - fieldcopilot.chat:**
+**Evidence - tracepilot.chat:**
 ```typescript
-case "fieldcopilot.chat": {
+case "tracepilot.chat": {
   const { query, topK = 5 } = args as { query: string; topK?: number };
   
   // Call agent core
@@ -104,9 +104,9 @@ case "fieldcopilot.chat": {
   });
 ```
 
-**Evidence - fieldcopilot.playbook:**
+**Evidence - tracepilot.playbook:**
 ```typescript
-case "fieldcopilot.playbook": {
+case "tracepilot.playbook": {
   const { incident } = args as { incident: string };
   
   // Use agent core to generate playbook (for now, use chat with special prompt)
@@ -119,9 +119,9 @@ case "fieldcopilot.playbook": {
   });
 ```
 
-**Evidence - fieldcopilot.action_draft:**
+**Evidence - tracepilot.action_draft:**
 ```typescript
-case "fieldcopilot.action_draft": {
+case "tracepilot.action_draft": {
   const { intent } = args as { intent: string };
   
   // Call agent core to draft action
@@ -134,9 +134,9 @@ case "fieldcopilot.action_draft": {
   });
 ```
 
-**Evidence - fieldcopilot.action_execute:**
+**Evidence - tracepilot.action_execute:**
 ```typescript
-case "fieldcopilot.action_execute": {
+case "tracepilot.action_execute": {
   const { approvalId, idempotencyKey } = args as { approvalId: string; idempotencyKey: string };
   
   // Check if approval exists and is approved
@@ -154,29 +154,29 @@ case "fieldcopilot.action_execute": {
 
 ### Evidence Per Tool
 
-#### ✅ `fieldcopilot.chat` - PASS
+#### ✅ `tracepilot.chat` - PASS
 
 **File:** `server/mcp/mcpServer.ts`  
-**Anchor:** Tool handler `case "fieldcopilot.chat":` at line 133
+**Anchor:** Tool handler `case "tracepilot.chat":` at line 133
 
 **Evidence:**
 - Line 137: Calls `runAgentTurn()` with `channel: "mcp"`
 - **Agent Core Policy Check:** `server/lib/agent/agentCore.ts:289-323` - Policy check applied in agent core for action drafts
 - **Status:** ✅ PASS - Policy enforced via agent core (no actions in chat flow)
 
-#### ✅ `fieldcopilot.playbook` - PASS
+#### ✅ `tracepilot.playbook` - PASS
 
 **File:** `server/mcp/mcpServer.ts`  
-**Anchor:** Tool handler `case "fieldcopilot.playbook":` at line 161
+**Anchor:** Tool handler `case "tracepilot.playbook":` at line 161
 
 **Evidence:**
 - Line 165: Calls `runAgentTurn()` with `channel: "mcp"`
 - **Status:** ✅ PASS - Policy enforced via agent core (no actions in playbook flow)
 
-#### ✅ `fieldcopilot.action_draft` - PASS
+#### ✅ `tracepilot.action_draft` - PASS
 
 **File:** `server/mcp/mcpServer.ts`  
-**Anchor:** Tool handler `case "fieldcopilot.action_draft":` at line 190
+**Anchor:** Tool handler `case "tracepilot.action_draft":` at line 190
 
 **Evidence:**
 - Line 194: Calls `runAgentTurn()` which applies policy check (agentCore.ts:292-296)
@@ -201,16 +201,16 @@ if (policyResult.allowed && policyResult.requiresApproval) {
 - Line 271: Returns `denialReason` if policy denies: `requiresApproval: policyResult.requiresApproval`
 - **Status:** ✅ PASS - Policy enforced twice (agent core + explicit), approval created when required, denial reason returned
 
-#### ❌ `fieldcopilot.action_execute` - FAIL (Two Critical Issues)
+#### ❌ `tracepilot.action_execute` - FAIL (Two Critical Issues)
 
 **File:** `server/mcp/mcpServer.ts`  
-**Anchor:** Tool handler `case "fieldcopilot.action_execute":` at line 279
+**Anchor:** Tool handler `case "tracepilot.action_execute":` at line 279
 
 **Issue 1: No Policy Re-Check Before Execution**
 
 **Evidence:**
 ```typescript
-case "fieldcopilot.action_execute": {
+case "tracepilot.action_execute": {
   const { approvalId, idempotencyKey } = args as { approvalId: string; idempotencyKey: string };
   
   // Check if approval exists and is approved
@@ -743,7 +743,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: fieldcopilot
+          POSTGRES_DB: tracepilot
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -765,17 +765,17 @@ jobs:
       
       - name: Setup database
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
         run: npm run db:push
       
       - name: Seed evals
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
         run: npm run seed:evals
       
       - name: Start server
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PORT: 5000
         run: npm run dev &
@@ -785,7 +785,7 @@ jobs:
       
       - name: Run voice smoke test
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           WS_URL: ws://localhost:5000/ws/voice
         run: npm run test:voice-smoke
@@ -793,7 +793,7 @@ jobs:
       
       - name: Run MCP smoke test
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fieldcopilot
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracepilot
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm run test:mcp-smoke
         continue-on-error: false
@@ -807,14 +807,14 @@ jobs:
 
 ### Evidence
 
-#### `fieldcopilot://status`
+#### `tracepilot://status`
 
 **File:** `server/mcp/mcpServer.ts`  
-**Anchor:** Resource handler for `ReadResourceRequestSchema` at line 393, case `uri === "fieldcopilot://status"` at line 397
+**Anchor:** Resource handler for `ReadResourceRequestSchema` at line 393, case `uri === "tracepilot://status"` at line 397
 
 **Evidence:**
 ```typescript
-if (uri === "fieldcopilot://status") {
+if (uri === "tracepilot://status") {
   const connectors = await storage.getConnectors();
   const activePolicy = await storage.getActivePolicy();
   
@@ -855,14 +855,14 @@ if (uri === "fieldcopilot://status") {
 
 **Status:** ✅ PASS - No secrets or PII leaked
 
-#### `fieldcopilot://evals`
+#### `tracepilot://evals`
 
 **File:** `server/mcp/mcpServer.ts`  
-**Anchor:** Resource handler for `ReadResourceRequestSchema`, case `uri === "fieldcopilot://evals"` at line 426
+**Anchor:** Resource handler for `ReadResourceRequestSchema`, case `uri === "tracepilot://evals"` at line 426
 
 **Evidence:**
 ```typescript
-if (uri === "fieldcopilot://evals") {
+if (uri === "tracepilot://evals") {
   const suites = await storage.getEvalSuites();
   const runs = await storage.getEvalRuns();
   
@@ -1004,7 +1004,7 @@ return `${source}\n${chunkText}`;
 **Anchor:** System prompt building at line 155
 
 ```typescript
-const systemPrompt = `You are FieldCopilot, an AI assistant for field operations teams. You help users find information from their knowledge base and can propose actions using integrated tools.
+const systemPrompt = `You are TracePilot, an AI assistant for field operations teams. You help users find information from their knowledge base and can propose actions using integrated tools.
 
 ${getUntrustedContextInstruction()}
 ```

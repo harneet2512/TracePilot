@@ -28,6 +28,7 @@ import { sanitizeContent, getUntrustedContextInstruction } from "./lib/safety/sa
 import { detectInjection } from "./lib/safety/detector";
 import { redactPIIFromObject } from "./lib/safety/redactPII";
 import { captureReplyArtifacts } from "./lib/scoring/replyScoringPipeline";
+import { runDeterministicChecks } from "./lib/scoring/deterministicChecks";
 import { classifyRegression, computeMetricDeltas, getComparableMetrics, resolveBaselineRun, toLegacyDiffStatus, type BaselineMode } from "./lib/eval/regressionEngine";
 import { RETRIEVAL_WARM_INDEX_CHUNK_LIMIT } from "./lib/retrievalConfig";
 import { indexIdsFromCitations, parseAnswerCitationMarkers } from "./lib/rag/citationIndex";
@@ -384,7 +385,7 @@ async function handleSimulatedOAuth(req: Request, res: Response, provider: OAuth
     return;
   }
 
-  const fakeEmail = `sim-${provider}@test.fieldcopilot.dev`;
+  const fakeEmail = `sim-${provider}@test.tracepilot.dev`;
   const fakeName = `Simulated ${provider}`;
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
@@ -697,7 +698,7 @@ export async function registerRoutes(
   app.get("/api/health", async (_req, res) => {
     let dbConnected = true;
     try {
-      await storage.getUserByEmail("admin@fieldcopilot.com");
+      await storage.getUserByEmail("admin@tracepilot.com");
     } catch (_err) {
       dbConnected = false;
     }
@@ -2535,6 +2536,28 @@ export async function registerRoutes(
     }
   });
 
+  // Thumbs up/down feedback for a reply (eval/logging pipeline)
+  app.post("/api/chat/feedback", authMiddleware, async (req, res) => {
+    try {
+      const { replyId, feedback } = req.body as { replyId?: string; requestId?: string; feedback?: string };
+      if (!feedback || (feedback !== "up" && feedback !== "down")) {
+        return res.status(400).json({ error: "feedback must be 'up' or 'down'" });
+      }
+      if (!replyId) return res.status(400).json({ error: "replyId is required" });
+      const chatReply = await storage.getChatReply(replyId);
+      if (!chatReply) return res.status(404).json({ error: "Reply not found" });
+      const conv = await storage.getConversation(chatReply.chatId);
+      if (!conv || conv.userId !== req.user!.id) return res.status(403).json({ error: "Unauthorized" });
+      const existing = await storage.getMessage(chatReply.messageId);
+      const metadata = (existing?.metadataJson as Record<string, unknown>) ?? {};
+      await storage.updateMessageMetadata(chatReply.messageId, { ...metadata, userFeedback: feedback });
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error("Chat feedback error:", err);
+      return res.status(500).json({ error: "Failed to save feedback" });
+    }
+  });
+
   // Streaming chat endpoint (SSE)
   app.post("/api/chat/stream", authMiddleware, maybeChatLimiter, async (req, res) => {
     const reqStartedAt = Date.now();
@@ -2607,15 +2630,22 @@ export async function registerRoutes(
         return;
       }
 
-      // Smalltalk path: no retrieval, no enterprise formatting, no Details
-      const { detectIntent } = await import("./lib/agent/agentCore");
-      const detectedIntent = detectIntent(message);
-      const forceDocIntent = /\b(blocker|blockers|okr|okrs|roadmap|owner|deadline|budget|contact|team|infrastructure|architecture|responsible|risk|claude|gpt|openai|model|chose|choose|chosen|versus|compare|phoenix|onboard|vector|database|embedding)\b/i.test(message);
-      const routedIntent = detectedIntent === "SMALLTALK" && forceDocIntent ? "DOC_OVERRIDE" : detectedIntent;
-      if (detectedIntent === "SMALLTALK" && !forceDocIntent) {
-        const fastPathStart = Date.now();
-        const { getQuickReplyResponse, buildGreetingResponse, getGreetingConfig, getSuggestionsForActiveConnectors, DYNAMIC_GREETING_PLACEHOLDER } = await import("./lib/quickReplies");
-        let { response: answer, quickReplies } = getQuickReplyResponse(message);
+      // Fast path source of truth is quickReplies config/rules (no hardcoded triggers).
+      const fastPathDecisionStart = Date.now();
+      const {
+        matchQuickReplyRule,
+        buildGreetingResponse,
+        getGreetingConfig,
+        getSuggestionsForActiveConnectors,
+        DYNAMIC_GREETING_PLACEHOLDER,
+      } = await import("./lib/quickReplies");
+      const quickReplyMatch = matchQuickReplyRule(message);
+      const fastPathDecisionMs = Date.now() - fastPathDecisionStart;
+      console.log(`[FAST_PATH] FAST_PATH=${quickReplyMatch.matched} durationMs=${fastPathDecisionMs} ruleId=${quickReplyMatch.triggerType ?? ""}`);
+
+      if (quickReplyMatch.matched) {
+        let answer = quickReplyMatch.response || "Hello! How can I help you today?";
+        let quickReplies = quickReplyMatch.quickReplies;
         if (answer === DYNAMIC_GREETING_PLACEHOLDER) {
           const workspaceId = req.user!.workspaceId ?? "default-workspace";
           const connectorTypes = await storage.getActiveConnectorTypesForWorkspace(workspaceId);
@@ -2636,19 +2666,18 @@ export async function registerRoutes(
           answer,
           answer_text: answer,
           bullets: [],
+          citations: [],
           sources: [],
           sources_used: [],
           conversationId: activeConversationId,
           quickReplies: quickReplies?.length ? quickReplies : undefined,
-          trustSignal: { level: "grounded", label: "", detail: undefined },
         });
         sendEvent("done", { traceId: null });
         cleanup();
-        console.log(`[FAST_PATH] Stream smalltalk TTFT=${Date.now() - fastPathStart}ms msg="${message.trim().slice(0, 30)}..."`);
         logPerf("chat_request", {
           traceId: req.requestId,
           chatId: activeConversationId,
-          intent: routedIntent,
+          intent: quickReplyMatch.triggerType ?? "FAST_PATH",
           mode: "stream",
           retrievalMs: 0,
           rerankMs: 0,
@@ -2665,7 +2694,7 @@ export async function registerRoutes(
         void (async () => {
           try {
             await storage.createMessage({ conversationId: activeConversationId, role: "user", content: message });
-            const assistantMessage = await storage.createMessage({
+            await storage.createMessage({
               conversationId: activeConversationId,
               role: "assistant",
               content: answer,
@@ -2680,39 +2709,18 @@ export async function registerRoutes(
                 },
               },
             });
-            captureReplyArtifactsAsync({
-              chatId: activeConversationId,
-              messageId: assistantMessage.id,
-              answerText: answer,
-              traceId: req.requestId,
-              streamed: true,
-              latencyMs: 0,
-              ttftMs: 0,
-              tokensIn: estimateTokens(message),
-              tokensOut: estimateTokens(answer),
-              status: "ok",
-              citations: [],
-              smalltalk: true,
-              retrieval: {
-                mode: "none",
-                topK: 0,
-                chunksReturnedCount: 0,
-                sourcesReturnedCount: 0,
-                topSimilarity: 0,
-                retrievalLatencyMs: 0,
-                retrievedChunks: [],
-                dedupStats: {
-                  timings: { retrievalMs: 0, rerankMs: 0, generationMs: 0, totalMs: 0 },
-                },
-              },
-              userPromptForJudge: message,
-            });
           } catch (err) {
             console.error("Failed to persist stream fast-path message", err);
           }
         })();
         return;
       }
+
+      // Non-fast-path continues through existing intent/routing and RAG/streaming behavior.
+      const { detectIntent } = await import("./lib/agent/agentCore");
+      const detectedIntent = detectIntent(message);
+      const forceDocIntent = /\b(blocker|blockers|okr|okrs|roadmap|owner|deadline|budget|contact|team|infrastructure|architecture|responsible|risk|claude|gpt|openai|model|chose|choose|chosen|versus|compare|phoenix|onboard|vector|database|embedding)\b/i.test(message);
+      const routedIntent = detectedIntent === "SMALLTALK" && forceDocIntent ? "DOC_OVERRIDE" : detectedIntent;
 
       await ensureConversationSchemaColumns();
 
@@ -3917,7 +3925,6 @@ Respond in JSON format:
     const baseUrl =
       process.env.ATLASSIAN_PUBLIC_BASE_URL ||
       process.env.PUBLIC_BASE_URL ||
-      (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null) ||
       `${req.protocol}://${req.get("host")}` ||
       `http://localhost:${process.env.PORT || 5000}`;
     const redirectUri = `${baseUrl}/api/oauth/atlassian/callback`;
@@ -3952,7 +3959,6 @@ Respond in JSON format:
       const baseUrl =
         process.env.ATLASSIAN_PUBLIC_BASE_URL ||
         process.env.PUBLIC_BASE_URL ||
-        (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null) ||
         `${req.protocol}://${req.get("host")}` ||
         `http://localhost:${process.env.PORT || 5000}`;
       const redirectUri = `${baseUrl}/api/oauth/atlassian/callback`;
@@ -4005,7 +4011,7 @@ Respond in JSON format:
     }
   });
 
-  // Slack OAuth (requires HTTPS - use ngrok/REPLIT_DEV_DOMAIN)
+  // Slack OAuth (requires HTTPS - use ngrok or PUBLIC_BASE_URL)
   app.get("/api/oauth/slack", authMiddleware, async (req, res) => {
     const clientId = process.env.SLACK_CLIENT_ID;
     if (!clientId) {
@@ -4039,7 +4045,6 @@ Respond in JSON format:
     });
 
     const baseUrl = process.env.SLACK_PUBLIC_BASE_URL
-      || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null)
       || process.env.PUBLIC_BASE_URL
       || `http://localhost:${process.env.PORT || 5000}`;
     const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
@@ -4072,8 +4077,7 @@ Respond in JSON format:
       const clientId = process.env.SLACK_CLIENT_ID!;
       const clientSecret = process.env.SLACK_CLIENT_SECRET!;
       const baseUrl = process.env.SLACK_PUBLIC_BASE_URL
-        || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null)
-        || process.env.PUBLIC_BASE_URL
+          || process.env.PUBLIC_BASE_URL
         || `http://localhost:${process.env.PORT || 5000}`;
       const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
 
@@ -4876,7 +4880,7 @@ Respond in JSON format:
     }
   });
 
-  app.get("/api/admin/chats/:chatId/replies/:replyId", authMiddleware, adminMiddleware, async (req, res) => {
+  app.get("/api/admin/chats/:chatId/replies/:replyId", authMiddleware, async (req, res) => {
     const startedAt = Date.now();
     try {
       await ensureConversationSchemaColumns();
@@ -4885,6 +4889,10 @@ Respond in JSON format:
       const reply = await storage.getChatReply(req.params.replyId);
       if (!reply || reply.chatId !== req.params.chatId) {
         return res.status(404).json({ error: "Reply not found" });
+      }
+      // Only chat owner or admin can read reply details (no cross-user access by guessing IDs)
+      if (chat.userId !== req.user!.id && req.user!.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
       }
 
       const messages = await storage.getMessages(chat.id);
@@ -4944,6 +4952,18 @@ Respond in JSON format:
         retryCount: 0,
       };
 
+      const citationsForChecks = (citationSafe.citationsJson ?? []) as Citation[];
+      const retrievedChunksForChecks = (retrievalSafe.retrievedChunksJson ?? []) as Array<{ chunkId?: string; sourceId?: string; snippet?: string; score?: number }>;
+      const dedupStats = (retrievalSafe.dedupStatsJson as Record<string, unknown> | null) ?? {};
+      const expectedChunkIds = (dedupStats.expectedChunkIds as string[] | undefined) ?? [];
+      const deterministicChecks = runDeterministicChecks({
+        userPrompt: priorUserMessages.length > 0 ? priorUserMessages[priorUserMessages.length - 1].content : "",
+        answerText: message?.content ?? "",
+        citations: citationsForChecks,
+        retrievedChunks: retrievedChunksForChecks,
+        expectedChunkIds,
+      });
+
       res.json({
         chat,
         reply,
@@ -4954,6 +4974,13 @@ Respond in JSON format:
         eval: evalSafe,
         tool: toolSafe,
         enterpriseEval,
+        deterministicChecks: {
+          abstentionPass: deterministicChecks.abstentionPass,
+          ownerCitationPass: deterministicChecks.ownerCitationPass,
+          deadlineCitationPass: deterministicChecks.deadlineCitationPass,
+          retrievalRecallPass: deterministicChecks.retrievalRecallPass,
+          failedChecks: deterministicChecks.failedChecks,
+        },
         // Backward-compatible aliases for external dashboards/tests.
         retrievalArtifact: retrievalSafe,
         citationArtifact: citationSafe,
@@ -6996,21 +7023,45 @@ Generate a playbook in JSON format matching the playbookResponseSchema.`;
   // Seed admin user endpoint (for initial setup)
   app.post("/api/seed", async (req, res) => {
     try {
-      // Check if admin already exists
-      const existingAdmin = await storage.getUserByEmail("admin@fieldcopilot.com");
-      if (existingAdmin) {
-        return res.json({ message: "Admin already exists", email: existingAdmin.email });
-      }
+      // Ensure default workspace exists (required for user FK)
+      await storage.ensureWorkspace("default-workspace", "Default Workspace");
 
-      // Create admin user
-      const admin = await storage.createUser({
+      // Check if admin already exists
+      let admin = await storage.getUserByEmail("admin@tracepilot.com");
+      if (!admin) {
+        admin = await storage.createUser({
         workspaceId: "default-workspace",
-        email: "admin@fieldcopilot.com",
+        email: "admin@tracepilot.com",
         passwordHash: "admin123",
         role: "admin",
       });
+      }
 
-      // Create default policy
+      // Ensure member exists (for authZ testing: 403 when member requests admin's chat)
+      const existingMember = await storage.getUserByEmail("member@tracepilot.com");
+      if (!existingMember) {
+        await storage.createUser({
+          workspaceId: "default-workspace",
+          email: "member@tracepilot.com",
+          passwordHash: "member123",
+          role: "member",
+        });
+      }
+
+      // TracePilot login (admin@tracepilot.com)
+      const existingTracePilot = await storage.getUserByEmail("admin@tracepilot.com");
+      if (!existingTracePilot) {
+        await storage.createUser({
+          workspaceId: "default-workspace",
+          email: "admin@tracepilot.com",
+          passwordHash: "harneet2512",
+          role: "admin",
+        });
+      }
+
+      // Create default policy (only if none exist)
+      const policies = await storage.getPolicies().then((p) => p?.length ?? 0).catch(() => 0);
+      if (!policies) {
       const defaultPolicy = `roles:
           admin:
           tools:
@@ -7039,10 +7090,13 @@ Generate a playbook in JSON format matching the playbookResponseSchema.`;
         yamlText: defaultPolicy,
         isActive: true,
       });
+      }
 
       res.json({
         message: "Seeded successfully",
-        admin: { email: admin.email, password: "admin123" },
+        admin: { email: admin!.email, password: "admin123" },
+        member: { email: "member@tracepilot.com", password: "member123" },
+        tracepilot: { email: "admin@tracepilot.com", password: "harneet2512" },
       });
     } catch (error) {
       console.error("Seed error:", error);

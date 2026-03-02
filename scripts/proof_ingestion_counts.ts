@@ -10,7 +10,7 @@ async function main() {
     const pool = new Pool({
         host: 'localhost',
         port: 5433,
-        database: 'fieldcopilot_test',
+        database: 'tracepilot_test',
         user: 'postgres',
         password: process.env.DB_PASSWORD || 'postgres'
     });

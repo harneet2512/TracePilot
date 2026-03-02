@@ -15,7 +15,7 @@ test("retrieval returns bounded chunks — no OOM", async ({ page, request }, te
   expect([200, 201]).toContain(seedResponse.status());
 
   await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
 
   const diagnoseResponse = await page.request.get(
@@ -44,7 +44,7 @@ test("retrieval cross-source query returns bounded result", async ({ page, reque
   expect([200, 201]).toContain(seedResponse.status());
 
   await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
 
   const diagnoseResponse = await page.request.get(

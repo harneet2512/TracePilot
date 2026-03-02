@@ -6,7 +6,7 @@ import { storage } from "../server/storage";
 async function run() {
     console.log("Running Agent Core Debug...");
     try {
-        const user = await storage.getUserByEmail("admin@fieldcopilot.com");
+        const user = await storage.getUserByEmail("admin@tracepilot.com");
         if (!user) throw new Error("User not found");
 
         const result = await runAgentTurn({

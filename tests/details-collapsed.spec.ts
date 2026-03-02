@@ -14,7 +14,7 @@ test("details panel is collapsed by default, expands on toggle click", async ({
   const baseURL = String((testInfo.project.use as any).baseURL || "http://127.0.0.1:5000");
 
   const loginResp = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResp.status()).toBe(200);
   const loginBody = await loginResp.json();

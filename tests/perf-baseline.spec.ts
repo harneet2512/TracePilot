@@ -26,7 +26,7 @@ test("collect baseline performance and reliability timings", async ({ page, requ
 
   await mark("1_login", async () => {
     await page.goto("/login");
-    await page.getByTestId("input-email").fill("admin@fieldcopilot.com");
+    await page.getByTestId("input-email").fill("admin@tracepilot.com");
     await page.getByTestId("input-password").fill("admin123");
     await page.getByTestId("button-login").click();
     await page.waitForURL(/\/chat/, { timeout: 20_000 });

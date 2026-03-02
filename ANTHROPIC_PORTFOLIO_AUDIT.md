@@ -1,8 +1,8 @@
-# FieldCopilot Portfolio Audit for Anthropic Product Engineer Role
+# TracePilot Portfolio Audit for Anthropic Product Engineer Role
 
 **Date:** 2025-01-27  
 **Auditor:** Applied AI Product Engineer Review  
-**Repository:** FieldCopilot (Field Operations AI Assistant)
+**Repository:** TracePilot (Field Operations AI Assistant)
 
 ---
 
@@ -63,7 +63,7 @@
 npm install
 
 # 2. Set up environment variables (.env)
-DATABASE_URL=postgresql://user:password@localhost:5432/fieldcopilot
+DATABASE_URL=postgresql://user:password@localhost:5432/tracepilot
 OPENAI_API_KEY=sk-...
 # OAuth secrets (optional)
 GOOGLE_CLIENT_ID=...

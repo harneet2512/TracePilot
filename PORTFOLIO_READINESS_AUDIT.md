@@ -1,8 +1,8 @@
-# Portfolio Readiness Audit - FieldCopilot
+# Portfolio Readiness Audit - TracePilot
 
 **Date:** 2025-01-27  
 **Auditor:** Applied AI Product Engineer  
-**Repository:** FieldCopilot (Field Operations AI Assistant)  
+**Repository:** TracePilot (Field Operations AI Assistant)  
 **Verdict:** ✅ **PORTFOLIO-READY** (with minor gaps)
 
 ---
@@ -66,7 +66,7 @@
 npm install
 
 # 2. Set up environment variables (.env)
-DATABASE_URL=postgresql://user:password@localhost:5432/fieldcopilot
+DATABASE_URL=postgresql://user:password@localhost:5432/tracepilot
 OPENAI_API_KEY=sk-...
 # OAuth (optional)
 GOOGLE_CLIENT_ID=...
@@ -137,23 +137,23 @@ npm run ci
 **Evidence:**
 - `server/mcp/mcpServer.ts:1-400` - Complete MCP stdio server implementation
 - `package.json:95` - `@modelcontextprotocol/sdk` dependency added
-- MCP server name: "fieldcopilot", version from package.json
+- MCP server name: "tracepilot", version from package.json
 - Transport: stdio (required)
-- Tools: `fieldcopilot.chat`, `fieldcopilot.playbook`, `fieldcopilot.action_draft`, `fieldcopilot.action_execute`
-- Resources: `fieldcopilot://status`, `fieldcopilot://evals`
+- Tools: `tracepilot.chat`, `tracepilot.playbook`, `tracepilot.action_draft`, `tracepilot.action_execute`
+- Resources: `tracepilot://status`, `tracepilot://evals`
 - All tools use agent core with `channel: "mcp"`
 - Policy enforcement and approval gates maintained
 - Safety: sanitization, injection detection, PII redaction applied
 
 **MCP Tools:**
-- `fieldcopilot.chat` (`server/mcp/mcpServer.ts:120-150`) - Calls `runAgentTurn()` with channel="mcp"
-- `fieldcopilot.playbook` (`server/mcp/mcpServer.ts:152-175`) - Generates playbook via agent core
-- `fieldcopilot.action_draft` (`server/mcp/mcpServer.ts:177-240`) - Drafts action with policy check
-- `fieldcopilot.action_execute` (`server/mcp/mcpServer.ts:242-300`) - Executes approved action with idempotency
+- `tracepilot.chat` (`server/mcp/mcpServer.ts:120-150`) - Calls `runAgentTurn()` with channel="mcp"
+- `tracepilot.playbook` (`server/mcp/mcpServer.ts:152-175`) - Generates playbook via agent core
+- `tracepilot.action_draft` (`server/mcp/mcpServer.ts:177-240`) - Drafts action with policy check
+- `tracepilot.action_execute` (`server/mcp/mcpServer.ts:242-300`) - Executes approved action with idempotency
 
 **MCP Resources:**
-- `fieldcopilot://status` (`server/mcp/mcpServer.ts:320-360`) - Build info, connectors, env checks
-- `fieldcopilot://evals` (`server/mcp/mcpServer.ts:362-400`) - Eval suites and latest runs
+- `tracepilot://status` (`server/mcp/mcpServer.ts:320-360`) - Build info, connectors, env checks
+- `tracepilot://evals` (`server/mcp/mcpServer.ts:362-400`) - Eval suites and latest runs
 
 **Smoke Test:**
 - `script/mcp-smoke.ts:1-150` - Smoke test script for MCP server

@@ -8,12 +8,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface EvidenceItem {
@@ -158,6 +160,62 @@ function StatusBadge({ status }: { status: string }) {
     )}>
       {status}
     </span>
+  );
+}
+
+/** Popover for table citation [1]/[2]: click opens popover with passage and filename; only "Open source" navigates. */
+function TableCitationPopover({
+  ev,
+  label,
+  "data-testid": dataTestId,
+}: {
+  ev: EvidenceItem;
+  label: number;
+  "data-testid"?: string;
+}) {
+  const title = ev?.title ?? "Source";
+  const excerpt = ev?.excerpts?.[0]?.text ?? ev?.whyUsed ?? "";
+  const url = ev?.url || ev?.locationUrl || (ev?.id ? `/api/sources/${ev.id}/open` : undefined);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="font-mono text-[11px] text-primary hover:text-primary/80 hover:underline cursor-pointer bg-primary/10 px-1 rounded transition-colors"
+          title={`View source: ${title}`}
+          data-testid={dataTestId}
+        >
+          [{label}]
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 max-h-[min(60vh,320px)] overflow-auto"
+        align="start"
+        side="top"
+        sideOffset={6}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="space-y-2">
+          <div className="font-medium text-sm truncate" title={title}>{title}</div>
+          {excerpt && (
+            <p className="text-xs text-muted-foreground line-clamp-4 break-words">{excerpt}</p>
+          )}
+          {url && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-center gap-1 text-xs"
+              onClick={() => {
+                window.open(url, "_blank", "noopener,noreferrer");
+              }}
+            >
+              <ExternalLink className="h-3 w-3" />
+              Open source
+            </Button>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -337,7 +395,7 @@ export function DocAnswer({
                   const impact = (item as any).impact;
                   const detailsText = formatDetailsCell(item);
                   return (
-                    <tr key={iIdx} className="border-b border-muted/20 hover:bg-muted/20 transition-colors">
+                    <tr key={`section-${sIdx}-item-${iIdx}`} className="border-b border-muted/20 hover:bg-muted/20 transition-colors">
                       <td className="py-2 pr-4 align-top">
                         <span className="text-foreground font-medium leading-snug">{item.text}</span>
                         {item.status ? <StatusBadge status={item.status} /> : null}
@@ -355,27 +413,24 @@ export function DocAnswer({
                         {item.citations && item.citations.length > 0 && (
                           <span className="inline-flex gap-0.5 flex-wrap">
                             {isSingleSource ? (
-                              <button
-                                className="font-mono text-[11px] text-primary hover:text-primary/80 hover:underline cursor-pointer bg-primary/10 px-1 rounded transition-colors"
-                                onClick={() => scrollToEvidence(0)}
-                                title={dedupedEvidence[0] ? `View source: ${dedupedEvidence[0].title}` : "View source"}
-                              >
-                                [1]
-                              </button>
+                              <TableCitationPopover
+                                ev={dedupedEvidence[0]}
+                                label={1}
+                                data-testid="inline-citation-link"
+                              />
                             ) : (
-                              citedSids.map(sid => {
+                              citedSids.map((sid, sidIdx) => {
                                 const evidenceIdx = evidenceIndexBySourceId.get(sid);
                                 if (evidenceIdx === undefined) return null;
+                                const ev = dedupedEvidence[evidenceIdx];
                                 const labelIdx = sourceIndex.get(sid) ?? (evidenceIdx + 1);
                                 return (
-                                  <button
-                                    key={sid}
-                                    className="font-mono text-[11px] text-primary hover:text-primary/80 hover:underline cursor-pointer bg-primary/10 px-1 rounded transition-colors"
-                                    onClick={() => scrollToEvidence(evidenceIdx)}
-                                    title={`View source: ${dedupedEvidence[evidenceIdx].title}`}
-                                  >
-                                    [{labelIdx}]
-                                  </button>
+                                  <TableCitationPopover
+                                    key={`${sIdx}-${iIdx}-sid-${sidIdx}-${sid}`}
+                                    ev={ev}
+                                    label={labelIdx}
+                                    data-testid="inline-citation-link"
+                                  />
                                 );
                               })
                             )}
@@ -469,12 +524,12 @@ export function DocAnswer({
                         {fact.text}
                         {!isSingleSource && fact.citations && fact.citations.length > 0 && (
                           <span className="ml-1 inline-flex gap-0.5">
-                            {Array.from(new Set(fact.citations.map(c => c.sourceId))).map(sid => {
+                            {Array.from(new Set(fact.citations.map(c => c.sourceId))).map((sid, sidIdx) => {
                               const idx = dedupedEvidence.findIndex(e => e.id === sid);
                               if (idx === -1) return null;
                               return (
                                 <button
-                                  key={sid}
+                                  key={`fact-${i}-cite-${sidIdx}-${sid}`}
                                   className="font-mono text-[11px] text-primary hover:text-primary/80 hover:underline cursor-pointer bg-primary/10 px-1 rounded transition-colors"
                                   onClick={() => scrollToEvidence(idx)}
                                   title={`View source: ${dedupedEvidence[idx].title}`}

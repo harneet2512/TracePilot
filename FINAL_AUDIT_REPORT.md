@@ -2,7 +2,7 @@
 
 **Date:** 2025-01-27  
 **Auditor:** Applied AI Product Engineer Review  
-**Repository:** FieldCopilot (Field Operations AI Assistant)  
+**Repository:** TracePilot (Field Operations AI Assistant)  
 **Status:** ✅ **PORTFOLIO-READY**
 
 ---

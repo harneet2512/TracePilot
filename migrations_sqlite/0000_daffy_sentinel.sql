@@ -454,6 +454,205 @@ CREATE TABLE `voice_turns` (
 --> statement-breakpoint
 CREATE INDEX `voice_turns_call_id_idx` ON `voice_turns` (`call_id`);--> statement-breakpoint
 CREATE INDEX `voice_turns_trace_id_idx` ON `voice_turns` (`trace_id`);--> statement-breakpoint
+CREATE TABLE `conversations` (
+	`id` text PRIMARY KEY NOT NULL,
+	`user_id` text NOT NULL,
+	`title` text DEFAULT 'New Chat' NOT NULL,
+	`summary` text,
+	`environment` text,
+	`model` text,
+	`model_config_json` text,
+	`retrieval_config_json` text,
+	`entrypoint` text,
+	`app_version` text,
+	`git_sha` text,
+	`final_outcome` text,
+	`error_class` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `conversations_user_id_idx` ON `conversations` (`user_id`);--> statement-breakpoint
+CREATE INDEX `conversations_updated_at_idx` ON `conversations` (`updated_at`);--> statement-breakpoint
+CREATE INDEX `conversations_environment_idx` ON `conversations` (`environment`);--> statement-breakpoint
+CREATE INDEX `conversations_model_idx` ON `conversations` (`model`);--> statement-breakpoint
+CREATE INDEX `conversations_created_at_idx` ON `conversations` (`created_at`);--> statement-breakpoint
+CREATE TABLE `messages` (
+	`id` text PRIMARY KEY NOT NULL,
+	`conversation_id` text NOT NULL,
+	`role` text NOT NULL,
+	`content` text NOT NULL,
+	`tool_call_id` text,
+	`citations_json` text,
+	`metadata_json` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`conversation_id`) REFERENCES `conversations`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `messages_conversation_id_idx` ON `messages` (`conversation_id`);--> statement-breakpoint
+CREATE INDEX `messages_created_at_idx` ON `messages` (`created_at`);--> statement-breakpoint
+CREATE TABLE `chat_replies` (
+	`id` text PRIMARY KEY NOT NULL,
+	`chat_id` text NOT NULL,
+	`message_id` text NOT NULL,
+	`latency_ms` integer,
+	`ttft_ms` integer,
+	`tokens_in` integer,
+	`tokens_out` integer,
+	`cost_usd` real,
+	`status` text DEFAULT 'ok' NOT NULL,
+	`error_type` text,
+	`trace_id` text,
+	`streamed` integer DEFAULT 1 NOT NULL,
+	`scored` integer DEFAULT 0 NOT NULL,
+	`scored_at` integer,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`chat_id`) REFERENCES `conversations`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`message_id`) REFERENCES `messages`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `chat_replies_chat_id_idx` ON `chat_replies` (`chat_id`);--> statement-breakpoint
+CREATE INDEX `chat_replies_message_id_idx` ON `chat_replies` (`message_id`);--> statement-breakpoint
+CREATE INDEX `chat_replies_trace_id_idx` ON `chat_replies` (`trace_id`);--> statement-breakpoint
+CREATE INDEX `chat_replies_created_at_idx` ON `chat_replies` (`created_at`);--> statement-breakpoint
+CREATE INDEX `chat_replies_status_idx` ON `chat_replies` (`status`);--> statement-breakpoint
+CREATE TABLE `reply_retrieval_artifacts` (
+	`id` text PRIMARY KEY NOT NULL,
+	`reply_id` text NOT NULL,
+	`retrieval_mode` text,
+	`top_k` integer,
+	`chunks_returned_count` integer,
+	`sources_returned_count` integer,
+	`top_similarity` real,
+	`retrieval_latency_ms` integer,
+	`retrieved_chunks_json` text,
+	`dedup_stats_json` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`reply_id`) REFERENCES `chat_replies`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `reply_retrieval_artifacts_reply_id_idx` ON `reply_retrieval_artifacts` (`reply_id`);--> statement-breakpoint
+CREATE TABLE `reply_citation_artifacts` (
+	`id` text PRIMARY KEY NOT NULL,
+	`reply_id` text NOT NULL,
+	`citations_json` text,
+	`citation_coverage_rate` real,
+	`citation_integrity_rate` real,
+	`citation_misattribution_rate` real,
+	`repair_applied` integer DEFAULT 0 NOT NULL,
+	`repair_notes_json` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`reply_id`) REFERENCES `chat_replies`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `reply_citation_artifacts_reply_id_idx` ON `reply_citation_artifacts` (`reply_id`);--> statement-breakpoint
+CREATE TABLE `reply_llm_eval_artifacts` (
+	`id` text PRIMARY KEY NOT NULL,
+	`reply_id` text NOT NULL,
+	`claims_json` text,
+	`claim_labels_json` text,
+	`grounded_claim_rate` real,
+	`unsupported_claim_rate` real,
+	`contradiction_rate` real,
+	`completeness_score` real,
+	`missing_points_json` text,
+	`answer_relevance_score` real,
+	`context_relevance_score` real,
+	`context_recall_score` real,
+	`low_evidence_calibration_json` text,
+	`format_valid_rate` real,
+	`judge_model` text,
+	`judge_version` text,
+	`judge_rationales_json` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`reply_id`) REFERENCES `chat_replies`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `reply_llm_eval_artifacts_reply_id_idx` ON `reply_llm_eval_artifacts` (`reply_id`);--> statement-breakpoint
+CREATE TABLE `reply_tool_artifacts` (
+	`id` text PRIMARY KEY NOT NULL,
+	`reply_id` text NOT NULL,
+	`tool_calls_json` text,
+	`tool_selection_accuracy` real,
+	`parameter_correctness` real,
+	`idempotency_key` text,
+	`duplicate_action_detected` integer DEFAULT 0 NOT NULL,
+	`retry_count` integer DEFAULT 0 NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`reply_id`) REFERENCES `chat_replies`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `reply_tool_artifacts_reply_id_idx` ON `reply_tool_artifacts` (`reply_id`);--> statement-breakpoint
+CREATE INDEX `reply_tool_artifacts_idempotency_key_idx` ON `reply_tool_artifacts` (`idempotency_key`);--> statement-breakpoint
+CREATE TABLE `enterprise_eval_artifacts` (
+	`id` text PRIMARY KEY NOT NULL,
+	`reply_id` text,
+	`run_id` text,
+	`eval_pack_version` text DEFAULT 'v1' NOT NULL,
+	`evidence_coverage_score` real,
+	`evidence_coverage_pass` integer,
+	`evidence_coverage_rationale` text,
+	`evidence_coverage_map_json` text,
+	`evidence_sufficiency_score` real,
+	`evidence_sufficiency_pass` integer,
+	`evidence_sufficiency_rationale` text,
+	`evidence_sufficiency_details_json` text,
+	`multihop_trace_score` real,
+	`multihop_trace_pass` integer,
+	`multihop_trace_rationale` text,
+	`multihop_trace_json` text,
+	`directness_score` real,
+	`directness_pass` integer,
+	`directness_rationale` text,
+	`actionability_score` real,
+	`actionability_pass` integer,
+	`actionability_rationale` text,
+	`clarity_score` real,
+	`clarity_pass` integer,
+	`clarity_rationale` text,
+	`clarity_details_json` text,
+	`followup_quality_score` real,
+	`followup_quality_pass` integer,
+	`followup_quality_rationale` text,
+	`source_scope_pass` integer,
+	`source_scope_score` real,
+	`source_scope_rationale` text,
+	`source_scope_violations_json` text,
+	`missing_data_hallucination_pass` integer,
+	`missing_data_hallucination_score` real,
+	`missing_data_hallucination_rationale` text,
+	`pii_leak_pass` integer,
+	`pii_leak_score` real,
+	`pii_leak_rationale` text,
+	`pii_leak_findings_json` text,
+	`stability_variance` real,
+	`stability_pass` integer,
+	`stability_rationale` text,
+	`stability_details_json` text,
+	`retrieval_drift_score` real,
+	`retrieval_drift_pass` integer,
+	`retrieval_drift_rationale` text,
+	`retrieval_drift_json` text,
+	`citation_ui_readiness_score` real,
+	`citation_ui_readiness_pass` integer,
+	`citation_ui_readiness_rationale` text,
+	`citation_ui_details_json` text,
+	`debug_panel_completeness_score` real,
+	`debug_panel_completeness_pass` integer,
+	`debug_panel_completeness_rationale` text,
+	`debug_panel_missing_json` text,
+	`overall_score` real,
+	`overall_pass` integer,
+	`summary_json` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`reply_id`) REFERENCES `chat_replies`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`run_id`) REFERENCES `eval_runs`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `enterprise_eval_artifacts_reply_id_idx` ON `enterprise_eval_artifacts` (`reply_id`);--> statement-breakpoint
+CREATE INDEX `enterprise_eval_artifacts_run_id_idx` ON `enterprise_eval_artifacts` (`run_id`);--> statement-breakpoint
+CREATE INDEX `enterprise_eval_artifacts_created_at_idx` ON `enterprise_eval_artifacts` (`created_at`);--> statement-breakpoint
 CREATE TABLE `workspaces` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,

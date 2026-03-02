@@ -1,6 +1,5 @@
 import { ApprovalModal } from "@/components/ApprovalModal";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { shouldFallbackToDemo, getDemoResponse, logDemoMode } from "@/lib/demoMode";
 import { useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation, Redirect } from "wouter";
 import { Layout } from "@/components/layout";
@@ -159,9 +158,6 @@ function renderInlineCitationNodes(text: string, citations?: any[]) {
     }
     const citation = citations[idx];
     if (citation) {
-      const sourceId = citation.sourceId || citation.id;
-      const target = citation.url
-        || (sourceId ? `/api/sources/${sourceId}/open` : undefined);
       nodes.push(
         <CitationPopover key={`inline-citation-${idx}-${match.index}`} citation={citation} index={idx}>
           <button
@@ -467,9 +463,16 @@ function ThinkingBubble({ tasks, statusLabel }: { tasks?: TaskItem[]; statusLabe
   );
 }
 
-function FeedbackButtons({ requestId, replyId }: { requestId?: string; replyId?: string }) {
-  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+function FeedbackButtons({ requestId, replyId, initialFeedback }: { requestId?: string; replyId?: string; initialFeedback?: "up" | "down" | null }) {
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(initialFeedback ?? null);
   const [sending, setSending] = useState(false);
+
+  // Sync from server when initialFeedback is provided (e.g. after reload)
+  useEffect(() => {
+    if (initialFeedback !== undefined && initialFeedback !== null) {
+      setFeedback(initialFeedback);
+    }
+  }, [initialFeedback]);
 
   const send = async (value: "up" | "down") => {
     if (sending || feedback === value) return;
@@ -489,6 +492,7 @@ function FeedbackButtons({ requestId, replyId }: { requestId?: string; replyId?:
     }
   };
 
+  const hasFeedback = feedback !== null;
   return (
     <div className="flex items-center gap-1">
       <Button
@@ -496,7 +500,7 @@ function FeedbackButtons({ requestId, replyId }: { requestId?: string; replyId?:
         size="icon"
         className={cn("h-6 w-6", feedback === "up" && "text-green-600")}
         onClick={() => send("up")}
-        disabled={sending}
+        disabled={sending || hasFeedback}
         title="Helpful"
         data-testid="feedback-thumbs-up"
       >
@@ -507,7 +511,7 @@ function FeedbackButtons({ requestId, replyId }: { requestId?: string; replyId?:
         size="icon"
         className={cn("h-6 w-6", feedback === "down" && "text-destructive")}
         onClick={() => send("down")}
-        disabled={sending}
+        disabled={sending || hasFeedback}
         title="Not helpful"
         data-testid="feedback-thumbs-down"
       >
@@ -904,6 +908,7 @@ function MessageBubble({
               const trust = (response as any)?.trustSignal as { level?: string; label?: string; detail?: string } | undefined;
               const replyId = (response as any)?.replyId as string | undefined;
               const requestId = (response as any)?.requestId as string | undefined;
+              const persistedFeedback = (message.metadataJson as Record<string, unknown> | undefined)?.userFeedback as "up" | "down" | undefined;
               return (
                 <div className="mt-2 flex items-center gap-3">
                   {trust?.label && (() => {
@@ -941,7 +946,7 @@ function MessageBubble({
                       </TooltipProvider>
                     );
                   })()}
-                  <FeedbackButtons requestId={requestId} replyId={replyId} />
+                  <FeedbackButtons requestId={requestId} replyId={replyId} initialFeedback={persistedFeedback ?? null} />
                 </div>
               );
             })()}
@@ -1270,11 +1275,6 @@ export default function ChatPage() {
       if (isTrivialPrompt) {
         const fastFallback = await tryNonStream();
         if (fastFallback.ok) return fastFallback.data;
-        // Demo mode fallback for trivial prompts
-        if (shouldFallbackToDemo(null, fastFallback.error)) {
-          logDemoMode("CHAT_FALLBACK", { query: text, error: String(fastFallback.error) });
-          return getDemoResponse(text);
-        }
         throw fastFallback.error;
       }
 
@@ -1288,12 +1288,6 @@ export default function ChatPage() {
 
       const fallback = await tryNonStream();
       if (fallback.ok) return fallback.data;
-
-      // Demo mode fallback — backend unreachable after all retries
-      if (shouldFallbackToDemo(null, fallback.error)) {
-        logDemoMode("CHAT_FALLBACK", { query: text, error: String(fallback.error) });
-        return getDemoResponse(text);
-      }
       throw fallback.error;
     },
     onMutate: async (variables) => {

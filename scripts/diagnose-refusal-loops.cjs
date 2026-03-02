@@ -231,7 +231,7 @@ async function main() {
   });
 
   const login = await api.post("/api/auth/login", {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   if (login.status() !== 200) {
     throw new Error(`Login failed: ${login.status()} ${await login.text()}`);

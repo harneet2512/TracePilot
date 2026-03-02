@@ -46,7 +46,7 @@ async function doctor() {
     console.log("");
     console.log("For Postgres (Docker):");
     console.log("  1. Run: docker compose up -d");
-    console.log("  2. Set DATABASE_URL=postgresql://postgres:postgres@localhost:5433/fieldcopilot_test");
+    console.log("  2. Set DATABASE_URL=postgresql://postgres:postgres@localhost:5433/tracepilot_test");
     console.log("  3. Run: npm run db:push");
     console.log("");
     console.log("For Supabase:");

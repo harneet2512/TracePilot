@@ -19,7 +19,7 @@ if (!process.env.DATABASE_URL) {
   console.error("❌ DATABASE_URL missing. Copy .env.example to .env or set env var.");
   console.error("");
   console.error("Example DATABASE_URL:");
-  console.error("  DATABASE_URL=postgresql://postgres:postgres@localhost:5433/fieldcopilot_test");
+  console.error("  DATABASE_URL=postgresql://postgres:postgres@localhost:5433/tracepilot_test");
   console.error("");
   console.error("To set up test database:");
   console.error("  Unix/Mac:   bash script/db_test_up.sh");

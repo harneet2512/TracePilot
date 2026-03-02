@@ -1,6 +1,6 @@
 # Portfolio Upgrade Summary
 
-This document summarizes all changes made to upgrade FieldCopilot to portfolio-ready status for Anthropic's Product Engineer role.
+This document summarizes all changes made to upgrade TracePilot to portfolio-ready status for Anthropic's Product Engineer role.
 
 ## Files Created
 

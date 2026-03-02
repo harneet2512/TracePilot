@@ -136,13 +136,13 @@ function SummaryTable({
                 </TableCell>
                 <TableCell className="px-3 py-2">
                   <span className="inline-flex gap-0.5">
-                    {row.citationIds.map((cid) => {
+                    {row.citationIds.map((cid, chipIdx) => {
                       const cidNum = Number(cid);
                       const citation = citations?.[cidNum - 1]
                         ?? citations?.find((_c, i) => i + 1 === cidNum);
                       return (
                         <CitationChip
-                          key={cid}
+                          key={`row-${idx}-cite-${chipIdx}`}
                           id={cid}
                           citation={citation ?? undefined}
                         />
@@ -171,7 +171,7 @@ function EvidenceList({
       <div className="text-xs uppercase text-muted-foreground mb-2 font-semibold">Evidence</div>
       <div className="space-y-2">
         {evidenceBySource.map((source, idx) => (
-          <EvidenceCard key={source.sourceKey || idx} source={source} index={idx + 1} />
+          <EvidenceCard key={`ev-${idx}-${source.sourceKey ?? source.title ?? 'src'}`} source={source} index={idx + 1} />
         ))}
       </div>
     </div>
@@ -407,11 +407,18 @@ export function DetailsDrawer({
     return new Map<string, number>(entries);
   }, [citationIndexMap, sections, citations]);
 
-  // Resolve summary rows: prefer new contract, fallback to deriving from sections
-  const summaryRows = useMemo(
-    () => (details?.summaryRows?.length ? details.summaryRows : deriveSummaryRows(sections, citations, sourceIndex)),
-    [details?.summaryRows, sections, citations, sourceIndex]
-  );
+  // Resolve summary rows: prefer new contract, fallback to deriving from sections; dedupe by stable signature so streaming merge never shows duplicate rows
+  const summaryRows = useMemo(() => {
+    const raw =
+      details?.summaryRows?.length ? details.summaryRows : deriveSummaryRows(sections, citations, sourceIndex);
+    const seen = new Set<string>();
+    return raw.filter((row) => {
+      const sig = [row.item, row.priority, row.owner, row.impact, (row.citationIds || []).join(",")].join("|");
+      if (seen.has(sig)) return false;
+      seen.add(sig);
+      return true;
+    });
+  }, [details?.summaryRows, sections, citations, sourceIndex]);
 
   // Resolve evidence: prefer new contract, fallback to deriving from sources + chunks
   const evidenceBySource = useMemo(

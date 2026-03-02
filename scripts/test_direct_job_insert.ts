@@ -16,7 +16,7 @@ const SCOPE_ID = "a24fb115-229d-41e4-82cf-c41507d6dc82";
 async function main() {
     if (!process.env.DATABASE_URL) {
         console.error(`ERROR: DATABASE_URL not set.
-Set it with: $env:DATABASE_URL="postgres://postgres:postgres@localhost:5433/fieldcopilot_test"`);
+Set it with: $env:DATABASE_URL="postgres://postgres:postgres@localhost:5433/tracepilot_test"`);
         process.exit(1);
     }
 

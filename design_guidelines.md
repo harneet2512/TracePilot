@@ -1,4 +1,4 @@
-# FieldCopilot Design Guidelines
+# TracePilot Design Guidelines
 
 ## Design Approach
 

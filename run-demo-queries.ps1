@@ -12,7 +12,7 @@ $queries = @(
     "I'm new to the team - what should I know about Project Phoenix?"
 )
 
-$login = Invoke-WebRequest -Uri 'http://localhost:5000/api/auth/login' -Method POST -ContentType 'application/json' -Body '{"email":"admin@fieldcopilot.com","password":"admin123"}' -SessionVariable sess -UseBasicParsing
+$login = Invoke-WebRequest -Uri 'http://localhost:5000/api/auth/login' -Method POST -ContentType 'application/json' -Body '{"email":"admin@tracepilot.com","password":"admin123"}' -SessionVariable sess -UseBasicParsing
 $loginJson = $login.Content | ConvertFrom-Json
 $csrf = $loginJson.csrfToken
 Write-Host "Logged in. Running 10 queries..."

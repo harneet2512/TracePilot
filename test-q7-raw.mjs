@@ -3,7 +3,7 @@ const BASE_URL = 'http://localhost:5000';
 const loginRes = await fetch(BASE_URL + '/api/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'admin@fieldcopilot.com', password: 'admin123' })
+  body: JSON.stringify({ email: 'admin@tracepilot.com', password: 'admin123' })
 });
 const loginBody = await loginRes.json();
 const csrf = loginBody.csrfToken;

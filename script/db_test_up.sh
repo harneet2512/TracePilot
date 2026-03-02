@@ -1,11 +1,11 @@
 #!/bin/bash
 # Start PostgreSQL 16 test database in Docker
-# Creates container 'fieldcopilot_test_db' on port 5433
+# Creates container 'tracepilot_test_db' on port 5433
 
 set -e
 
-CONTAINER_NAME="fieldcopilot_test_db"
-DB_NAME="fieldcopilot_test"
+CONTAINER_NAME="tracepilot_test_db"
+DB_NAME="tracepilot_test"
 DB_USER="postgres"
 DB_PASSWORD="postgres"
 PORT="5433"

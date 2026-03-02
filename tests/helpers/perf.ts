@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from "@playwright/test";
 
 export async function loginWithSessionCookies(page: Page, request: APIRequestContext, baseURL: string) {
   const resp = await request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   if (resp.status() !== 200) {
     throw new Error(`Login failed with status ${resp.status()}`);

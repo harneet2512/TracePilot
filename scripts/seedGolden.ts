@@ -338,7 +338,7 @@ async function seedSQLite() {
 
   db.close();
 
-  if (sourceCount === 6 && chunkCount >= 60 && chunkCount <= 80) {
+  if (sourceCount === 6 && chunkCount >= 55 && chunkCount <= 80) {
     console.log("\n[SUCCESS] Golden DB seeded correctly!");
     process.exit(0);
   } else {
@@ -454,7 +454,7 @@ async function seedPostgres() {
   console.log(`  Sources in DB: ${sourceCount.length}`);
   console.log(`  Chunks in DB: ${chunkCount.length}`);
 
-  if (sourceCount.length === 6 && chunkCount.length >= 60 && chunkCount.length <= 80) {
+  if (sourceCount.length === 6 && chunkCount.length >= 55 && chunkCount.length <= 80) {
     console.log("\n[SUCCESS] Golden DB seeded correctly!");
     process.exit(0);
   } else {

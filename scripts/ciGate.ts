@@ -1,7 +1,11 @@
 import "dotenv/config";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 // CI gate script - fails if regression thresholds violated
 import { storage } from "../server/storage";
 import { runEvalSuite, compareWithBaseline } from "./evalRunner";
+
+const __filename = fileURLToPath(import.meta.url);
 
 const THRESHOLDS = {
     successRateDrop: 3, // Fail if success rate drops > 3%
@@ -101,8 +105,9 @@ async function runCI() {
     }
 }
 
-// Run if called directly
-if (require.main === module) {
+// Run only when executed as main (ESM-safe)
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (isMain) {
     runCI().catch((error) => {
         console.error("CI gate failed with error:", error);
         process.exit(1);

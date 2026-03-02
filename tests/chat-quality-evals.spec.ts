@@ -6,7 +6,7 @@ const afterDir = path.join(process.cwd(), "playwright-artifacts", "evals", "afte
 
 async function loginAsAdmin(page: import("@playwright/test").Page) {
   const loginResponse = await page.request.post("/api/auth/login", {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResponse.status()).toBe(200);
 }

@@ -3,17 +3,17 @@ import { storage } from "../server/storage";
 
 async function testLogin() {
     console.log("Checking for admin user...");
-    const user = await storage.getUserByEmail("admin@fieldcopilot.com");
+    const user = await storage.getUserByEmail("admin@tracepilot.com");
 
     if (!user) {
-        console.log("❌ User admin@fieldcopilot.com NOT FOUND in DB.");
+        console.log("❌ User admin@tracepilot.com NOT FOUND in DB.");
         process.exit(1);
     }
 
     console.log("✅ User found:", { id: user.id, email: user.email, role: user.role, hasHash: !!user.passwordHash });
 
     console.log("Testing password 'admin123'...");
-    const validUser = await storage.validatePassword("admin@fieldcopilot.com", "admin123");
+    const validUser = await storage.validatePassword("admin@tracepilot.com", "admin123");
 
     if (validUser) {
         console.log("✅ Password VALIDATED successfully.");

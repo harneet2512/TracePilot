@@ -1,4 +1,4 @@
-# FieldCopilot
+# TracePilot
 
 Enterprise-grade field operations AI assistant with RAG, tool integration, and observability.
 
@@ -23,12 +23,12 @@ npm install
 # Option A: Create .env file (recommended for worker script)
 cp .env.example .env
 # Edit .env and set:
-#   DATABASE_URL=postgresql://user:password@localhost:5432/fieldcopilot
+#   DATABASE_URL=postgresql://user:password@localhost:5432/tracepilot
 #   OPENAI_API_KEY=sk-...
 
 # Option B: Set env vars in shell (for dev/test scripts)
 # Windows PowerShell:
-$env:DATABASE_URL="postgresql://user:password@localhost:5432/fieldcopilot"
+$env:DATABASE_URL="postgresql://user:password@localhost:5432/tracepilot"
 $env:OPENAI_API_KEY="sk-..."
 ```
 
@@ -103,7 +103,7 @@ npm run dev
 ```powershell
 # Windows PowerShell
 docker compose up -d
-$env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/fieldcopilot_test"
+$env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/tracepilot_test"
 npm run db:push
 npm run db:doctor
 npm run dev
@@ -135,8 +135,8 @@ npm run db:doctor
 
 **Tests:**
 - Use test DB container: `powershell script/db_test_up.ps1` (Windows) or `bash script/db_test_up.sh` (Unix/Mac)
-- Creates container `fieldcopilot_test_db` on port 5433
-- Set `DATABASE_URL=postgresql://postgres:postgres@localhost:5433/fieldcopilot_test`
+- Creates container `tracepilot_test_db` on port 5433
+- Set `DATABASE_URL=postgresql://postgres:postgres@localhost:5433/tracepilot_test`
 - Set `NODE_ENV=test`
 
 ### Seed Initial Data
@@ -152,7 +152,7 @@ npm run seed:evals
 
 ## Quickstart for Digital Native Teams
 
-**New to FieldCopilot?** Start here for a fast path to production.
+**New to TracePilot?** Start here for a fast path to production.
 
 ### Normal Mode (HTTP) Quickstart
 
@@ -289,11 +289,11 @@ Add to Claude Desktop's MCP configuration (`claude_desktop_config.json`):
 ```json
 {
   "mcpServers": {
-    "fieldcopilot": {
+    "tracepilot": {
       "command": "tsx",
       "args": ["/path/to/Field-Copilot-1/server/mcp/mcpServer.ts"],
       "env": {
-        "DATABASE_URL": "postgresql://user:password@localhost:5432/fieldcopilot",
+        "DATABASE_URL": "postgresql://user:password@localhost:5432/tracepilot",
         "OPENAI_API_KEY": "sk-..."
       }
     }
@@ -303,10 +303,10 @@ Add to Claude Desktop's MCP configuration (`claude_desktop_config.json`):
 
 **4. Use MCP Tools in Claude Desktop**
 
-- `fieldcopilot.chat` - Chat with FieldCopilot agent
-- `fieldcopilot.playbook` - Generate incident response playbook
-- `fieldcopilot.action_draft` - Draft a tool action
-- `fieldcopilot.action_execute` - Execute approved action
+- `tracepilot.chat` - Chat with TracePilot agent
+- `tracepilot.playbook` - Generate incident response playbook
+- `tracepilot.action_draft` - Draft a tool action
+- `tracepilot.action_execute` - Execute approved action
 
 **5. Run Smoke Test**
 
@@ -318,8 +318,8 @@ tsx script/mcp-smoke.ts
 
 **6. Access MCP Resources**
 
-- `fieldcopilot://status` - Build info, enabled connectors, env checks
-- `fieldcopilot://evals` - List eval suites + latest run summary
+- `tracepilot://status` - Build info, enabled connectors, env checks
+- `tracepilot://evals` - List eval suites + latest run summary
 
 **Next Steps:**
 - Read `ONBOARDING_PLAYBOOK.md` for full setup guide
@@ -595,19 +595,19 @@ Comprehensive automated test suite for the voice agent runtime (56 test cases).
    powershell script/db_test_up.ps1
    ```
 
-   This creates a PostgreSQL 16 container named `fieldcopilot_test_db` on port 5433.
+   This creates a PostgreSQL 16 container named `tracepilot_test_db` on port 5433.
 
 2. **Configure environment:**
 
    Copy `.env.example` to `.env` and set:
    ```bash
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5433/fieldcopilot_test
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5433/tracepilot_test
    NODE_ENV=test
    ```
 
    **Windows PowerShell alternative** (if .env doesn't work):
    ```powershell
-   $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5433/fieldcopilot_test"
+   $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5433/tracepilot_test"
    $env:NODE_ENV="test"
    ```
 
@@ -636,16 +636,16 @@ The suite covers:
 **DATABASE_URL missing error:**
 - Ensure `.env` file exists with `DATABASE_URL` set
 - Or export the environment variable before running tests
-- Check that the test database container is running: `docker ps | grep fieldcopilot_test_db`
+- Check that the test database container is running: `docker ps | grep tracepilot_test_db`
 
 **Port 5433 already in use:**
-- Stop the existing container: `docker stop fieldcopilot_test_db`
+- Stop the existing container: `docker stop tracepilot_test_db`
 - Or change the port in `db_test_up.sh`/`db_test_up.ps1` and update `DATABASE_URL`
 
 **Database connection errors:**
 - Wait a few seconds after starting the container for PostgreSQL to initialize
 - Verify container is running: `docker ps`
-- Check container logs: `docker logs fieldcopilot_test_db`
+- Check container logs: `docker logs tracepilot_test_db`
 
 ## Architecture
 

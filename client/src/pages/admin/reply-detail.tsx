@@ -63,6 +63,13 @@ type ReplyDetailResponse = {
     traceId?: string;
     spans?: Array<{ name: string; kind: string; durationMs?: number; startedAt?: string }>;
   };
+  deterministicChecks?: {
+    abstentionPass: boolean;
+    ownerCitationPass: boolean;
+    deadlineCitationPass: boolean;
+    retrievalRecallPass: boolean;
+    failedChecks?: string[];
+  };
   enterpriseEval?: {
     overallPass?: boolean;
     overallScore?: number;
@@ -191,6 +198,21 @@ export default function AdminReplyDetailPage() {
                 <pre className="rounded-md border p-3 text-xs whitespace-pre-wrap">{JSON.stringify(data.citation?.repairNotesJson ?? {}, null, 2)}</pre>
               </CardContent>
             </Card>
+
+            {data.deterministicChecks ? (
+              <Card>
+                <CardHeader><CardTitle className="text-base">3b) Deterministic checks</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>Abstention (zero-chunk guard): <Badge variant={data.deterministicChecks.abstentionPass ? "secondary" : "destructive"}>{data.deterministicChecks.abstentionPass ? "pass" : "fail"}</Badge></div>
+                  <div>Owner in cited source: <Badge variant={data.deterministicChecks.ownerCitationPass ? "secondary" : "destructive"}>{data.deterministicChecks.ownerCitationPass ? "pass" : "fail"}</Badge></div>
+                  <div>Deadline in cited source: <Badge variant={data.deterministicChecks.deadlineCitationPass ? "secondary" : "destructive"}>{data.deterministicChecks.deadlineCitationPass ? "pass" : "fail"}</Badge></div>
+                  <div>Retrieval recall @K: <Badge variant={data.deterministicChecks.retrievalRecallPass ? "secondary" : "destructive"}>{data.deterministicChecks.retrievalRecallPass ? "pass" : "fail"}</Badge></div>
+                  {(data.deterministicChecks.failedChecks?.length ?? 0) > 0 && (
+                    <div className="md:col-span-2 text-muted-foreground">Failed: {data.deterministicChecks.failedChecks!.join(", ")}</div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : null}
 
             {data.eval ? (
               <>

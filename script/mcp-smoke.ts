@@ -1,7 +1,7 @@
 /**
  * MCP Smoke Test - Quick test of MCP server functionality
  * 
- * This script tests the MCP server by calling fieldcopilot.chat tool
+ * This script tests the MCP server by calling tracepilot.chat tool
  * via stdio transport.
  */
 
@@ -62,10 +62,10 @@ async function runMCPSmokeTest() {
     });
     console.log("✅ List tools passed\n");
 
-    // Test 2: Call fieldcopilot.chat
-    console.log("Test 2: Call fieldcopilot.chat");
+    // Test 2: Call tracepilot.chat
+    console.log("Test 2: Call tracepilot.chat");
     const chatResult = await client.callTool({
-      name: "fieldcopilot.chat",
+      name: "tracepilot.chat",
       arguments: {
         query: "What are the safety procedures for equipment maintenance?",
         topK: 5,
@@ -109,9 +109,9 @@ async function runMCPSmokeTest() {
     console.log("✅ List resources passed\n");
 
     // Test 4: Read status resource
-    console.log("Test 4: Read fieldcopilot://status");
+    console.log("Test 4: Read tracepilot://status");
     const statusResource = await client.readResource({
-      uri: "fieldcopilot://status",
+      uri: "tracepilot://status",
     });
 
     if (statusResource.contents && statusResource.contents.length > 0) {

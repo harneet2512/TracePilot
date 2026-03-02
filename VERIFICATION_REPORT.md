@@ -44,10 +44,10 @@
 3. **MCP Adapter**
    - **File:** `server/mcp/mcpServer.ts`
    - **Tools:** 
-     - `fieldcopilot.chat` (line 133)
-     - `fieldcopilot.playbook` (line 161)
-     - `fieldcopilot.action_draft` (line 190)
-     - `fieldcopilot.action_execute` (line 279)
+     - `tracepilot.chat` (line 133)
+     - `tracepilot.playbook` (line 161)
+     - `tracepilot.action_draft` (line 190)
+     - `tracepilot.action_execute` (line 279)
    - **All tools call `runAgentTurn()` with `channel: "mcp"`**
 
 ---
@@ -58,18 +58,18 @@
 
 ### Evidence
 
-#### ✅ `fieldcopilot.chat` - PASS
+#### ✅ `tracepilot.chat` - PASS
 - **File:** `server/mcp/mcpServer.ts:133-160`
 - **Path:** Calls `runAgentTurn()` → agent core applies policy check (line 292-323 in `agentCore.ts`)
 - **Policy enforcement:** ✅ Applied via agent core
 - **Approval creation:** ✅ Not applicable (chat only, no action execution)
 
-#### ✅ `fieldcopilot.playbook` - PASS
+#### ✅ `tracepilot.playbook` - PASS
 - **File:** `server/mcp/mcpServer.ts:161-189`
 - **Path:** Calls `runAgentTurn()` → agent core applies policy check
 - **Policy enforcement:** ✅ Applied via agent core
 
-#### ✅ `fieldcopilot.action_draft` - PASS
+#### ✅ `tracepilot.action_draft` - PASS
 - **File:** `server/mcp/mcpServer.ts:190-277`
 - **Path:** 
   1. Calls `runAgentTurn()` (line 194) → agent core applies policy check
@@ -79,7 +79,7 @@
 - **Approval creation:** ✅ Creates approval record when required (line 251-259)
 - **Denial reason:** ✅ Returns `denialReason` from policy result (line 271)
 
-#### ❌ `fieldcopilot.action_execute` - FAIL
+#### ❌ `tracepilot.action_execute` - FAIL
 - **File:** `server/mcp/mcpServer.ts:279-342`
 - **Path:**
   1. Gets approval by ID (line 283)
@@ -286,7 +286,7 @@ if (!policyResult.allowed) {
 #### D1: Smoke Tests Exist
 - **MCP Smoke Test:** `script/mcp-smoke.ts`
   - **Lines 12-111:** Full implementation
-  - **Tests:** List tools, call `fieldcopilot.chat`, list resources, read status resource
+  - **Tests:** List tools, call `tracepilot.chat`, list resources, read status resource
   - **Assertions:** ✅ Checks for content, citations, channel metadata
   - **Status:** ✅ Functional
 
@@ -340,7 +340,7 @@ if (!policyResult.allowed) {
 
 ### Evidence
 
-#### `fieldcopilot://status`
+#### `tracepilot://status`
 - **File:** `server/mcp/mcpServer.ts:397-424`
 - **Returns:**
   - `version` (from package.json) ✅ Safe
@@ -352,7 +352,7 @@ if (!policyResult.allowed) {
   - `environment.hasDatabase` (boolean) ✅ Safe
 - **Status:** ✅ No secrets or PII leaked
 
-#### `fieldcopilot://evals`
+#### `tracepilot://evals`
 - **File:** `server/mcp/mcpServer.ts:426-456`
 - **Returns:**
   - `suiteId`, `suiteName` ✅ Safe
@@ -416,7 +416,7 @@ if (!policyResult.allowed) {
 ## Recommended Fixes (Priority Order)
 
 ### Priority 1: Critical Security (CHECK A)
-1. **Add policy re-check to `fieldcopilot.action_execute`**
+1. **Add policy re-check to `tracepilot.action_execute`**
    - **File:** `server/mcp/mcpServer.ts:279-342`
    - **Add:** Policy check before execution (see fix above)
    - **Add:** Approval status validation

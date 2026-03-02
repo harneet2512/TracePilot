@@ -17,7 +17,7 @@ test("admin smoke: chats list, chat detail (no broken reply links), evals page",
 
   // Login
   const loginResponse = await page.request.post(`${baseURL}/api/auth/login`, {
-    data: { email: "admin@fieldcopilot.com", password: "admin123" },
+    data: { email: "admin@tracepilot.com", password: "admin123" },
   });
   expect(loginResponse.status(), "admin login should succeed").toBe(200);
 

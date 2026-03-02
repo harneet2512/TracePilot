@@ -69,9 +69,9 @@
       ]
     },
     {
-      "triggerType": "short",
-      "maxLength": 10,
-      "response": "Hello! I'm TracePilot. I search across your company knowledge. What would you like to find?",
+      "triggerType": "ack",
+      "matchPatterns": ["^(ok|okay|k|cool|sure|sounds good|got it|great|nice|awesome)[\\s!.?]*$"],
+      "response": "Sounds good. Want to look up something else?",
       "quickReplies": [
         { "label": "What are our Q4 OKRs?", "text": "What are our Q4 OKRs for the AI search project?" },
         { "label": "Any blockers?", "text": "Are there any blockers for the AI search launch?" },

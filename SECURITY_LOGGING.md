@@ -2,7 +2,7 @@
 
 ## Overview
 
-FieldCopilot implements PII (Personally Identifiable Information) redaction and security-aware logging to protect user privacy and sensitive data.
+TracePilot implements PII (Personally Identifiable Information) redaction and security-aware logging to protect user privacy and sensitive data.
 
 ## What is Logged
 
