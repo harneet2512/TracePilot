@@ -1,6 +1,17 @@
 # TracePilot
 
-Enterprise-grade field operations AI assistant with RAG, tool integration, and observability.
+<p align="center">
+  <img src="./docs/media/tracepilot-main.gif" alt="TracePilot main workflow demo" width="100%" />
+</p>
+
+<p align="center">
+  <strong>Enterprise knowledge search with grounded AI answers</strong><br />
+  Semantic retrieval, grounded citations, connector coverage, and evaluation visibility in one workflow.
+</p>
+
+<p align="center">
+  <a href="./docs/index.html">Open full-screen demo page</a>
+</p>
 
 ## Tech Stack
 
