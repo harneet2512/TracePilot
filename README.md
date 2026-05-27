@@ -17,9 +17,7 @@
 
 ## Demo
 
-https://github.com/user-attachments/assets/TracePilot-Demo-fixed.mp4
-
-> Upload the demo video as a GitHub release asset or drag it into a GitHub issue/PR to get the embed URL, then replace the link above.
+https://github.com/harneet2512/TracePilot/releases/download/v1.0.0/TracePilot-Demo-fixed.mp4
 
 ---
 
