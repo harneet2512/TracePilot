@@ -13,7 +13,7 @@
 
 ## Demo
 
-https://github.com/user-attachments/assets/32cf57c9-3737-4e92-bce4-87f57537945a
+https://github.com/user-attachments/assets/c3e48ddf-ad25-4b43-8a10-9307ea72431a
 
 ---
 
