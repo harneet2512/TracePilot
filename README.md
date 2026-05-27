@@ -13,14 +13,7 @@
 
 ## Demo
 
-<p align="center">
-  <a href="https://github.com/harneet2512/TracePilot/releases/download/v1.0.0/TracePilot-Demo-fixed.mp4">
-    <img src="https://img.shields.io/badge/▶_Watch_Demo-TracePilot-blue?style=for-the-badge&logo=github" alt="Watch Demo" />
-  </a>
-</p>
-
-<!-- To auto-embed the video, open issue #1, drag-drop the mp4, copy the user-attachments URL, and paste it here: -->
-<!-- https://github.com/user-attachments/assets/PASTE-VIDEO-ID-HERE -->
+https://github.com/user-attachments/assets/32cf57c9-3737-4e92-bce4-87f57537945a
 
 ---
 
@@ -47,200 +40,248 @@
 - **Database:** PostgreSQL (Drizzle ORM) or SQLite for local dev
 - **AI:** OpenAI GPT-4o + text-embedding-3-small
 - **Realtime:** WebSocket (voice), Server-Sent Events (chat streaming)
-- **Observability:** Custom tracing + Prometheus metrics
+- **Observability:** Custom span tracing + Prometheus metrics (`/metrics`)
 
 ---
 
 ## Evaluation System
 
-TracePilot includes a production-grade evaluation pipeline that scores every chat reply across multiple dimensions, runs golden-case regression suites, and blocks CI merges on quality drops.
+Every chat reply passes through a multi-layer scoring pipeline. The pipeline runs automatically on each response — no manual trigger needed.
 
-### Scoring Pipeline
+### Reply Scoring Pipeline
 
-Every chat reply is automatically scored by a multi-layer pipeline:
+```
+User query → Retrieval → LLM response
+                                │
+                    ┌───────────┴───────────┐
+                    ▼                       ▼
+          Deterministic Checks       LLM Judge (GPT-4o)
+           (instant, no LLM)         (claim-level eval)
+                    │                       │
+                    └───────────┬───────────┘
+                                ▼
+                    Enterprise Eval Pack (14 components)
+                                │
+                                ▼
+                    Trust Signal → UI badge
+```
 
-**Deterministic checks** (no LLM, instant):
-| Check | What it validates |
-|-------|-------------------|
-| `formatValidRate` | Response validates against ChatResponse JSON schema |
-| `mustCitePass` | At least 1 citation present when evidence is retrieved |
-| `lengthPass` | Response within min/max length bounds |
-| `abstentionPass` | Zero retrieved chunks → answer avoids confident claims |
-| `ownerCitationPass` | Named owners appear in cited chunks, not hallucinated |
-| `deadlineCitationPass` | Dates/deadlines trace back to cited evidence |
-| `piiLeakDetected` | Scans for email, API key, AWS key, bearer token patterns |
+### Deterministic Checks
 
-**Grounding metrics** (hybrid deterministic + LLM judge):
-| Metric | Description |
-|--------|-------------|
-| `groundedClaimRate` | % of claims supported by retrieved evidence |
-| `unsupportedClaimRate` | % of claims with no supporting chunk |
-| `contradictionRate` | % of claims that contradict evidence |
-| `hallucinationCount` | Absolute count of unsupported claims |
-| `numericMismatchCount` | Numbers in answer that don't match source values |
+Computed instantly on every reply (`server/lib/scoring/deterministicChecks.ts`):
 
-**Citation quality metrics:**
-| Metric | Description |
-|--------|-------------|
-| `citationCoverageRate` | Ratio of cited sentences to total sentences |
-| `citationIntegrityRate` | Ratio of valid citations (with sourceId + chunkId) to total |
-| `citationMisattributionRate` | Claims cited to wrong sources |
-| `overCitingRate` | Penalty when citations exceed claim count |
-| `multiSourceSupportRate` | Claims backed by 2+ independent sources |
+| Field | Type | What it checks |
+|-------|------|----------------|
+| `formatValidRate` | `0 \| 1` | Response validates against `chatResponseSchema` (Zod) |
+| `citationCoverageRate` | `0–1` | `citationCount / sentenceCount` |
+| `citationIntegrityRate` | `0–1` | Citations with valid `sourceId` + `chunkId` / total citations |
+| `citationMisattributionRate` | `0–1` | `1 - citationIntegrityRate` |
+| `retrievalRelevanceProxy` | `0–1` | Hybrid: lexical term overlap × 0.6 + vector similarity × 0.4 |
+| `overCitingRate` | `0–1` | Penalizes when `citationCount > sentenceCount` (>50% triggers flag) |
+| `piiLeakDetected` | `bool` | Regex scan for email, phone, `sk-*` API keys, `AKIA*` AWS keys, `Bearer` tokens |
+| `mustCitePass` | `bool` | At least 1 citation when `mustCite=true` |
+| `lengthPass` | `bool` | Answer length between `minLength` (30) and `maxLength` (6000) chars |
+| `abstentionPass` | `bool` | Zero retrieved chunks → answer must not contain owner/deadline factual claims |
+| `ownerCitationPass` | `bool` | Owner names extracted from answer must appear in cited chunk text |
+| `deadlineCitationPass` | `bool` | Dates extracted from answer must appear in cited chunk text |
+| `retrievalRecallPass` | `bool` | At least one `expectedChunkId` found in retrieved set |
+| `failedChecks` | `string[]` | Array of all check names that failed |
 
-**LLM judge scores** (GPT-4o evaluator):
-| Score | Description |
-|-------|-------------|
-| `answerRelevanceScore` | Does the answer address the user's question? |
-| `completenessScore` | Coverage of expected points |
-| `contextRelevanceScore` | Was the retrieved context relevant? |
-| `contextRecallScore` | Did retrieval surface the right chunks? |
-| Per-claim labels | Each claim labeled `entailed`, `unsupported`, or `contradicted` with rationale |
+### LLM Judge
 
-**Trust signal** (UI badge computed from metrics):
-- **Grounded** — coverage ≥ 60%, integrity ≥ 80%, no PII, relevance ≥ 40%
-- **Review** — middle tier, partial evidence
-- **Warning** — coverage < 30%, integrity < 50%, PII detected, or failed must-cite
+GPT-4o evaluates claim-level grounding (`server/lib/scoring/llmJudge.ts`):
+
+| Field | Type | What it scores |
+|-------|------|----------------|
+| `claims` | `string[]` | Atomic claims extracted from the answer |
+| `claimLabels` | `JudgeClaimLabel[]` | Per-claim: `{ claim, label, supportingChunkIds, rationale }` |
+| `groundedClaimRate` | `0–1` | `entailed / totalClaims` |
+| `unsupportedClaimRate` | `0–1` | `unsupported / totalClaims` |
+| `contradictionRate` | `0–1` | `contradicted / totalClaims` |
+| `answerRelevanceScore` | `0–1` | Does the answer address the user's question? |
+| `contextRelevanceScore` | `0–1` | Was the retrieved context relevant to the query? |
+| `contextRecallScore` | `0–1` | Did retrieval surface the right chunks? |
+| `completenessScore` | `0–1` | Coverage of expected points |
+| `lowEvidenceCalibration` | `{ pass, rationale }` | Did the answer abstain/clarify when evidence was weak? |
+| `judgeModel` | `string` | `"gpt-4o-mini"` |
+
+Each claim label is one of: **`entailed`** (supported by evidence), **`unsupported`** (no matching chunk), **`contradicted`** (conflicts with evidence).
+
+### Golden Eval Scorer
+
+Offline groundedness scoring without LLM (`eval/golden/scorer.ts`):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `groundedClaimRate` | `0–1` | Claims with ≥30% word overlap + numeric match against chunk text |
+| `hallucinationCount` | `int` | Claims that failed grounding check |
+| `numericMismatchCount` | `int` | Claims where `$`, date, or name values don't match source |
+| `citationCoverageRate` | `0–1` | Cited claims / total claims |
+| `multiSourceSupportRate` | `0–1` | Claims backed by chunks from ≥2 different `sourceId`s |
+| `expectedFactsFound` | `int` | `requiredValues` matched in answer (with number formatting tolerance) |
+| `expectedFactsMissing` | `string[]` | Facts not found |
+| `passed` | `bool` | `true` when `groundedClaimRate ≥ 95%`, zero hallucinations, zero numeric mismatches, all expected facts present, minimum sources met |
 
 ### Enterprise Eval Pack (14 Components)
 
-A comprehensive eval artifact scored on every reply in production:
+Scored on every reply in production (`server/lib/scoring/enterpriseEvalPack.ts`):
 
-| # | Component | Pass Threshold | What it measures |
-|---|-----------|----------------|------------------|
-| 1 | Evidence Coverage | ≥ 85% | % of claims mapped to supporting chunks |
-| 2 | Evidence Sufficiency | ≥ 70% | Per-claim evidence strength |
-| 3 | Multihop Trace | ≥ 0.8 | At least 2 unique sources cited |
-| 4 | Directness | ≥ 0.75 | Prompt-term overlap in first paragraph |
-| 5 | Actionability | — | Presence of action language (recommend, next step) |
-| 6 | Clarity | — | Word count 80–500, 3–7 bullets, no repetition |
-| 7 | Follow-up Quality | — | ≤ 1 follow-up question |
-| 8 | Source Scope | — | Citations within allowed source list |
-| 9 | Hallucination Avoidance | — | Low-evidence triggers abstention language |
-| 10 | PII Leak | — | No email/API key/AWS key/bearer token in output |
-| 11 | Stability | — | Unsupported claim rate variance < 15% |
-| 12 | Retrieval Drift | — | Retrieved chunks available for comparison |
-| 13 | Citation UI Readiness | ≥ 90% | Citations include URLs for frontend rendering |
-| 14 | Debug Panel Completeness | ≥ 85% | Required debug fields present |
+| # | Component | Field | Pass | How it's computed |
+|---|-----------|-------|------|-------------------|
+| 1 | Evidence Coverage | `evidenceCoverageScore` | ≥ 0.85 | `claimsWithSupportingChunks / totalClaims` |
+| 2 | Evidence Sufficiency | `evidenceSufficiencyScore` | ≥ 0.70 | Avg per-claim `min(1, supportCount / 2)` |
+| 3 | Multihop Trace | `multihopTraceScore` | ≥ 0.80 | `uniqueSources ≥ 2 → 1.0`, `= 1 → 0.6`, `= 0 → 0.2` |
+| 4 | Directness | `directnessScore` | ≥ 0.75 | Prompt-term overlap in first paragraph |
+| 5 | Actionability | `actionabilityScore` | ≥ 0.70 | Regex for `next step\|recommend\|should\|plan` |
+| 6 | Clarity | `clarityScore` | ≥ 0.70 | Word count 80–500, 3–7 bullets, no 6+ char repetition |
+| 7 | Follow-up Quality | `followupQualityScore` | ≥ 0.80 | `questionMarkCount ≤ 1 → 0.9`, else `0.5` |
+| 8 | Source Scope | `sourceScopeScore` | `1` | All `citation.sourceId` in `allowedSourceIds` |
+| 9 | Hallucination Avoidance | `missingDataHallucinationScore` | `1` | Low-evidence → answer contains abstention language |
+| 10 | PII Leak | `piiLeakScore` | `1` | No `email\|sk-*\|AKIA*\|Bearer` patterns in output |
+| 11 | Stability | `stabilityVariance` | < 0.15 | `unsupportedClaimRate` proxy variance |
+| 12 | Retrieval Drift | `retrievalDriftScore` | ≥ 0.80 | Retrieved chunks present for baseline comparison |
+| 13 | Citation UI Readiness | `citationUiReadinessScore` | ≥ 0.90 | `citationsWithUrl / totalCitations` |
+| 14 | Debug Panel | `debugPanelCompletenessScore` | ≥ 0.85 | 4 required fields: `retrievedChunksJson`, `retrievalLatencyMs`, `toolCallsJson`, `judgeRationalesJson` |
 
-**Overall pass** = average score ≥ 0.8 + all safety gates clear.
+**`overallScore`** = average of 14 component scores.
+**`overallPass`** = `overallScore ≥ 0.8` AND `piiLeakPass` AND `sourceScopePass` AND `missingDataHallucinationPass`.
 
-### Golden Eval Suite
+### Trust Signal
 
-10 curated test cases covering the full retrieval/grounding surface:
+Computed from deterministic checks, drives the UI badge (`server/lib/scoring/trustSignal.ts`):
 
-| Case | Query | Tests |
-|------|-------|-------|
-| Q1 | Q4 OKRs | Launch date, latency target, budget extraction |
-| Q2 | Blockers | AWS quota, Pinecone cost identification |
-| Q3 | Vector DB choice | Pinecone config, pod type, cost grounding |
-| Q4 | AWS owner & deadline | Person name + escalation date from Jira |
-| Q5 | 2025 roadmap | Q1–Q4 feature extraction across sources |
-| Q6 | Infrastructure contact | Email, Slack handle, responsibilities |
-| Q7 | Project cost | Allocated vs spent, line-item breakdowns |
-| Q8 | Biggest risk | Risk identification, mitigation, fallback plan |
-| Q9 | Claude vs GPT-4 | Cost comparison %, citation accuracy delta |
-| Q10 | Project overview | Comprehensive multi-source synthesis |
+| Level | Badge | Conditions |
+|-------|-------|------------|
+| `grounded` | "answer is supported by cited sources" | `citationCoverageRate ≥ 0.6` AND `citationIntegrityRate ≥ 0.8` AND `formatValidRate = 1` AND `!piiLeakDetected` AND `retrievalRelevanceProxy ≥ 0.4` AND `failedChecks.length = 0` |
+| `review` | "some claims may need checking" | Everything else |
+| `warning` | "source support limited, verify details" | `citationCoverageRate < 0.3` OR `citationIntegrityRate < 0.5` OR `piiLeakDetected` OR `retrievalRelevanceProxy < 0.35` OR `!mustCitePass` |
 
-Each case specifies `minSources`, `expectedSourcePrefixes`, and `expectedFacts` with `requiredValues` for exact-match validation (with numeric formatting tolerance).
+### Golden Eval Suite (10 Cases)
+
+| Case | Query | `minSources` | `expectedSourcePrefixes` | Key `requiredValues` |
+|------|-------|-------------|--------------------------|----------------------|
+| Q1 | Q4 OKRs | 1 | `Q4_2024_OKRs` | launch date, latency target, budget |
+| Q2 | Blockers | 1 | `JIRA_INFRA` | AWS quota limit, Pinecone cost |
+| Q3 | Vector DB choice | 2 | `AI_Search`, `Q4_2024_OKRs` | Pinecone, pod config, cost |
+| Q4 | AWS owner & deadline | 1 | `JIRA_INFRA` | Jordan Martinez, escalation date |
+| Q5 | 2025 roadmap | 1 | `Product_Roadmap` | Q1–Q4 feature names |
+| Q6 | Infra contact | 1 | `Team_Quick_Reference` | email, Slack handle |
+| Q7 | Project cost | 2 | `Q4_2024_OKRs`, `Product_Roadmap` | allocated $, spent $ |
+| Q8 | Biggest risk | 2 | `JIRA_INFRA`, `Q4_2024_OKRs` | risk name, mitigation |
+| Q9 | Claude vs GPT-4 | 2 | `AI_Search`, `Q4_2024_OKRs` | cost %, accuracy delta |
+| Q10 | Project overview | 3 | `Q4_2024_OKRs`, `Product_Roadmap`, `AI_Search` | multi-source synthesis |
 
 ### CI Regression Gate
 
-The CI gate (`npm run ci`) compares the current eval run against a baseline and fails the build on quality regressions:
+`npm run ci` runs `scripts/ciGate.ts` — compares current eval run against baseline:
 
-| Threshold | Limit | Action |
-|-----------|-------|--------|
-| Success rate drop | > 3% | **FAIL** — block merge |
-| Citation integrity drop | > 2% | **FAIL** — block merge |
-| Cost increase without improvement | > 10% | **FAIL** — block merge |
+| Metric | Field | Threshold | Action |
+|--------|-------|-----------|--------|
+| Success rate | `successRate` | drop > 3% | **FAIL** — block merge |
+| Citation integrity | `citationIntegrity` | drop > 2% | **FAIL** — block merge |
+| Cost per success | `costPerSuccess` | increase > 10% (without success improvement) | **FAIL** — block merge |
+| Recall@5 | `recallAtK` | tracked, no hard gate | **WARN** |
 
-Baseline management supports three comparison modes: `previous` (last run), `pinned` (saved baseline), and `window` (time-windowed average).
+First run becomes baseline (`isBaseline: true`). Comparison modes: `previous`, `pinned`, `window`.
 
 ---
 
 ## Admin Dashboard
 
-TracePilot ships with a full admin dashboard at `/admin/*` covering chat quality, evaluations, observability, audit trail, connector management, and policy configuration.
+Full admin console at `/admin/*` with 10 views.
 
 ### Evals Dashboard (`/admin/evals`)
 
-Two modes — **Production** and **Suites**:
+**Production mode** — live quality KPIs across 24h / 7d / 30d:
 
-**Production mode** shows live quality KPIs across 24h/7d/30d windows:
-- Grounding average, citation integrity, hallucination risk rate
-- Retrieval hit rate, unique sources average, refusal rate, safety rate
-- Latency breakdowns: retrieval P50/P95, generation P50/P95, total P50/P95
-- Per-reply production metrics: success rate, unsupported claim rate, tool failure rate
-- Enterprise pass rates: overall, citation UI readiness, hallucination avoidance, stability
-- Worst replies table (bottom performers by any metric)
-- Failure mode breakdown with category rates
+| KPI | Field | Source |
+|-----|-------|--------|
+| Grounding average | `groundingAvg` | Reply eval artifacts |
+| Citation integrity | `citationIntegrityRate` | Citation artifacts |
+| Hallucination risk | `hallucinationRiskRate` | LLM judge |
+| Retrieval hit rate | `retrievalHitRate` | Retrieval artifacts |
+| Unique sources avg | `uniqueSourcesAvg` | Retrieval artifacts |
+| Refusal rate | `refusalRate` | Deterministic checks |
+| Safety rate | `safetyRate` | PII + abstention checks |
+| Retrieval P50/P95 | `retrievalP50`, `retrievalP95` | Span latency |
+| Generation P50/P95 | `generationP50`, `generationP95` | Span latency |
+| Total P50/P95 | `totalP50`, `totalP95` | End-to-end latency |
+| Success rate | `successRate` | Reply status |
+| Unsupported claim rate | `avgUnsupportedClaimRate` | LLM judge |
+| Tool failure rate | `toolFailureRate` | Tool artifacts |
+| Enterprise overall pass | `overallPassRate` | Enterprise eval pack |
+| Citation UI readiness | `citationUiReadinessRate` | Enterprise eval pack |
+| Hallucination avoidance | `hallucinationAvoidanceRate` | Enterprise eval pack |
+| Stability pass rate | `stabilityPassRate` | Enterprise eval pack |
 
-**Suites mode** for running and comparing eval suites:
-- Upload custom eval suite JSON, launch runs, view pass/fail results
+Plus: **worst replies** table, **failure mode breakdown** with category rates.
+
+**Suites mode** — run and compare eval suites:
+- Upload custom suite JSON, launch runs, view pass/fail per case
 - Baseline comparison with delta metrics and severity (P0/P1/P2)
-- Gate status: PASS / WARN / FAIL with issue counts
+- Gate status: PASS / WARN / FAIL
 - Regressed/improved case tables with drilldown links
-- 30-point run trend charts for key metrics
-- Enterprise eval pack pass rate and average score
+- 30-point run trend charts
 
-### Chat Quality Dashboard (`/admin/chats`)
+### Chat Quality (`/admin/chats`)
 
-Aggregate metrics across all conversations:
-- Chat count, reply count, success rate
-- P95 latency, P95 TTFT (time to first token)
-- Average/P95 token usage, total cost
-- Unsupported claim rate (avg and P95), citation integrity
-- Tool failure rate, enterprise pass rates
-- Per-chat rows with model, environment, reply count, cost, and regression flags
-- Filters by environment and model
+| Column | Description |
+|--------|-------------|
+| Chat count, reply count | Volume |
+| `successRate` | Replies with `status: "ok"` |
+| P95 latency, P95 TTFT | `latencyMs`, `ttftMs` percentiles |
+| Avg/P95 tokens | `tokensIn + tokensOut` |
+| Total cost | `costUsd` sum |
+| `avgUnsupportedClaimRate` | From eval artifacts |
+| `citationIntegrityRate` | From citation artifacts |
+| `toolFailureRate` | Tool artifacts with errors |
+| Enterprise pass rates | From enterprise eval pack |
 
-### Chat Detail View (`/admin/chats/:id`)
+Per-chat rows with model, environment, reply count, cost, regression flags. Filters by environment and model.
 
-Deep dive into a single conversation:
-- Full message thread with per-reply latency, TTFT, tokens, cost, trace ID
-- Retrieval artifacts: chunks/sources count, top similarity
-- Citation artifacts: integrity rate, count, coverage
-- Eval artifacts: grounded rate, unsupported rate, relevance, completeness
-- Low-evidence calibration pass/rationale
-- Tool call history with parameters and response summaries
-- Aggregate stats: latency/token min/max/avg/P50/P95
+### Chat Detail (`/admin/chats/:id`)
 
-### Reply Detail View (`/admin/reply/:id`)
+Full conversation thread. Per reply:
+- `latencyMs`, `ttftMs`, `tokensIn`, `tokensOut`, `costUsd`, `traceId`, `status`
+- Retrieval: `chunksReturnedCount`, `sourcesReturnedCount`, `topSimilarity`, `retrievalLatencyMs`
+- Citations: `citationIntegrityRate`, `citationCoverageRate`, `citationCount`
+- Eval: `groundedClaimRate`, `unsupportedClaimRate`, `answerRelevanceScore`, `completenessScore`
+- `lowEvidenceCalibration: { pass, rationale }`
+- Tool calls JSON with params and response summaries
+- Aggregates: min/max/avg/P50/P95 across all replies
 
-Deepest inspection level for a single assistant reply:
-- Retrieved chunks with chunkId, sourceId, title, snippet, similarity score
-- Citation list with chunk/source mapping, URLs, coverage rate, repair notes
-- Per-claim eval labels: claim text, verdict (entailed/unsupported/contradicted), supporting chunks, rationale
-- Tool call timeline: name, params, response, latency, status, retry count, dedup detection
-- Span list: name, kind, duration
-- Deterministic check results: abstention, owner citation, deadline citation, retrieval recall
-- Full enterprise eval breakdown with 14 component scores
+### Reply Detail (`/admin/reply/:id`)
+
+Deepest drill-down for a single assistant reply:
+
+| Artifact | Fields shown |
+|----------|-------------|
+| **Retrieval** | `chunkId`, `sourceId`, `title`, `snippet`, `score` per chunk; `chunksReturnedCount`, `sourcesReturnedCount`, `topSimilarity`, `retrievalLatencyMs` |
+| **Citations** | Per-citation: `sourceId`, `chunkId`, `url`; rates: `citationCoverageRate`, `citationIntegrityRate`, `citationMisattributionRate`; `repairApplied`, `repairNotesJson` |
+| **Eval** | Per-claim: `{ claim, label, supportingChunkIds, rationale }`; `groundedClaimRate`, `unsupportedClaimRate`, `contradictionRate`, `answerRelevanceScore`, `contextRelevanceScore`, `completenessScore` |
+| **Tools** | Per-call: `name`, `params`, `response`, `latencyMs`, `status`; `retryCount`, `idempotencyKey`, `duplicateActionDetected` |
+| **Enterprise** | All 14 component scores + `overallScore` + `overallPass` |
+| **Deterministic** | `abstentionPass`, `ownerCitationPass`, `deadlineCitationPass`, `retrievalRecallPass`, `failedChecks[]` |
+| **Spans** | `name`, `kind`, `durationMs` per span |
 
 ### Eval Case Drilldown (`/admin/eval-case/:id`)
 
-Regression analysis for a single eval case:
-- Baseline vs current status (pass/fail)
-- "Why regressed" reasons list
-- Per-metric comparison table: metric name, baseline value, current value, delta, severity, status
-- Full explainability artifacts from both runs
+Regression analysis: baseline vs current `pass/fail`, "why regressed" reasons, per-metric comparison (name, baseline value, current value, delta, severity P0/P1/P2, status).
 
-### Observability Dashboard (`/admin/observability`)
+### Observability (`/admin/observability`)
 
 Four tabs with time-range selector (24h/7d/30d) and connector filter:
 
 | Tab | Metrics |
 |-----|---------|
-| **Chat** | Total conversations, active users, avg response time, token usage, request count, latency split (retrieval/generation/other), hourly timeseries, top errors |
-| **Retrieval** | Total searches, avg latency, recall@5, index size, avg chunks/sources returned, performance timeseries |
-| **Citations** | Total citations, integrity rate, avg per chat, click-through rate, quality timeseries |
-| **Sync** | Total syncs, success rate, avg duration, docs processed, per-channel status with staleness |
+| **Chat** | `totalConversations`, `activeUsers`, `avgResponseTime`, `tokenUsage`, `requestCount`, `successRate`, `p95DurationMs`, `avgTokensPerChat`; `latencySplit: { retrievalMs, generationMs, otherMs }`; hourly timeseries; top errors |
+| **Retrieval** | `totalSearches`, `avgLatency`, `recallAt5`, `indexSize`, `avgChunksRetrieved`, `avgTopSimilarity`; performance timeseries |
+| **Citations** | `totalCitations`, `integrityRate`, `avgCitationsPerChat`, `clickThroughRate`; quality timeseries |
+| **Sync** | `totalSyncs`, `successRate`, `avgDuration`, `docsProcessed`; per-channel: `lastSync`, `stalenessMs` |
 
 ### Audit Trail (`/admin/audit`)
 
-Full request-level audit log:
-- Request ID, user email, role, success/failure status
-- Filters by kind: chat, action_execute, eval, replay
-- Per-event: prompt, answer, retrieval details, citations, latency breakdown, cost, trace ID
+Request-level audit log. Filters: `chat`, `action_execute`, `eval`, `replay`. Per event: request ID, user email, role, prompt, answer, retrieval details, citations, latency breakdown, `costUsd`, `traceId`.
 
 ### Other Admin Pages
 
@@ -249,6 +290,29 @@ Full request-level audit log:
 | **Connectors** | `/admin/connectors` | Manage Google Drive, Jira, Confluence, Slack accounts and sync scopes |
 | **Ingest** | `/admin/ingest` | Drag-drop file upload with progress, source list with delete |
 | **Policies** | `/admin/policies` | YAML policy editor for role-based tool permissions and approval gates |
+
+---
+
+## Prometheus Metrics
+
+Exposed at `GET /metrics` (`server/lib/observability/prometheus.ts`):
+
+| Metric | Type | Labels | Buckets |
+|--------|------|--------|---------|
+| `chat_ttft_seconds` | Histogram | — | 0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 5, 10 |
+| `chat_total_duration_seconds` | Histogram | — | 0.5, 1, 2, 3, 5, 10, 15, 30, 60 |
+| `rag_retrieval_duration_seconds` | Histogram | — | 0.05, 0.1, 0.25, 0.5, 0.75, 1, 2, 5 |
+| `rag_chunks_returned` | Histogram | — | 0, 1, 2, 3, 5, 8, 10, 15, 20, 30 |
+| `rag_sources_returned` | Histogram | — | 0, 1, 2, 3, 4, 5, 6, 8, 10 |
+| `rag_top_similarity` | Histogram | — | 0.3–0.95 (11 buckets) |
+| `rag_dedup_sources_saved` | Histogram | — | 0, 1, 2, 3, 5, 10 |
+| `llm_duration_seconds` | Histogram | — | 0.5, 1, 2, 3, 5, 10, 15, 30 |
+| `llm_tokens_input_total` | Counter | — | — |
+| `llm_tokens_output_total` | Counter | — | — |
+| `http_requests_total` | Counter | `route`, `method`, `status` | — |
+| `http_request_duration_seconds` | Histogram | `route`, `method`, `status` | 0.01–10 (10 buckets) |
+| `errors_total` | Counter | `type` | — |
+| `grounding_rate` | Histogram | — | 0, 0.5, 0.7, 0.8, 0.9, 0.95, 1.0 |
 
 ---
 
@@ -392,22 +456,22 @@ Resources: `tracepilot://status`, `tracepilot://evals`
 
 ### Key Subsystems
 
-- **Source Versioning:** Immutable snapshots with content-hash dedup. Citations reference `sourceVersionId` + character offsets.
-- **Job Runner:** `FOR UPDATE SKIP LOCKED` concurrency, per-connector rate limiting, exponential backoff retries, dead letter queue.
-- **Scoring Pipeline:** Every reply passes through deterministic checks → grounding analysis → LLM judge → enterprise eval pack → trust signal computation.
-- **Observability:** Request → trace → spans. Prometheus histograms for TTFT, retrieval latency, chunks returned, token counts, grounding rates.
+- **Source Versioning:** Immutable snapshots with content-hash dedup. Citations reference `sourceVersionId` + `charStart`/`charEnd` offsets.
+- **Job Runner:** `FOR UPDATE SKIP LOCKED` concurrency, per-`connectorType` + per-`connectorAccountId` limits, token bucket rate limiting, exponential backoff retries, dead letter queue after `maxAttempts`.
+- **Scoring Pipeline:** `captureReplyArtifacts()` → deterministic checks → trust signal → retrieval/citation/tool artifacts → async `scoreReplyWithJudge()` → LLM judge → enterprise eval pack.
+- **Observability:** Request → `trace` → `span[]`. Each span: `name`, `kind` (`embed|retrieve|llm|tool|chunk|validate`), `durationMs`, `inputTokens`, `outputTokens`, `similarityMin/Max/Avg`.
 
 ---
 
 ## Testing
 
 ```bash
-npm test                   # Unit tests
+npm test                   # Unit tests (server/__tests__/*.test.ts)
 npm run test:voice-smoke   # Voice WebSocket smoke test
 npm run test:mcp-smoke     # MCP server smoke test
 npm run test:rag           # RAG invariant tests (Playwright)
-npm run eval               # Golden eval suite (10 cases)
-npm run ci                 # CI regression gate
+npm run eval               # Golden eval suite (10 cases, offline scorer)
+npm run ci                 # CI regression gate (fails on threshold breach)
 ```
 
 ---
