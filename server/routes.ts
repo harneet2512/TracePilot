@@ -2765,7 +2765,7 @@ Generate a playbook in JSON format matching the playbookResponseSchema.`;
 
       res.json({
         message: "Seeded successfully",
-        admin: { email: admin.email, password: "admin123" },
+        admin: { email: admin.email },
       });
     } catch (error) {
       console.error("Seed error:", error);

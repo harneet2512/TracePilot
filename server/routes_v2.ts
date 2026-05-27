@@ -7094,9 +7094,8 @@ Generate a playbook in JSON format matching the playbookResponseSchema.`;
 
       res.json({
         message: "Seeded successfully",
-        admin: { email: admin!.email, password: "admin123" },
-        member: { email: "member@tracepilot.com", password: "member123" },
-        tracepilot: { email: "admin@tracepilot.com", password: "harneet2512" },
+        admin: { email: admin!.email },
+        member: { email: "member@tracepilot.com" },
       });
     } catch (error) {
       console.error("Seed error:", error);

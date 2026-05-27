@@ -4,19 +4,39 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Environment
 .env
 .env.*
 !.env.example
+
+# Local data
 .data/
 .local/
-proof_*.log
-cookies.txt
-.tmp_cookies.txt
 *.pem
 *.key
-proof/db.sqlite
-test_golden.db
+
+# Logs and temp
+proof_*.log
+cookies.txt
+tc_cookies.txt
+.tmp_cookies.txt
+*.log
+
+# Test artifacts
 playwright-report/
 playwright-artifacts/
 test-results/
 artifacts/
+test_golden.db
+
+# IDE / tooling
+.claude/settings.local.json
+.interface-design/
+
+# Dev artifacts (don't commit)
+proof/
+reports/
+audit/
+tmp/
+portfolio/
